@@ -2,6 +2,7 @@
     Name MainPass
     SupportInstancing false
     DrawType _ SKINNED
+    RenderPass EntityId
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl

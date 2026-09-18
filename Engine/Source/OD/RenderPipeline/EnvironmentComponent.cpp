@@ -22,7 +22,7 @@ EnvironmentSettings::EnvironmentSettings(){
     //skyIrradianceMap = Cubemap::CreateIrradianceMapFromCubeMap(skyCubemap);
     //skyPrefilterMap = Cubemap::CreatePrefilterMapFromCubeMap(skyCubemap);
 
-    Assert(skyCubemap != nullptr);
+    //Assert(skyCubemap != nullptr);
 
     skyCustomMaterial = ResourceManager::Get().Create<Material>();
     skyCustomMaterial->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/SkyboxCubemap.glsl"));

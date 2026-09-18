@@ -14,7 +14,7 @@
 namespace OD{
 namespace Gfx{  
 
-//#define DONT_DEFERRED_RESOURCE_CREATION
+#define DONT_DEFERRED_RESOURCE_CREATION
 
 #if OPENGL_CHECK_ERRORS
     #define glCheckError() glCheckError_(__FILE__, __LINE__)
@@ -179,16 +179,16 @@ bool OpenglGPUDevice::_CreatePipeline(PipelineData& data, const char* _source, c
 
     std::string vertexSource =
         "#version 460 core\n"
+        "#define GFX_API\n"
         "#define OpenGL_API\n"
-        "#define OpenGL_API_New\n"
         "#define UseUniformBuffer\n"
         "#define VERTEX\n" +
         source;
 
     std::string fragmentSource =
         "#version 460 core\n"
+        "#define GFX_API\n"
         "#define OpenGL_API\n"
-        "#define OpenGL_API_New\n"
         "#define UseUniformBuffer\n"
         "#define FRAGMENT\n" +
         source;
@@ -262,21 +262,25 @@ bool OpenglGPUDevice::_CreatePipeline(PipelineData& data, const char* _source, c
 
     for(int i = 0; i < reflection.bindings.size(); i++){
         const auto& _bind = reflection.bindings[i];
+        Assert(_bind.binding < MaxBindingsLookUp);
 
         if(_bind.type == BindingType::UniformBuffer){
             GLuint blockIndex = glGetUniformBlockIndex(data.program, _bind.blockName.c_str());
             glCheckError();
 
-            Assert(blockIndex != GL_INVALID_INDEX);
-            data.groupsLookUp[_bind.set].bindingsLookUp[_bind.binding] = blockIndex;
+            //Assert(blockIndex != GL_INVALID_INDEX);
+            data.groupsLookUp[_bind.set].bindingsLookUp[_bind.binding].blockIndex = blockIndex;
+            data.groupsLookUp[_bind.set].bindingsLookUp[_bind.binding].bufferSize = _bind.size;
+
+            if(_bind.set == 2) Assert(_bind.size == 256);
         }
 
         if(_bind.type == BindingType::Texture2D || _bind.type == BindingType::TextureCube){
             GLint uniformLoc = glGetUniformLocation(data.program, _bind.name.c_str());
             glCheckError();
 
-            Assert(uniformLoc >= 0);
-            data.groupsLookUp[_bind.set].bindingsLookUp[_bind.binding] = uniformLoc;
+            //Assert(uniformLoc >= 0);
+            data.groupsLookUp[_bind.set].bindingsLookUp[_bind.binding].uniformLoc = uniformLoc;
         }
     }
 
@@ -336,10 +340,12 @@ bool OpenglGPUDevice::_CreateBuffer(BufferData& data, size_t size, BufferUsage u
     data.type = GetBufferTarget(usage);
     data.usage = usage;
     data.memory = memory;
+    data.size = size;
     return true;
 }   
 
 void OpenglGPUDevice::_UpdatedBuffer(BufferData& data, const void* _data, size_t size){
+    Assert(size <= data.size);
     glBindBuffer(data.type, data.buffer);
     glBufferData(data.type, size, _data, GetOpenGLBufferUsage(data.memory));
     glCheckError();
@@ -1257,7 +1263,11 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                     Assert(binding.dynamicOffset == false);
 
                     const PipelineData& pipeline = pipelinePool.Get(currentPipeline);
-                    GLuint blockIndex = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding];
+                    Assert(pipeline.info.bindGroupLayouts[cmd.setBindGroup.slot] == bindGroup.info.layout);
+
+                    GLuint blockIndex = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].blockIndex;
+                    Assert(blockIndex != GL_INVALID_INDEX);
+                    Assert(pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].bufferSize == buffer.size);
 
                     glBindBufferRange(
                         GL_UNIFORM_BUFFER,
@@ -1281,7 +1291,8 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                         const Texture2DData& tex = texture2DPool.Get(binding.texture);
 
                         const PipelineData& pipeline = pipelinePool.Get(currentPipeline);
-                        GLuint uniformLoc = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding];
+                        GLuint uniformLoc = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].uniformLoc;
+                        Assert(uniformLoc >= 0);
 
                         glActiveTexture(GL_TEXTURE0 + curTextureIndex);
                         glBindTexture(GL_TEXTURE_2D, tex.tex);
@@ -1295,7 +1306,8 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                         const FramebufferData& tex = framebufferPool.Get(binding.framebuffer);
 
                         const PipelineData& pipeline = pipelinePool.Get(currentPipeline);
-                        GLuint uniformLoc = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding];
+                        GLuint uniformLoc = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].uniformLoc;
+                        Assert(uniformLoc >= 0);
 
                         glActiveTexture(GL_TEXTURE0 + curTextureIndex);
                         glBindTexture(GL_TEXTURE_2D, binding.framebufferAttacement < 0 ? tex.depthAttachment : tex.colorAttachments[binding.framebufferAttacement]);
@@ -1311,7 +1323,9 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                     if(binding.cubemap != InvalidID){
                         const CubemapData& cube = cubemapPool.Get(binding.cubemap);
                         const PipelineData& pipeline = pipelinePool.Get(currentPipeline);
-                        GLuint uniformLoc = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding];
+                        GLuint uniformLoc = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].uniformLoc;
+                        Assert(uniformLoc >= 0);
+
                         glActiveTexture(GL_TEXTURE0 + curTextureIndex);
                         glBindTexture(GL_TEXTURE_CUBE_MAP, cube.tex);
                         glUniform1i(uniformLoc, curTextureIndex);
@@ -1473,9 +1487,21 @@ void OpenglGPUDevice::SyncSingleThreadData(){
 ///////////////////////////////////
 
 Pipeline OpenglGPUDevice::CreatePipeline(const char* source, PipelineInfo info){   
+    #ifdef DONT_DEFERRED_RESOURCE_CREATION
+
+    PipelineData data;
+    if(!_CreatePipeline(data, source, info)) return InvalidID;
+    auto id = pipelinePool.AllocId();
+    pipelinePool.CpuPushResource(id, data);
+    return id;
+
+    #else
+
     auto id = pipelinePool.AllocId();
     multithreadRendererContext.simulationFrame->resourceCommands.CreatePipeline(id, source, info);
     return id;
+
+    #endif
 }
 
 void OpenglGPUDevice::DestroyPipeline(Pipeline id){

@@ -1,6 +1,7 @@
 #pragma BeginPassDef
     Name MainPass
     DrawType _ SKINNED INSTANCING INSTANCINGMATRIX43 SKINNED2
+    RenderPass DirectionalShadow OtherShadow
     CullFace BACK
     DepthTest LESS
     Blend Off
@@ -9,14 +10,10 @@
 #include Engine/ShaderLibrary/Base.glsl
 #include Engine/ShaderLibrary/Vertex.glsl
 
-BeginUniform(3, 0, ShadowData)
-    Uniform mat4 lightSpaceMatrix;
-EndUniform()
-
 #if defined(VERTEX)
     //uniform mat4 lightSpaceMatrix;
     void main(){
-        gl_Position = lightSpaceMatrix * GetModelMatrix() * GetLocalPos();
+        OutPosition = projection * view * GetModelMatrix() * GetLocalPos();
     }
 #endif
 

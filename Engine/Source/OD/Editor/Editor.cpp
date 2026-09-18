@@ -177,10 +177,10 @@ void Editor::OnInit(){
     FrameBufferSpecification framebufferSpecification = {Application::ScreenWidth(), Application::ScreenHeight()};
     framebufferSpecification.colorAttachments = {{FramebufferTextureFormat::RGB16F}};
     framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH24_STENCIL8};
-    framebuffer = ResourceManager::Get().Create<Framebuffer>(framebufferSpecification);
+    framebuffer = ResourceManager::Get().Create<Framebuffer>("Editor", Application::ScreenWidth(), Application::ScreenHeight()); //ResourceManager::Get().Create<Framebuffer>(framebufferSpecification);
     framebuffer->name = "Editor";
     //framebuffer = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
-    framebuffer->Invalidate();
+    //framebuffer->Invalidate();
 
     viewportSize.x = framebuffer->Width();
     viewportSize.y = framebuffer->Height();

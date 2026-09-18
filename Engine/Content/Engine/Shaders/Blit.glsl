@@ -4,6 +4,7 @@ EndProperties
 
 BeginPass
     #pragma Name MainPass
+    #pragma RenderPass DefaultWindows PostProssing Editor
 
     #include Engine/ShaderLibrary/Base.glsl
     #include Engine/ShaderLibrary/Core.glsl

@@ -15,20 +15,19 @@ BeginUniform(2, 0, CamDraw)
     Uniform mat4 invView;
 EndUniform()
 
-#include Engine/ShaderLibrary/UniformsDef.glsl
-#include Engine/ShaderLibrary/TexturesDef.glsl
+#include Engine/ShaderLibrary/PipelineDataDef.glsl
 
 BeginUniform(0, 0, Main)
     Uniform int lightIndex;
 EndUniform()
 
-Texture2D(0, 6, gPosition, gPositionSampler)
-Texture2D(0, 7, gNormal, gNormalSampler)
-Texture2D(0, 8, gAlbedoSpec, gAlbedoSpecSampler)
-Texture2D(0, 9, gEmission, gEmissionSampler)
-Texture2D(0, 10, gOther, gOtherSampler)
-Texture2D(0, 10, gDepth, gDepthSampler)
-Texture2D(0, 10, sss, sssSampler)
+Texture2D(0, 10, gPosition, gPositionSampler)
+Texture2D(0, 11, gNormal, gNormalSampler)
+Texture2D(0, 12, gAlbedoSpec, gAlbedoSpecSampler)
+Texture2D(0, 13, gEmission, gEmissionSampler)
+Texture2D(0, 14, gOther, gOtherSampler)
+Texture2D(0, 15, gDepth, gDepthSampler)
+Texture2D(0, 16, sss, sssSampler)
 
 #if defined(VERTEX) && defined(MainPass)
     In(0) vec3 vPos;

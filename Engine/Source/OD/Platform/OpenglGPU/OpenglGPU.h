@@ -70,6 +70,7 @@ private:
         BufferUsage usage;
         BufferMemory memory;
         GLenum type;
+        size_t size;
     };
     ResourcePool<BufferData> bufferPool;
 
@@ -85,8 +86,16 @@ private:
     };
     ResourcePool<CubemapData> cubemapPool;
 
+    struct BindGroupLookUpData{
+        size_t bufferSize = 0;
+        GLuint blockIndex = GL_INVALID_INDEX;
+
+        GLint uniformLoc = -1;
+    };
+
+    #define MaxBindingsLookUp 20
     struct BindGroupLookUp{
-        GLuint bindingsLookUp[20];
+        BindGroupLookUpData bindingsLookUp[MaxBindingsLookUp];
     };
 
     struct PipelineData{

@@ -72,7 +72,8 @@ private:
     SubShaderTarget currentShader;
 
     Gfx::ShaderReflection reflection;
-    Gfx::BindGroupLayout materialBindGroupLayout;
+    Gfx::BindGroupLayoutInfo materialBindGroupLayoutInfo;
+    Gfx::BindGroupLayout materialBindGroupLayout = Gfx::InvalidID;
     Gfx::PipelineInfo pipelineInfo;
     std::vector<Gfx::BindGroupLayoutInfo> layoutsOut;
 

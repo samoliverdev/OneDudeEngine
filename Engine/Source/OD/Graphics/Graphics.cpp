@@ -10,6 +10,7 @@
 #include "Cubemap.h"
 #include "Texture.h"
 #include "InstancingBuffer.h"
+#include "UniformBuffer.h"
 #include "Common.h"
 #include "OD/Defines.h"
 #include "OD/Core/Lua.h"
@@ -99,7 +100,10 @@ Gfx::Buffer camBuffer;
 Gfx::Buffer emptyModelBuffer;
 Gfx::Buffer emptyInstacingVbo;
 
+std::string curFramebufferRenderPassName;
 int curFramebufferRenderPassIndex = -1;
+
+Gfx::BindGroup curCameraBindGroup;
 
 struct UniformBufferPool{
     Gfx::BindGroupLayout layout;
@@ -147,10 +151,12 @@ struct InstancingBufferPool{
     }
 };
 
+UniformBufferPool camDataPool;
 UniformBufferPool drawMeshPool;
 InstancingBufferPool drawMeshInstancingPool;
 
 Material* curMat = nullptr;
+SubShader* curShader = nullptr;
 Gfx::BindGroup curBindGroup;
 
 struct CameraData{
@@ -247,6 +253,7 @@ void Graphics::Initialize(){
     emptyModelBindGroup = gfxDevice->CreateBindGroup(bindGroupInfo);
 
     drawMeshPool.layout = drawDrawMeshGroupLayout;
+    camDataPool.layout = camGroupLayout;
     #endif
 }
 
@@ -369,6 +376,7 @@ void Graphics::_Begin(){
     curFramebufferRenderPassIndex = -1;
 
     curMat = nullptr;
+    curShader = nullptr;
     curBindGroup = emptyBindGroup;
 }
 
@@ -389,6 +397,7 @@ void Graphics::SetCamera(Camera& camera){
     }*/
 
     gfxDevice->UpdatedBuffer(camBuffer, &data, sizeof(CameraData));
+    curCameraBindGroup = camDataPool.GetBindGroup(*gfxDevice, &data, sizeof(CameraData));
     #else
     graphicsDevice->SetCamera(camera); 
     #endif
@@ -461,7 +470,9 @@ void Graphics::Scissor(unsigned int x, unsigned int y, int w, int h){
 }
 
 Gfx::BindGroup Graphics::BindMaterial(Material& mat){
-    if(mat.shader->materialBindGroupLayout == emptyLayout) return emptyBindGroup;
+    if(mat.shader->materialBindGroupLayout == emptyLayout){
+        return emptyBindGroup;
+    }
 
     for(const auto& i: mat.maps){
         const MaterialMap& map = i.second;
@@ -542,15 +553,94 @@ Gfx::BindGroup Graphics::BindMaterial(Material& mat){
     }
     gfxDevice->UpdatedBuffer(mat.materialBuffer, mat.materialBufferData, mat.materialBufferSize);
 
+    Assert(curMat->shader->materialBindGroupLayout == mat.shader->materialBindGroupLayout);
+
     Gfx::BindGroupInfo bindGroupInfo = {};
     bindGroupInfo.layout = mat.shader->materialBindGroupLayout;
     for(auto& i: mat.shader->reflection.bindings){
         if(i.set != 0) continue;
 
-        if(i.type == Gfx::BindingType::UniformBuffer && i.blockName == "Main"){
+        if(i.type == Gfx::BindingType::UniformBuffer){
+            if(i.blockName == "Main"){
+                bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].buffer = mat.materialBuffer;
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].size = i.size;
+                bindGroupInfo.entriesCount += 1;
+            }  else if(mat.maps.count(i.blockName)){
+                auto& m = mat.maps[i.blockName];
+                bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].buffer = m.buffer->buffer;
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].size = i.size;
+                bindGroupInfo.entriesCount += 1;
+            } else if(mat.globalMaps.count(i.blockName)){
+                auto& m = mat.globalMaps[i.blockName];
+                bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].buffer = m.buffer->buffer;
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].size = i.size;
+                bindGroupInfo.entriesCount += 1;
+            } else {
+                Assert(false);
+            }
+        }
+
+        if(i.type == Gfx::BindingType::Texture2D){
+            if(mat.maps.count(i.name)){
+                auto& m = mat.maps[i.name];
+
+                if(m.type == MaterialMap::Type::Texture){
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].texture = m.texture->tex;// mat.maps[i.name].texture->tex;
+                    bindGroupInfo.entriesCount += 1;
+                } else if(m.type == MaterialMap::Type::Framebuffer){
+                    Assert(m.framebuffer->framebuffer != Gfx::InvalidID);
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].framebuffer = m.framebuffer->framebuffer;
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].framebufferAttacement = m.framebufferAttachment;
+                    bindGroupInfo.entriesCount += 1;
+                } else {
+                    Assert(false);
+                }
+            } else {
+                Assert(false);
+            }
+        }
+
+        if(i.type == Gfx::BindingType::TextureCube){
+            Assert(false);
+        }
+
+        if(i.type == Gfx::BindingType::Texture2DArray){
+            Assert(false);
+        }
+
+        if(i.type == Gfx::BindingType::TextureCubeArray){
+            Assert(false);
+        }
+
+        if(i.type == Gfx::BindingType::StorageBuffer){
+            Assert(false);
+        }
+
+
+        /*if(i.type == Gfx::BindingType::UniformBuffer && i.blockName == "Main"){
             bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
             bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
             bindGroupInfo.entries[bindGroupInfo.entriesCount].buffer = mat.materialBuffer;
+            bindGroupInfo.entries[bindGroupInfo.entriesCount].size = i.size;
+            bindGroupInfo.entriesCount += 1;
+        }
+
+        if(i.type == Gfx::BindingType::UniformBuffer && i.blockName != "Main" && mat.globalMaps.count(i.blockName)){
+            auto& m = mat.globalMaps[i.blockName];
+
+            bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
+            bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
+            bindGroupInfo.entries[bindGroupInfo.entriesCount].buffer = m.buffer->buffer;
             bindGroupInfo.entries[bindGroupInfo.entriesCount].size = i.size;
             bindGroupInfo.entriesCount += 1;
         }
@@ -573,9 +663,10 @@ Gfx::BindGroup Graphics::BindMaterial(Material& mat){
                 bindGroupInfo.entries[bindGroupInfo.entriesCount].framebufferAttacement = m.framebufferAttachment;
                 bindGroupInfo.entriesCount += 1;
             }
-        }
+        }*/
     }
 
+    Assert(mat.shader->materialBindGroupLayoutInfo.entriesCount >= bindGroupInfo.entriesCount);
     return gfxDevice->CreateFrameBindGroup(bindGroupInfo);
 }
 
@@ -584,9 +675,10 @@ void Graphics::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawD
     //Assert(false);
     auto perDrawBindGroup = drawMeshPool.GetBindGroup(*gfxDevice, &modelMatrix, sizeof(Matrix4));
 
-    if(curMat != &mat || curMat->isDirty){
+    if(curMat != &mat || curMat->isDirty || curMat->currentShader.drawTypes[(int)Shader::DrawType::DefaultDraw].get() != curShader){
         curMat = &mat;
         curMat->isDirty = false;
+        curShader = curMat->currentShader.drawTypes[(int)Shader::DrawType::DefaultDraw].get();
         curBindGroup = BindMaterial(*curMat);
     }
 
@@ -596,7 +688,7 @@ void Graphics::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawD
     cmd->SetPipeline(mat.currentShader.drawTypes[(int)Shader::DrawType::DefaultDraw]->_pipelines[curFramebufferRenderPassIndex]);
     cmd->SetBindGroup(0, curBindGroup);
     cmd->SetBindGroup(1, perDrawBindGroup);
-    cmd->SetBindGroup(2, camBindGroup);
+    cmd->SetBindGroup(2, curCameraBindGroup);// camBindGroup);
 
     cmd->SetVertexBuffer(0, mesh.vertexVbo);
     cmd->SetVertexBuffer(1, mesh.uvVbo);
@@ -646,7 +738,7 @@ void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* animMatrix
         cmd->SetPipeline(mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipelines[curFramebufferRenderPassIndex]);
         cmd->SetBindGroup(0, curBindGroup);
         cmd->SetBindGroup(1, emptyModelBuffer);
-        cmd->SetBindGroup(2, camBindGroup);
+        cmd->SetBindGroup(2, curCameraBindGroup);// camBindGroup);
 
         cmd->SetVertexBuffer(0, mesh.vertexVbo);
         cmd->SetVertexBuffer(1, mesh.uvVbo);
@@ -702,7 +794,7 @@ void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, InstancingBuffer& b
     cmd->SetPipeline(mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipelines[curFramebufferRenderPassIndex]);
     cmd->SetBindGroup(0, curBindGroup);
     cmd->SetBindGroup(1, emptyModelBuffer);
-    cmd->SetBindGroup(2, camBindGroup);
+    cmd->SetBindGroup(2, curCameraBindGroup);// camBindGroup);
 
     cmd->SetVertexBuffer(0, mesh.vertexVbo);
     cmd->SetVertexBuffer(1, mesh.uvVbo);
@@ -783,6 +875,7 @@ void Graphics::BeginFramebuffer(Framebuffer& frambuffer, bool clean, Vector4 cle
     Assert(frambuffer.framebuffer != Gfx::InvalidID);
 
     curFramebufferRenderPassIndex = frambuffer.passIndex;
+    curFramebufferRenderPassName = frambuffer.passName;
     Assert(curFramebufferRenderPassIndex  != -1);
 
     gfxDevice->GetCommandBuffer()->BeginFramebuffer(

@@ -16,6 +16,7 @@ void SSGIFeature::OnGui(){
 }
 
 SSGIFeature::SSGIFeature(){
+    #ifndef TestNewGPU_API
     enable = false;
     event = RenderPassEvent::PostProcess;
     
@@ -28,6 +29,7 @@ SSGIFeature::SSGIFeature(){
 
     giBlitPass = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIBlitPostFX.glsl"));
     giTemporalFilterPass = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/SSGITemporalFilter.glsl"));
+    #endif
 }
 
 SSGIFeature::~SSGIFeature(){
@@ -42,6 +44,7 @@ void SSGIFeature::AddRenderPasses(IRenderer& renderer, RenderContext& context){
 }
 
 void SSGIFeature::Execute(Scene& scene, RenderContext& context, RenderFrameData& data){
+    #ifndef TestNewGPU_API
     if(context.isDeferred == false){
         Graphics::BlitFramebuffer(data.src.get(), data.dst.get());
         return;
@@ -386,6 +389,9 @@ void SSGIFeature::Execute(Scene& scene, RenderContext& context, RenderFrameData&
     delete pong;
     delete giFull;
     */
+   #else
+   Assert(false);
+   #endif
 }
 
 }

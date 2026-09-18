@@ -2,6 +2,7 @@
     Name MainPass
     CullFace NONE
     DepthTest LESS_EQUAL
+    RenderPass Forward
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl
@@ -14,22 +15,22 @@ EndUniform()
 TextureCube(0, 1, mainTex, mainSampler)
 
 #if defined(VERTEX) && defined(MainPass)
-    layout(location = 0) in vec3 inPos;
+    //layout(location = 0) in vec3 inPos;
 
-    out vec3 texCoords;
+    Out(0) vec3 texCoords;
 
     void main() {
-        texCoords = inPos;
-        vec4 pos = projection * skyboxView * vec4(inPos, 1.0);
-        gl_Position = pos.xyww;
+        texCoords = pos;
+        vec4 _pos = projection * skyboxView * vec4(pos, 1.0);
+        gl_Position = _pos.xyww;
     }
 #endif
 
 #include Engine/ShaderLibrary/Core.glsl
 
 #if defined(FRAGMENT) && defined(MainPass)
-    in vec3 texCoords;
-    out vec4 fragColor;
+    In(0) vec3 texCoords;
+    Out(0) vec4 fragColor;
 
     void main(){
         fragColor = texture(mainTex, texCoords);

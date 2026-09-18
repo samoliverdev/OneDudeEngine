@@ -34,7 +34,13 @@ Gfx::FramebufferAttachmentType GetType(OD::FramebufferAttachmentType type){
 
 Gfx::FramebufferTextureFormat GetColorFormat(OD::FramebufferTextureFormat format){
     switch(format){
+        case OD::FramebufferTextureFormat::RED_INTEGER: return Gfx::FramebufferTextureFormat::RED_INTEGER;
+
         case OD::FramebufferTextureFormat::RGB: return Gfx::FramebufferTextureFormat::RGB;
+        case OD::FramebufferTextureFormat::RGB16F: return Gfx::FramebufferTextureFormat::RGB16F;
+
+        case OD::FramebufferTextureFormat::RGB11B10F: return Gfx::FramebufferTextureFormat::RGB11B10F;
+
         case OD::FramebufferTextureFormat::RGBA8: return Gfx::FramebufferTextureFormat::RGBA8;
         case OD::FramebufferTextureFormat::RGBA16F: return Gfx::FramebufferTextureFormat::RGBA16F;
     }
@@ -65,6 +71,7 @@ bool FramebufferRenderPass::RegisterRenderPass(const std::string& name, RenderPa
     } else {
         Gfx::FrameBufferLayout layout = {};
         layout.type = GetType(info.type);
+        layout.layers = info.sample;
 
         layout.colorAttachmentsCount = info.colorAttachments.size();
         for(int i = 0; i  < info.colorAttachments.size(); i++){
@@ -135,7 +142,7 @@ Framebuffer::Framebuffer(const std::string& name, int width, int height, int lay
     type = FramebufferType::Dynamic;
     specification.width = width;
     specification.height = height;
-    specification.sample = layers;
+    specification.sample = data->info.sample;// layers;
     specification.type = data->info.type;
     specification.colorAttachments = data->info.colorAttachments;
     specification.depthAttachment = data->info.depthAttachment;
@@ -144,12 +151,16 @@ Framebuffer::Framebuffer(const std::string& name, int width, int height, int lay
 
     passName = name;
 
+    #ifdef TestNewGPU_API
     Gfx::FrameBufferCreateInfo info = {};
     info.layout = data->layout;
     info.width = width;
     info.height = height;
     framebuffer = gfxDevice->CreateFramebuffer(info);
     Assert(framebuffer != Gfx::InvalidID);
+    #else
+    graphicsDevice->FramebufferCreate(*this);
+    #endif 
 }
 
 Framebuffer::~Framebuffer(){
@@ -171,7 +182,24 @@ void Framebuffer::Reload(FrameBufferSpecification inSpecification){
 
 void Framebuffer::Resize(int width, int height){
     #ifdef TestNewGPU_API
-    Assert(false);
+    //Assert(false);
+    if(width == 0 || height == 0) return;
+
+    if(framebuffer != Gfx::InvalidID) gfxDevice->DestroyFramebuffer(framebuffer);
+
+    Assert(passIndex != -1);
+    FramebufferRenderPassData* data = &renderPassDatas[passIndex];
+
+    Assert(data != nullptr);
+    specification.width = width;
+    specification.height = height;
+
+    Gfx::FrameBufferCreateInfo info = {};
+    info.layout = data->layout;
+    info.width = width;
+    info.height = height;
+    framebuffer = gfxDevice->CreateFramebuffer(info);
+    Assert(framebuffer != Gfx::InvalidID);
     #else
     if(width == 0 || height == 0) return; // avoid crash
 
@@ -186,8 +214,8 @@ void Framebuffer::Resize(int width, int height){
 
 bool Framebuffer::IsValid(){
     #ifdef TestNewGPU_API
-    Assert(false);
-    return false;
+    //Assert(false);
+    return true;
     #else
     return graphicsDevice->FramebufferIsValid(*this);
     #endif

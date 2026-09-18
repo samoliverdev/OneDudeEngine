@@ -134,6 +134,32 @@ RendererFeatureContext::RendererFeatureContext(){
 }
 
 RenderContext::RenderContext(){
+    #ifdef TestNewGPU_API
+    entityIdOutColor = ResourceManager::Get().Create<Framebuffer>("EntityId", Application::ScreenWidth(), Application::ScreenHeight()); 
+    entityIdOutColor->name = "entityIdOutColor";
+
+    forwardOutColor = ResourceManager::Get().Create<Framebuffer>("Forward", Application::ScreenWidth(), Application::ScreenHeight());
+    forwardOutColor->name = "forwardOutColor";
+    
+    deferredOutColor = ResourceManager::Get().Create<Framebuffer>("Deferred", Application::ScreenWidth(), Application::ScreenHeight());
+    deferredOutColor->name = "deferredOutColor";
+
+    deferredOutColorCopy = ResourceManager::Get().Create<Framebuffer>("DeferredCopy", Application::ScreenWidth(), Application::ScreenHeight());
+    deferredOutColorCopy->name = "deferredOutColorCopy";
+
+    finalColor = ResourceManager::Get().Create<Framebuffer>("PostProssing", Application::ScreenWidth(), Application::ScreenHeight());
+    finalColor->name = "finalColor";
+    postFx1 = ResourceManager::Get().Create<Framebuffer>("PostProssing", Application::ScreenWidth(), Application::ScreenHeight());
+    postFx1->name = "postFx1";
+    postFx2 = ResourceManager::Get().Create<Framebuffer>("PostProssing", Application::ScreenWidth(), Application::ScreenHeight());
+    postFx2->name = "postFx2";
+
+    directionalShadowAtlas = ResourceManager::Get().Create<Framebuffer>("DirectionalShadow", 1024, 1024);
+    directionalShadowAtlas->name = "directionalShadowAtlas";
+    otherShadowAtlas = ResourceManager::Get().Create<Framebuffer>("OtherShadow", 1024, 1024);
+    otherShadowAtlas->name = "otherShadowAtlas";
+
+    #else
     FrameBufferSpecification framebufferSpecification = {Application::ScreenWidth(), Application::ScreenHeight()};
 
     framebufferSpecification.colorAttachments = {
@@ -198,6 +224,36 @@ RenderContext::RenderContext(){
     //postFx1 = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
     //postFx2 = new Framebuffer(FramebufferType::Stand, Application::ScreenWidth(), Application::ScreenHeight());
 
+    //screenSpaceShadow = AssetManager::Get().LoadAsset<ComputeShader>("Engine/ComputeShader/BendSssGpu.compute");
+    screenSpaceShadow = ResourceManager::Get().LoadByPath<ComputeShader>("Engine/ComputeShader/BendSssGpu2.compute");
+    screenSpaceShadowData = CreateRef<UniformBuffer>(sizeof(SSSParameters2));
+
+    FrameBufferSpecification framebufferSpecification2 = {Application::ScreenWidth(), Application::ScreenHeight()};
+    framebufferSpecification2.colorAttachments = { {FramebufferTextureFormat::RGBA32F} }; //TODO: Optimaze this size
+    framebufferSpecification2.createDepth = false;
+    framebufferSpecification2.type = FramebufferAttachmentType::TEXTURE_2D;
+    framebufferSpecification2.sample = 1;
+    screenSpaceShadowOutput = ResourceManager::Get().Create<Framebuffer>(framebufferSpecification2);
+    screenSpaceShadowOutput->name = "screenSpaceShadowOutput";
+
+    screenSpaceShadow2 = ResourceManager::Get().Create<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/ScreenSpaceShadow2.glsl"));
+
+    FrameBufferSpecification specification = {};
+    specification.width = 1024 * 1;
+    specification.height = 1024 * 1;
+    specification.type = FramebufferAttachmentType::TEXTURE_2D_ARRAY;
+    specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT16};
+    specification.createDepth = true;
+
+    specification.sample = MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT * MAX_CASCADE_COUNT;
+    directionalShadowAtlas = ResourceManager::Get().Create<Framebuffer>(specification);
+    directionalShadowAtlas->name = "directionalShadowAtlas";
+
+    specification.sample = MAX_SHADOWED_OTHER_LIGHT_COUNT;
+    otherShadowAtlas = ResourceManager::Get().Create<Framebuffer>(specification);
+    otherShadowAtlas->name = "otherShadowAtlas";
+    #endif
+
     entityIdShader = ResourceManager::Get().Create<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/EntityId.glsl"));
 
     blitShader = ResourceManager::Get().Create<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Blit.glsl"));
@@ -228,34 +284,7 @@ RenderContext::RenderContext(){
     //    rendererFeatures.push_back(i());
     //}
 
-    //screenSpaceShadow = AssetManager::Get().LoadAsset<ComputeShader>("Engine/ComputeShader/BendSssGpu.compute");
-    screenSpaceShadow = ResourceManager::Get().LoadByPath<ComputeShader>("Engine/ComputeShader/BendSssGpu2.compute");
-    screenSpaceShadowData = CreateRef<UniformBuffer>(sizeof(SSSParameters2));
-
-    FrameBufferSpecification framebufferSpecification2 = {Application::ScreenWidth(), Application::ScreenHeight()};
-    framebufferSpecification2.colorAttachments = { {FramebufferTextureFormat::RGBA32F} }; //TODO: Optimaze this size
-    framebufferSpecification2.createDepth = false;
-    framebufferSpecification2.type = FramebufferAttachmentType::TEXTURE_2D;
-    framebufferSpecification2.sample = 1;
-    screenSpaceShadowOutput = ResourceManager::Get().Create<Framebuffer>(framebufferSpecification2);
-    screenSpaceShadowOutput->name = "screenSpaceShadowOutput";
-
-    screenSpaceShadow2 = ResourceManager::Get().Create<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/ScreenSpaceShadow2.glsl"));
-
-    FrameBufferSpecification specification = {};
-    specification.width = 1024 * 1;
-    specification.height = 1024 * 1;
-    specification.type = FramebufferAttachmentType::TEXTURE_2D_ARRAY;
-    specification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT16};
-    specification.createDepth = true;
-
-    specification.sample = MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT * MAX_CASCADE_COUNT;
-    directionalShadowAtlas = ResourceManager::Get().Create<Framebuffer>(specification);
-    directionalShadowAtlas->name = "directionalShadowAtlas";
-
-    specification.sample = MAX_SHADOWED_OTHER_LIGHT_COUNT;
-    otherShadowAtlas = ResourceManager::Get().Create<Framebuffer>(specification);
-    otherShadowAtlas->name = "otherShadowAtlas";
+    
 }
 
 RenderContext::~RenderContext(){
@@ -456,11 +485,13 @@ glm::vec4 GetInvDeviceZToWorldZTransform(const glm::mat4& projection){
 }
 
 void RenderContext::CleanSSS(){
+    #ifndef TestNewGPU_API
     auto camera = GetCamera();
     screenSpaceShadowOutput->Resize(camera.width, camera.height);
 
     Graphics::BeginFramebuffer(*screenSpaceShadowOutput, true, {1, 1, 1, 1}, 0, 0);
     Graphics::EndFramebuffer();
+    #endif
 }
 
 void RenderContext::DrawSSS(Vector3 _lightDir, SSS_Settings settings){
@@ -2837,6 +2868,8 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
 }
 
 void RenderContext::RenderSkyboxLater(Scene& scene){
+    #ifdef TestNewGPU_API
+    #else
     OD_PROFILE_SCOPE("RenderContext::RenderSkybox"); 
     if(skyMaterial == nullptr) return;
     
@@ -2877,6 +2910,7 @@ void RenderContext::RenderSkyboxLater(Scene& scene){
 
     //Graphics::SetDepthTest(DepthTest::LESS);
     //Graphics::SetDepthMask(true);
+    #endif
 }
 
 void RenderContext::DrawRenderersBuffer(RendererList& commandBuffer, bool sort, bool deferred, bool isDecal){
@@ -3163,15 +3197,24 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
 }
 
 void RenderContext::DrawShadows(RendererList& commandBuffer, ShadowSplitData& splitData, Ref<Material>& shadowPass){
+    #ifdef TestNewGPU_API
+    return;
+    #else
+
     OD_PROFILE_SCOPE("RenderContext::DrawShadows");
     commandBuffer.Sort();
     //commandBuffer.SetOverrideMaterial(shadowPass);
 
     //Material::SetGlobalMatrix4("lightSpaceMatrix", splitData.projViewMatrix);
 
-    shadowData.lightSpaceMatrix = splitData.projViewMatrix;
-    pipelineDataBuffer->SetData(&shadowData, sizeof(ShadowData), 0);
-    Material::SetGlobalUniformBuffer("ShadowData", pipelineDataBuffer, 0);
+    //shadowData.lightSpaceMatrix = splitData.projViewMatrix;
+    //pipelineDataBuffer->SetData(&shadowData, sizeof(ShadowData), 0);
+    //Material::SetGlobalUniformBuffer("ShadowData", pipelineDataBuffer, 0);
+
+    Camera cam = {};
+    cam.projection = splitData.projViewMatrix;
+    cam.view = Matrix4Identity;
+    Graphics::SetCamera(cam);
  
     commandBuffer.onUpdateMaterial = [&](Material& material){ 
         //Shader::SetMatrix4("lightSpaceMatrix", splitData.projViewMatrix);
@@ -3183,6 +3226,7 @@ void RenderContext::DrawShadows(RendererList& commandBuffer, ShadowSplitData& sp
     commandBuffer.Submit();
     commandBuffer.onUpdateMaterial = nullptr;
     commandBuffer.SetOverrideMaterial(nullptr);
+    #endif
 }
 
 /*

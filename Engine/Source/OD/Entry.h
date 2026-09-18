@@ -110,14 +110,14 @@ int main(int argc, char *argv[]){
         OD::Application::GetArgs().push_back(std::string(argv[i]));
     }
 
-    #ifdef TestNewGPU_API
+    /*#ifdef TestNewGPU_API
     OD::ApplicationCallbacks callbacks = {};
-    #else
+    #else*/
     OD::ApplicationCallbacks callbacks = {
         [](){ OD::CoreModulesInit(); },
         [](){ OD::CoreModulesShutdown(); }
     };
-    #endif
+    //#endif
 
     if(!OD::Application::Create(CreateMainModule(), GetStartAppConfig(), argc > 1 ? argv[1] : RESOURCES_PATH "", callbacks, CreateCustomProject())){
         printf("Application failed to create!");

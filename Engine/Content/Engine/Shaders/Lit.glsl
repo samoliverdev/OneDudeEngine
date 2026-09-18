@@ -23,6 +23,8 @@
     MultiCompile Opaque Blend
     MultiCompile Forward Deferred
 
+    RenderPass Forward Deferred DeferredCopy
+
     CullFace BACK
     DepthTest LESS
     Blend Off
@@ -34,6 +36,8 @@
     DrawType _ SKINNED INSTANCING INSTANCINGMATRIX43 SKINNED2
     MultiCompile Forward Deferred
 
+    RenderPass Forward Deferred DeferredCopy
+
     CullFace BACK
     DepthTest LEQUAL
     Blend ONE ONE_MINUS_SRC_ALPHA
@@ -42,8 +46,7 @@
 
 #include Engine/ShaderLibrary/Base.glsl
 #include Engine/ShaderLibrary/Vertex.glsl
-#include Engine/ShaderLibrary/UniformsDef.glsl
-#include Engine/ShaderLibrary/TexturesDef.glsl
+#include Engine/ShaderLibrary/PipelineDataDef.glsl
 
 BeginUniform(0, 0, Main)
     Uniform vec4 color;
@@ -59,10 +62,10 @@ BeginUniform(0, 0, Main)
     Uniform float cutoff;
 EndUniform()
 
-Texture2D(0, 6, mainTex, mainTexSampler)
-Texture2D(0, 7, normalMap, normalMapSampler)
-Texture2D(0, 8, emissionMap, emissionMapSampler)
-Texture2D(0, 9, maskMap, maskMapSampler)
+Texture2D(0, 10, mainTex, mainTexSampler)
+Texture2D(0, 11, normalMap, normalMapSampler)
+Texture2D(0, 12, emissionMap, emissionMapSampler)
+Texture2D(0, 13, maskMap, maskMapSampler)
 
 //uniform int perDrawInt_1;
 

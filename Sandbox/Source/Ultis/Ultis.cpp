@@ -34,7 +34,7 @@ Ref<Material> LoadFloorMaterial(){
       Ref<Material> m = ResourceManager::Get().Create<Material>();
 
       //m->SetEnableInstancing(true);
-      m->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl"));
+      m->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Unlit.glsl"));
       m->SetTexture("mainTex", ResourceManager::Get().LoadByPath<Texture2D>("Sandbox/Textures/floor"));
       m->SetVector4("color", Vector4(1, 1, 1, 1));
       return m;
@@ -51,7 +51,7 @@ Ref<Material> LoadRockMaterial(){
    //if(FileExist(path) == false){
       Ref<Material> m = ResourceManager::Get().Create<Material>();
       //m->SetShader(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/StandDiffuse.glsl"));
-      m->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl"));
+      m->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Unlit.glsl"));
       m->SetTexture("mainTex", ResourceManager::Get().LoadByPath<Texture2D>("Sandbox/Textures/Rock"));
       m->SetVector4("color", Vector4(1, 1, 1, 1));
       return m;
@@ -67,7 +67,7 @@ Ref<Material> LoadMaterial1(){
 
    //if(FileExist(path) == false){
       Ref<Material> m = ResourceManager::Get().Create<Material>();
-      m->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl"));
+      m->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Unlit.glsl"));
       m->SetTexture("mainTex", ResourceManager::Get().LoadByPath<Texture2D>("Sandbox/Textures/image"));
       m->SetVector4("color", Vector4(1, 1, 1, 1));                 
       return m;

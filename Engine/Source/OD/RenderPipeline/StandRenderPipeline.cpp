@@ -70,11 +70,64 @@ public:
 void StandRenderPipelineModuleInit(){
     RenderPassInfo renderPassInfo = {};
     renderPassInfo.colorAttachments = { {FramebufferTextureFormat::RED_INTEGER} };
-    renderPassInfo.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT24};
-    renderPassInfo.type = FramebufferAttachmentType::TEXTURE_2D; //TEXTURE_2D_MULTISAMPLE
+    renderPassInfo.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT16};
+    renderPassInfo.type = FramebufferAttachmentType::TEXTURE_2D; 
     renderPassInfo.sample = 1;
     renderPassInfo.createDepth = true;
     FramebufferRenderPass::RegisterRenderPass("EntityId", renderPassInfo);
+
+    renderPassInfo = {};
+    renderPassInfo.colorAttachments = { {FramebufferTextureFormat::RGBA16F} };
+    renderPassInfo.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT16};
+    renderPassInfo.type = FramebufferAttachmentType::TEXTURE_2D; 
+    renderPassInfo.sample = 1;
+    renderPassInfo.createDepth = true;
+    FramebufferRenderPass::RegisterRenderPass("Forward", renderPassInfo);
+
+    renderPassInfo = {};
+    renderPassInfo.colorAttachments = { 
+        {FramebufferTextureFormat::RGB16F},
+        {FramebufferTextureFormat::RGBA16F},
+        {FramebufferTextureFormat::RGBA16F},
+        {FramebufferTextureFormat::RGB11B10F}
+    };
+    renderPassInfo.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT16};
+    renderPassInfo.type = FramebufferAttachmentType::TEXTURE_2D; 
+    renderPassInfo.sample = 1;
+    renderPassInfo.createDepth = true;
+    FramebufferRenderPass::RegisterRenderPass("Deferred", renderPassInfo);
+
+    renderPassInfo.createDepth = false;
+    FramebufferRenderPass::RegisterRenderPass("DeferredCopy", renderPassInfo);
+
+    renderPassInfo = {};
+    renderPassInfo.colorAttachments = { {FramebufferTextureFormat::RGB11B10F} };
+    renderPassInfo.type = FramebufferAttachmentType::TEXTURE_2D; 
+    renderPassInfo.sample = 1;
+    renderPassInfo.createDepth = false;
+    FramebufferRenderPass::RegisterRenderPass("PostProssing", renderPassInfo);
+
+    renderPassInfo = {};
+    renderPassInfo.type = FramebufferAttachmentType::TEXTURE_2D_ARRAY; 
+    renderPassInfo.sample = MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT * MAX_CASCADE_COUNT;
+    renderPassInfo.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT16};
+    renderPassInfo.createDepth = true;
+    FramebufferRenderPass::RegisterRenderPass("DirectionalShadow", renderPassInfo);
+
+    renderPassInfo = {};
+    renderPassInfo.type = FramebufferAttachmentType::TEXTURE_2D_ARRAY; 
+    renderPassInfo.sample = MAX_SHADOWED_OTHER_LIGHT_COUNT;
+    renderPassInfo.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT16};
+    renderPassInfo.createDepth = true;
+    FramebufferRenderPass::RegisterRenderPass("OtherShadow", renderPassInfo);
+
+    renderPassInfo = {};
+    renderPassInfo.colorAttachments = { {FramebufferTextureFormat::RGBA16F} };
+    renderPassInfo.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT16};
+    renderPassInfo.type = FramebufferAttachmentType::TEXTURE_2D; 
+    renderPassInfo.sample = 1;
+    renderPassInfo.createDepth = true;
+    FramebufferRenderPass::RegisterRenderPass("Editor", renderPassInfo);
 
     SceneManager::Get().RegisterCoreComponent<EnvironmentComponent>("EnvironmentComponent", "Renderer");
     SceneManager::Get().RegisterCoreComponent<CameraComponent>("CameraComponent", "Renderer");
@@ -620,7 +673,8 @@ void CameraRenderer::RenderPassNew(CameraRenderPass& inpass, RenderContext* rend
     inpass.camera.height = inpass.camera.viewportRect.w * inpass.camera.height; 
 
     if(inpass.target == nullptr){
-        inpass.target = ResourceManager::Get().Create<Framebuffer>(renderContext->GetFinalColor()->Specification());
+        //inpass.target = ResourceManager::Get().Create<Framebuffer>(renderContext->GetFinalColor()->Specification());
+        inpass.target = ResourceManager::Get().Create<Framebuffer>("PostProssing", inpass.camera.width, inpass.camera.height);
         inpass.target->name = "CameraRenderPass";
     }
 

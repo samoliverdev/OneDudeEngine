@@ -13,14 +13,14 @@ BeginUniform(2, 0, CamDraw)
     Uniform mat4 invView;
 EndUniform()
 
-#if defined(OpenGL_API) && defined(UseUniformBuffer) && !defined(OpenGL_API_New)
+#if defined(OpenGL_API) && defined(UseUniformBuffer) && !defined(GFX_API)
     uniform mat4 model;
 #else
 
 BeginUniform(1, 0, PerDraw)
     Uniform mat4 model;
 
-    #if !defined(OpenGL_API) && defined(SKINNED)
+    #if defined(GFX_API) && (defined(SKINNED) || defined(SKINNED2))
     mat4 animated[MAX_BONES];
     #endif
 
@@ -56,7 +56,7 @@ layout(location = 6) in vec4 weights;
     #endif
 //#endif
 
-#ifdef OpenGL_API
+#if defined(OpenGL_API) && !defined(GFX_API)
 
 #if defined(SKINNED)
     uniform mat4 animated[MAX_BONES];

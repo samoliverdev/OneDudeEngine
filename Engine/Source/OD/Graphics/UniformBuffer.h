@@ -1,5 +1,6 @@
 #pragma once
 #include "OD/Core/Resource.h"
+#include "OD/Gfx/Gfx.h"
 #include "OD/Platform/OpenGL/GL.h"
 
 namespace OD{
@@ -26,6 +27,8 @@ private:
     UniformBufferDataGL;
     //unsigned int rendererId = 0;
     //int bind = 0;
+
+    Gfx::Buffer buffer = Gfx::InvalidID;
 };
 
 }

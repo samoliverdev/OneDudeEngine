@@ -19,6 +19,7 @@ Gfx::ImageFormat GetImageFormat(TextureFormat f){
     switch(f){
         case TextureFormat::RED8: return Gfx::ImageFormat::R8_UNORM;
         case TextureFormat::RGB: return Gfx::ImageFormat::R8G8B8_UNORM;
+        case TextureFormat::RGB8: return Gfx::ImageFormat::R8G8B8_UNORM;
         case TextureFormat::RGBA: return Gfx::ImageFormat::R8G8B8A8_UNORM;
     }
 
@@ -30,6 +31,7 @@ size_t GetFormatSize(TextureFormat f){
     switch(f){
         case TextureFormat::RED8: return sizeof(uint8_t);
         case TextureFormat::RGB: return sizeof(uint8_t)*3;
+        case TextureFormat::RGB8: return sizeof(uint8_t)*3;
         case TextureFormat::RGBA: return sizeof(uint8_t)*4;
     }
 
@@ -438,7 +440,7 @@ Ref<Texture2D> Texture2D::LoadDefautlTexture2D(){
 
 Ref<Texture2D> Texture2D::CreateBrdfLUTTexture2D(){
     #ifdef TestNewGPU_API
-    Assert(false);
+    //Assert(false);
     return nullptr;
     #else
     return graphicsDevice->Texture2DCreateBrdfLUTTexture2D();

@@ -232,8 +232,11 @@ EShLanguage ToGlslangStage(VkShaderStageFlagBits stage){
         case VK_SHADER_STAGE_GEOMETRY_BIT: return EShLangGeometry;
         case VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT: return EShLangTessControl;
         case VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT: return EShLangTessEvaluation;
-        default: throw std::runtime_error("Unsupported Vulkan shader stage");
+        //default: throw std::runtime_error("Unsupported Vulkan shader stage");
     }
+
+    Assert(false);
+    return EShLangTessEvaluation;
 }
 
 std::vector<uint32_t> CompileGLSL(const std::string& source, VkShaderStageFlagBits stage){
@@ -427,8 +430,8 @@ VkDescriptorType GetVulkanDescriptorType(BindingType type){
 
 bool VulkanGPUDevice::_CreatePipeline(PipelineData& data, const char* source, const PipelineInfo& info){
     std::string srcStr = source;
-    std::string vertexSource = "#version 450\n#define Vulkan_API\n#define VERTEX\n" + srcStr;
-    std::string fragmentSource = "#version 450\n#define Vulkan_API\n#define FRAGMENT\n" + srcStr;
+    std::string vertexSource = "#version 450\n#define GFX_API\n#define Vulkan_API\n#define VERTEX\n" + srcStr;
+    std::string fragmentSource = "#version 450\n#define GFX_API\n#define Vulkan_API\n#define FRAGMENT\n" + srcStr;
 
     VkShaderModule vertModule = VK_NULL_HANDLE;
     VkShaderModule fragModule = VK_NULL_HANDLE;
@@ -768,69 +771,41 @@ void VulkanGPUDevice::_DestroyBuffer(BufferData& data){
 #pragma region RenderPass
 
 VkFormat ToVkColorFormat(FramebufferTextureFormat format){
-    switch (format){
-        case FramebufferTextureFormat::None:
-            return VK_FORMAT_UNDEFINED;
-
-        case FramebufferTextureFormat::RGB:
-            return VK_FORMAT_R8G8B8_UNORM;
-
-        case FramebufferTextureFormat::RGBA8:
-            return VK_FORMAT_R8G8B8A8_UNORM;
-
-        case FramebufferTextureFormat::RGB11B10F:
-            return VK_FORMAT_B10G11R11_UFLOAT_PACK32;
-
-        case FramebufferTextureFormat::RGB16F:
-            return VK_FORMAT_R16G16B16_SFLOAT;
-
-        case FramebufferTextureFormat::RGBA16F:
-            return VK_FORMAT_R16G16B16A16_SFLOAT;
-
-        case FramebufferTextureFormat::RGB32F:
-            return VK_FORMAT_R32G32B32_SFLOAT;
-
-        case FramebufferTextureFormat::RGBA32F:
-            return VK_FORMAT_R32G32B32A32_SFLOAT;
-
-        case FramebufferTextureFormat::RED_INTEGER:
-            return VK_FORMAT_R32_SINT;
-
-        default:
-            return VK_FORMAT_UNDEFINED;
+    switch(format){
+        case FramebufferTextureFormat::None: return VK_FORMAT_UNDEFINED;
+        case FramebufferTextureFormat::RGB: return VK_FORMAT_R8G8B8_UNORM;
+        case FramebufferTextureFormat::RGBA8: return VK_FORMAT_R8G8B8A8_UNORM;
+        case FramebufferTextureFormat::RGB11B10F: return VK_FORMAT_B10G11R11_UFLOAT_PACK32;
+        case FramebufferTextureFormat::RGB16F: return VK_FORMAT_R16G16B16A16_SFLOAT; //VK_FORMAT_R16G16B16_SFLOAT;
+        case FramebufferTextureFormat::RGBA16F: return VK_FORMAT_R16G16B16A16_SFLOAT;
+        case FramebufferTextureFormat::RGB32F: return VK_FORMAT_R32G32B32_SFLOAT;
+        case FramebufferTextureFormat::RGBA32F: return VK_FORMAT_R32G32B32A32_SFLOAT;
+        case FramebufferTextureFormat::RED_INTEGER: return VK_FORMAT_R32_SINT;
+        //default: return VK_FORMAT_UNDEFINED;
     }
+
+    Assert(false);
+    return VK_FORMAT_UNDEFINED;
 }
 
 VkFormat ToVkDepthFormat(FramebufferDepthTextureFormat format){
-    switch (format){
-        case FramebufferDepthTextureFormat::None:
-            return VK_FORMAT_UNDEFINED;
-
-        case FramebufferDepthTextureFormat::DEPTH24_STENCIL8:
-            return VK_FORMAT_D24_UNORM_S8_UINT;
-
-        case FramebufferDepthTextureFormat::DEPTH32F_STENCIL8:
-            return VK_FORMAT_D32_SFLOAT_S8_UINT;
-
-        case FramebufferDepthTextureFormat::DEPTH_COMPONENT16:
-            return VK_FORMAT_D16_UNORM;
-
-        //case FramebufferDepthTextureFormat::DEPTH_COMPONENT24:
-        //    return VK_FORMAT_D24_UNORM;
-
-        case FramebufferDepthTextureFormat::DEPTH_COMPONENT32:
-            return VK_FORMAT_D32_SFLOAT;
-
-        case FramebufferDepthTextureFormat::DEPTH_COMPONENT32F:
-            return VK_FORMAT_D32_SFLOAT;
-
-        default:
-            return VK_FORMAT_UNDEFINED;
+    switch(format){
+        case FramebufferDepthTextureFormat::None: return VK_FORMAT_UNDEFINED;
+        case FramebufferDepthTextureFormat::DEPTH24_STENCIL8: return VK_FORMAT_D24_UNORM_S8_UINT;
+        case FramebufferDepthTextureFormat::DEPTH32F_STENCIL8: return VK_FORMAT_D32_SFLOAT_S8_UINT;
+        case FramebufferDepthTextureFormat::DEPTH_COMPONENT16: return VK_FORMAT_D16_UNORM;
+        case FramebufferDepthTextureFormat::DEPTH_COMPONENT24: return VK_FORMAT_D16_UNORM; //VK_FORMAT_D24_UNORM;
+        case FramebufferDepthTextureFormat::DEPTH_COMPONENT32: return VK_FORMAT_D32_SFLOAT;
+        case FramebufferDepthTextureFormat::DEPTH_COMPONENT32F: return VK_FORMAT_D32_SFLOAT;
+        //default: return VK_FORMAT_UNDEFINED;
     }
+
+    Assert(false);
+    return VK_FORMAT_UNDEFINED;
 }
 
 VkSampleCountFlagBits ToVkSampleCount(uint8_t samples){
-    switch (samples){
+    switch(samples){
         case 1:  return VK_SAMPLE_COUNT_1_BIT;
         case 2:  return VK_SAMPLE_COUNT_2_BIT;
         case 4:  return VK_SAMPLE_COUNT_4_BIT;
@@ -960,6 +935,7 @@ VkFormat GetImageFormat(ImageFormat f){
         case ImageFormat::R8G8B8A8_SRGB: return VK_FORMAT_R8G8B8A8_SRGB;
     }
 
+    Assert(false);
     return VK_FORMAT_R8G8B8A8_UNORM;
 }
 
@@ -988,6 +964,7 @@ VkSamplerAddressMode ToVkTextureWrapping(TextureWrapping wrapping){
         case TextureWrapping::ClampToEdge:    return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
         case TextureWrapping::ClampToBorder:  return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
     }
+    Assert(false);
     return VK_SAMPLER_ADDRESS_MODE_REPEAT;
 }
 

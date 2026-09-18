@@ -514,7 +514,7 @@ void BoidsSample::OnInit(){
         //scene->SetParent(boids, boid);
     }
 
-    Application::AddModule<Editor>();
+    //Application::AddModule<Editor>();
     scene->Start();
 }
 

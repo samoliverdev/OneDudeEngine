@@ -7,6 +7,7 @@
 namespace OD{
 
 extern GraphicsDevice* graphicsDevice;
+extern Gfx::Device* gfxDevice;
 
 Ref<UniformBuffer> UniformBuffer::Create(size_t size){
     Ref<UniformBuffer> buffer = CreateRef<UniformBuffer>(size);
@@ -25,11 +26,21 @@ Ref<UniformBuffer> UniformBuffer::Create(size_t size){
 }
 
 UniformBuffer::UniformBuffer(size_t size){
+    #ifdef TestNewGPU_API
+    //Assert(false);
+    buffer = gfxDevice->CreateBuffer(size, Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
+    #else
     graphicsDevice->UniformBufferCreate(*this, size);
+    #endif
 }
 
 UniformBuffer::~UniformBuffer(){
+    #ifdef TestNewGPU_API
+    //Assert(false);
+    gfxDevice->DestroyBuffer(buffer);
+    #else
     graphicsDevice->UniformBufferDestroy(*this);
+    #endif
 }
 
 //void UniformBuffer::Destroy(){
@@ -41,7 +52,12 @@ UniformBuffer::~UniformBuffer(){
 //}
 
 bool UniformBuffer::IsValid(){
+    #ifdef TestNewGPU_API
+    //Assert(false);
+    return true;
+    #else
     return graphicsDevice->UniformBufferIsValid(*this);
+    #endif
 }
 
 //void UniformBuffer::Bind(UniformBuffer& buffer, int bind){
@@ -51,7 +67,12 @@ bool UniformBuffer::IsValid(){
 //}
 
 void UniformBuffer::SetData(const void* data, size_t size, size_t offset){
+    #ifdef TestNewGPU_API
+    //Assert(false);
+    gfxDevice->UpdatedBuffer(buffer, data, size);
+    #else
     graphicsDevice->UniformBufferSetData(*this, data, size, offset);
+    #endif
 
     /*Assert(IsValid() == true);
 

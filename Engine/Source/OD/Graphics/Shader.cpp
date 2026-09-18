@@ -482,7 +482,7 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
         insirtSize += keyworld.size();
     }
 
-    if(key.empty()){
+    if(key.empty() && materialBindGroupLayout == Gfx::InvalidID){
         #ifdef TestNewGPU_API
         Gfx::Reflect(shaderSourceData.baseSource.c_str(), reflection);
         
@@ -490,6 +490,7 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
         layoutsOut.clear();
         Gfx::ShaderReflectionToPipelineInfo(reflection, pipelineInfo, layoutsOut);
 
+        materialBindGroupLayoutInfo = layoutsOut[0];
         materialBindGroupLayout = layoutsOut[0].entriesCount == 0 ? emptyLayout : gfxDevice->CreateBindGroupLayout(layoutsOut[0]);
         #endif
     }
@@ -500,6 +501,7 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
 
     std::vector<std::string> framebufferRenderPasses;
     for(auto i: shaderSourceData.passes[pass].properties){
+        if(i.size() == 0) continue;
         if(i[0] == "RenderPass"){
             for(int j = 1; j < i.size(); j++){
                 framebufferRenderPasses.push_back(i[j]);
@@ -533,7 +535,7 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
 
         for(auto framebufferRenderPass: framebufferRenderPasses){
         int renderPassIndex = FramebufferRenderPass::GetRenderPassIndex(framebufferRenderPass);
-        Assert(renderPassIndex >= 0);
+        //Assert(renderPassIndex >= 0);
         if(renderPassIndex == -1) continue;
 
         std::string passDefine = "#define "+ framebufferRenderPass + "\n";

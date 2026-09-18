@@ -104,7 +104,7 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
     ////////////////////////////////
     #ifdef TestNewGPU_API
     gpuDevice = dynamic_cast<Gfx::Device*>(Graphics::GetGraphicsDevice());
-    gpuDevice->Init(true);
+    gpuDevice->Init(false);
     #endif
     ////////////////////////////////
 

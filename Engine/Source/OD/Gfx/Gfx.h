@@ -299,7 +299,7 @@ struct BindLayoutEntry{
 };
 
 struct BindGroupLayoutInfo{
-    BindLayoutEntry entries[4];
+    BindLayoutEntry entries[128];
     uint32_t entriesCount = 0;
 };
 

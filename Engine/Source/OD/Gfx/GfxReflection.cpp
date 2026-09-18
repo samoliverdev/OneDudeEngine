@@ -436,8 +436,8 @@ std::vector<uint32_t> CompileGLSL(const std::string& source, EShLanguage stage){
 
 bool Reflect(const char* shaderSource, ShaderReflection& reflection){
     std::string srcStr = shaderSource;
-    std::string vertexSource = "#version 450\n#define Vulkan_API\n#define VERTEX\n" + srcStr;
-    std::string fragmentSource = "#version 450\n#define Vulkan_API\n#define FRAGMENT\n" + srcStr;
+    std::string vertexSource = "#version 450\n#define GFX_API\n#define Vulkan_API\n#define VERTEX\n" + srcStr;
+    std::string fragmentSource = "#version 450\n#define GFX_API\n#define Vulkan_API\n#define FRAGMENT\n" + srcStr;
 
     std::vector<uint32_t> spirvV = CompileGLSL(vertexSource, EShLangVertex);
     std::vector<uint32_t> spirvF = CompileGLSL(fragmentSource, EShLangFragment);
@@ -475,8 +475,8 @@ void ShaderReflectionToPipelineInfo(const ShaderReflection& reflection, Pipeline
 
         BindGroupLayoutInfo& layout = layoutsOut[binding.set]; //info.bindGroupLayouts[binding.set];
 
-        Assert(layout.entriesCount <= 4);
-        if(layout.entriesCount >= 4) continue;
+        //Assert(layout.entriesCount <= 4);
+        //if(layout.entriesCount >= 4) continue;
 
         BindLayoutEntry& entry = layout.entries[layout.entriesCount++];
 

@@ -20,6 +20,7 @@ Pass {
     #pragma Name MainPass
     #pragma SupportInstancing false
     #pragma DrawType _ SKINNED
+    #pragma RenderPass EntityId
     MultiCompile Opaque Blend
 
     MaterialData           { 
