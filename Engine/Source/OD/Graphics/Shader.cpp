@@ -469,6 +469,70 @@ std::string DrawTypeToString(Shader::DrawType type){
     return "UNKNOWN";
 }
 
+inline Gfx::CullFace Convert(OD::CullFace cull){
+    switch(cull){
+        case OD::CullFace::BACK: return Gfx::CullFace::BACK;
+        case OD::CullFace::FRONT: return Gfx::CullFace::FRONT;
+        case OD::CullFace::FRONT_AND_BACK: return Gfx::CullFace::FRONT_AND_BACK;
+        case OD::CullFace::NONE: return Gfx::CullFace::NONE;
+    }
+
+    Assert(false);
+    return Gfx::CullFace::NONE;
+}
+
+inline Gfx::DepthTest Convert(OD::DepthTest cull){
+    switch(cull){
+        case OD::DepthTest::ALWAYS: return Gfx::DepthTest::ALWAYS;
+        case OD::DepthTest::DIFFERENT: return Gfx::DepthTest::DIFFERENT;
+        case OD::DepthTest::DISABLE: return Gfx::DepthTest::DISABLE;
+        case OD::DepthTest::EQUAL: return Gfx::DepthTest::EQUAL;
+        case OD::DepthTest::GREATER: return Gfx::DepthTest::GREATER;
+        case OD::DepthTest::GREATER_EQUAL: return Gfx::DepthTest::GREATER_EQUAL;
+        case OD::DepthTest::LESS: return Gfx::DepthTest::LESS;
+        case OD::DepthTest::LESS_EQUAL: return Gfx::DepthTest::LESS_EQUAL;
+        case OD::DepthTest::NEVER: return Gfx::DepthTest::NEVER;
+    }
+
+    Assert(false);
+    return Gfx::DepthTest::NEVER;
+}
+
+inline Gfx::BlendMode Convert(OD::BlendMode b){
+    switch(b){
+        case OD::BlendMode::CONSTANT_ALPHA: return Gfx::BlendMode::CONSTANT_ALPHA;
+        case OD::BlendMode::CONSTANT_COLOR: return Gfx::BlendMode::CONSTANT_COLOR;
+        case OD::BlendMode::DST_ALPHA: return Gfx::BlendMode::DST_ALPHA;
+        case OD::BlendMode::DST_COLOR: return Gfx::BlendMode::DST_COLOR;
+        case OD::BlendMode::ONE: return Gfx::BlendMode::ONE;
+        case OD::BlendMode::ONE_MINUS_CONSTANT_ALPHA: return Gfx::BlendMode::ONE_MINUS_CONSTANT_ALPHA;
+        case OD::BlendMode::ONE_MINUS_CONSTANT_COLOR: return Gfx::BlendMode::ONE_MINUS_CONSTANT_COLOR;
+        case OD::BlendMode::ONE_MINUS_DST_ALPHA: return Gfx::BlendMode::ONE_MINUS_DST_ALPHA;
+        case OD::BlendMode::ONE_MINUS_DST_COLOR: return Gfx::BlendMode::ONE_MINUS_DST_COLOR;
+        case OD::BlendMode::ONE_MINUS_SRC_ALPHA: return Gfx::BlendMode::ONE_MINUS_SRC_ALPHA;
+        case OD::BlendMode::ONE_MINUS_SRC_COLOR: return Gfx::BlendMode::ONE_MINUS_SRC_COLOR;
+        case OD::BlendMode::SRC_ALPHA: return Gfx::BlendMode::SRC_ALPHA;
+        case OD::BlendMode::SRC_COLOR: return Gfx::BlendMode::SRC_COLOR;
+        case OD::BlendMode::ZERO: return Gfx::BlendMode::ZERO;
+    }
+
+    Assert(false);
+    return Gfx::BlendMode::CONSTANT_ALPHA;
+}
+
+inline Gfx::BlendOp Convert(OD::BlendOp b){
+    switch(b){
+        case OD::BlendOp::FUNC_ADD: return Gfx::BlendOp::FUNC_ADD;
+        case OD::BlendOp::FUNC_REVERSE_SUBTRACT: return Gfx::BlendOp::FUNC_REVERSE_SUBTRACT;
+        case OD::BlendOp::FUNC_SUBTRACT: return Gfx::BlendOp::FUNC_SUBTRACT;
+        case OD::BlendOp::MAX: return Gfx::BlendOp::MAX;
+        case OD::BlendOp::MIN: return Gfx::BlendOp::MIN;
+    }
+
+    Assert(false);
+    return Gfx::BlendOp::FUNC_ADD;
+}
+
 void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywords, int pass, const std::set<DrawType>& drawTypes){
     std::vector<std::string> _enabledKeywords(keywords.begin(), keywords.end());
     _enabledKeywords.push_back(passes[pass].name);
@@ -540,6 +604,17 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
 
         std::string passDefine = "#define "+ framebufferRenderPass + "\n";
         shaderSourceData.baseSource.insert(0, passDefine);
+
+        pipelineInfo.cullFace = Convert(shaderSourceData.passes[pass].pipeline.cullFace);
+        pipelineInfo.depthMask = shaderSourceData.passes[pass].pipeline.depthMask;
+        pipelineInfo.depthTest = Convert(shaderSourceData.passes[pass].pipeline.depthTest);
+        pipelineInfo.colorMask = shaderSourceData.passes[pass].pipeline.colorMask;
+        pipelineInfo.blend = shaderSourceData.passes[pass].pipeline.blend;
+        pipelineInfo.opBlend = Convert(shaderSourceData.passes[pass].pipeline.opBlend);
+        pipelineInfo.srcBlend = Convert(shaderSourceData.passes[pass].pipeline.srcBlend);
+        pipelineInfo.dstBlend = Convert(shaderSourceData.passes[pass].pipeline.dstBlend);
+        pipelineInfo.srcAlphaBlend = Convert(shaderSourceData.passes[pass].pipeline.srcAlphaBlend);
+        pipelineInfo.dstAlphaBlend = Convert(shaderSourceData.passes[pass].pipeline.dstAlphaBlend);
 
         //std::string GFX_API = "#define GFX_API\n";
         //shaderSourceData.baseSource.insert(0, GFX_API);

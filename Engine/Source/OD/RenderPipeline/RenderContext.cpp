@@ -2868,8 +2868,8 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
 }
 
 void RenderContext::RenderSkyboxLater(Scene& scene){
-    #ifdef TestNewGPU_API
-    #else
+    /*#ifdef TestNewGPU_API
+    #else*/
     OD_PROFILE_SCOPE("RenderContext::RenderSkybox"); 
     if(skyMaterial == nullptr) return;
     
@@ -2910,7 +2910,7 @@ void RenderContext::RenderSkyboxLater(Scene& scene){
 
     //Graphics::SetDepthTest(DepthTest::LESS);
     //Graphics::SetDepthMask(true);
-    #endif
+    //#endif
 }
 
 void RenderContext::DrawRenderersBuffer(RendererList& commandBuffer, bool sort, bool deferred, bool isDecal){
@@ -3197,9 +3197,9 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
 }
 
 void RenderContext::DrawShadows(RendererList& commandBuffer, ShadowSplitData& splitData, Ref<Material>& shadowPass){
-    #ifdef TestNewGPU_API
+    /*#ifdef TestNewGPU_API
     return;
-    #else
+    #else*/
 
     OD_PROFILE_SCOPE("RenderContext::DrawShadows");
     commandBuffer.Sort();
@@ -3226,7 +3226,7 @@ void RenderContext::DrawShadows(RendererList& commandBuffer, ShadowSplitData& sp
     commandBuffer.Submit();
     commandBuffer.onUpdateMaterial = nullptr;
     commandBuffer.SetOverrideMaterial(nullptr);
-    #endif
+    //#endif
 }
 
 /*

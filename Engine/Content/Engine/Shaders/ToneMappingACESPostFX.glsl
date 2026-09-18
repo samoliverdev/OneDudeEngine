@@ -24,7 +24,7 @@ Texture2D(0, 1, mainTex, mainSampler)
 #if defined(FRAGMENT) && defined(MainPass)
     //uniform sampler2D mainTex;
 
-    In(1) vec2 _texCoord;
+    In(0) vec2 _texCoord;
     Out(0) vec4 fragColor;
 
     //Source: https://github.com/dmnsgn/glsl-tone-map/blob/main/aces.glsl

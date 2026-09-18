@@ -1,6 +1,7 @@
 #pragma once
 #include "OD/Core/Resource.h"
 #include "OD/Platform/OpenGL/GL.h"
+#include "OD/Gfx/Gfx.h"
 
 namespace sol{ class state; }
 
@@ -36,6 +37,10 @@ private:
     size_t ramUsage;
     size_t vramUsage;
     CubemapDataGL; 
+
+    #ifdef TestNewGPU_API
+    Gfx::Cubemap tex = Gfx::InvalidID;
+    #endif
 };
 
 }

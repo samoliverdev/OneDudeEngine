@@ -1009,6 +1009,140 @@ void ApplyVertexAttribute(GLuint location, VertexFormat format, size_t offset, s
     }
 }
 
+
+inline void SetColorMask(Vector4 mask){
+    glColorMask(mask.r, mask.g, mask.b, mask.a);
+    glCheckError();
+}   
+
+inline void SetRenderMode(RenderMode mode){
+    if(mode == RenderMode::SHADED) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    if(mode == RenderMode::WIREFRAME) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glCheckError();
+}
+
+inline void SetDepthMask(bool value){
+    if(value){
+        glDepthMask(GL_TRUE);
+    } else {
+        glDepthMask(GL_FALSE);
+    }
+    glCheckError();
+}
+
+inline void SetDepthTest(DepthTest depthTest){
+    switch(depthTest){
+      case DepthTest::DISABLE:
+        glDisable(GL_DEPTH_TEST);
+        break;
+      case DepthTest::LESS:
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);  
+        break;
+      case DepthTest::LESS_EQUAL:
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LEQUAL);  
+        break;
+      case DepthTest::EQUAL:
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_EQUAL);  
+        break;
+      case DepthTest::GREATER:
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_GREATER);  
+        break;
+      case DepthTest::GREATER_EQUAL:
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_GEQUAL);  
+        break;
+      case DepthTest::DIFFERENT:
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_NOTEQUAL);  
+        break;
+      case DepthTest::ALWAYS:
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_ALWAYS);  
+        break;
+      case DepthTest::NEVER:
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_NEVER);  
+        break;
+    }
+    glCheckError();
+}
+
+inline void SetCullFace(CullFace cullFace){
+    switch(cullFace){
+      case CullFace::BACK:
+        glEnable(GL_CULL_FACE); 
+        glCullFace(GL_BACK);
+        break;
+
+      case CullFace::FRONT:
+        glEnable(GL_CULL_FACE); 
+        glCullFace(GL_FRONT);
+        break;
+
+      case CullFace::FRONT_AND_BACK:
+        glEnable(GL_CULL_FACE); 
+        glCullFace(GL_FRONT_AND_BACK);
+        break;
+
+      case CullFace::NONE:
+        glDisable(GL_CULL_FACE);
+        break;
+    }
+    glCheckError();
+}
+
+inline void SetBlend(bool b){
+    if(b){
+        glEnable(GL_BLEND);
+    } else {
+        glDisable(GL_BLEND);
+    }
+    glCheckError();
+}
+
+//TODO: Change to table value
+inline int BlendModeToGL(BlendMode blendMode){
+    if(blendMode == BlendMode::ZERO) return GL_ZERO;
+    if(blendMode == BlendMode::ONE) return GL_ONE;
+    if(blendMode == BlendMode::SRC_COLOR) return GL_SRC_COLOR;
+    if(blendMode == BlendMode::ONE_MINUS_SRC_COLOR) return GL_ONE_MINUS_SRC_COLOR;
+    if(blendMode == BlendMode::DST_COLOR) return GL_DST_COLOR;
+    if(blendMode == BlendMode::ONE_MINUS_DST_COLOR) return GL_ONE_MINUS_DST_COLOR;
+    if(blendMode == BlendMode::SRC_ALPHA) return GL_SRC_ALPHA;
+    if(blendMode == BlendMode::ONE_MINUS_SRC_ALPHA) return GL_ONE_MINUS_SRC_ALPHA;
+    if(blendMode == BlendMode::DST_ALPHA) return GL_DST_ALPHA;
+    if(blendMode == BlendMode::ONE_MINUS_DST_ALPHA) return GL_ONE_MINUS_DST_ALPHA;
+    if(blendMode == BlendMode::CONSTANT_COLOR) return GL_CONSTANT_COLOR;
+    if(blendMode == BlendMode::ONE_MINUS_CONSTANT_COLOR) return GL_ONE_MINUS_CONSTANT_COLOR;
+    if(blendMode == BlendMode::CONSTANT_ALPHA) return GL_CONSTANT_ALPHA;
+    if(blendMode == BlendMode::ONE_MINUS_CONSTANT_ALPHA) return GL_ONE_MINUS_CONSTANT_ALPHA;
+
+    glCheckError();
+    Assert(false);
+    return 0;
+}
+
+//TODO: Change to table value
+inline int BlendOpToGL(BlendOp op){
+    if(op == BlendOp::FUNC_ADD) return GL_FUNC_ADD;
+    if(op == BlendOp::FUNC_SUBTRACT) return GL_FUNC_SUBTRACT;
+    if(op == BlendOp::FUNC_REVERSE_SUBTRACT) return GL_FUNC_REVERSE_SUBTRACT;
+    if(op == BlendOp::MIN) return GL_MIN;
+    if(op == BlendOp::MAX) return GL_MAX;
+
+    Assert(false);
+    return 0;
+}
+
+inline void SetBlendFunc(BlendMode sfactor, BlendMode dfactor){
+    glBlendFunc(BlendModeToGL(sfactor), BlendModeToGL(dfactor));
+    glCheckError();
+}
+
 void OpenglGPUDevice::RunRender(RenderFrame& frame){
     #undef max
 
@@ -1203,6 +1337,31 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
 
         case CommandBuffer::Type::SetPipeline:{
             PipelineData& pipeline = pipelinePool.Get(cmd.setPipeline.id);
+
+            SetColorMask(pipeline.info.colorMask);
+            SetCullFace(pipeline.info.cullFace);
+            SetDepthTest(pipeline.info.depthTest);
+            SetDepthMask(pipeline.info.depthMask);
+            if(pipeline.info.blend){
+                SetBlend(true);
+
+                if(pipeline.info.srcBlend != pipeline.info.srcAlphaBlend || pipeline.info.dstBlend != pipeline.info.dstAlphaBlend){
+                    glBlendFuncSeparate(
+                        BlendModeToGL(pipeline.info.srcBlend), 
+                        BlendModeToGL(pipeline.info.dstBlend), 
+                        BlendModeToGL(pipeline.info.srcAlphaBlend), 
+                        BlendModeToGL(pipeline.info.dstAlphaBlend)
+                    );
+                    glCheckError();
+                } else {
+                    SetBlendFunc(pipeline.info.srcBlend, pipeline.info.dstBlend);
+                }
+
+                glBlendEquation(BlendOpToGL(pipeline.info.opBlend));
+            } else {
+                SetBlend(false);
+            }
+
             glUseProgram(pipeline.program);
             currentPipeline = cmd.setPipeline.id;
             currentPipelineInfo = pipeline.info;
@@ -1300,9 +1459,7 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                         glCheckError();
 
                         curTextureIndex += 1;
-                    }
-                    
-                    if(binding.framebuffer != InvalidID){
+                    } else if(binding.framebuffer != InvalidID){
                         const FramebufferData& tex = framebufferPool.Get(binding.framebuffer);
 
                         const PipelineData& pipeline = pipelinePool.Get(currentPipeline);
@@ -1315,6 +1472,8 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                         glCheckError();
 
                         curTextureIndex += 1;
+                    } else {
+                        Assert(false);
                     }
                 }
 
@@ -1330,6 +1489,8 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                         glBindTexture(GL_TEXTURE_CUBE_MAP, cube.tex);
                         glUniform1i(uniformLoc, curTextureIndex);
                         curTextureIndex += 1;
+                    } else {
+                        Assert(false);
                     }
                 }
             }

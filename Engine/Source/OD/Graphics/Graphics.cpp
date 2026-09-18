@@ -105,6 +105,8 @@ int curFramebufferRenderPassIndex = -1;
 
 Gfx::BindGroup curCameraBindGroup;
 
+Gfx::Cubemap defaultCubemap;
+
 struct UniformBufferPool{
     Gfx::BindGroupLayout layout;
     std::vector<Gfx::Buffer> buffers;
@@ -254,6 +256,17 @@ void Graphics::Initialize(){
 
     drawMeshPool.layout = drawDrawMeshGroupLayout;
     camDataPool.layout = camGroupLayout;
+
+
+    std::vector<uint8_t> pixels(static_cast<size_t>(256) * 256 * 6 * 4, 255);
+    Gfx::CubemapInfo cubeInfo{};
+    cubeInfo.width = 256;
+    cubeInfo.height = 256;
+    cubeInfo.format = Gfx::ImageFormat::R8G8B8A8_SRGB;
+    cubeInfo.mipmap = false;
+    defaultCubemap = gfxDevice->CreateCubemap(cubeInfo);
+    Assert(defaultCubemap != Gfx::InvalidID);
+    gfxDevice->UploadCubemap(defaultCubemap, pixels.data(), pixels.size());
     #endif
 }
 
@@ -591,11 +604,33 @@ Gfx::BindGroup Graphics::BindMaterial(Material& mat){
                 auto& m = mat.maps[i.name];
 
                 if(m.type == MaterialMap::Type::Texture){
+                    Assert(m.texture != nullptr);
                     bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
                     bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
                     bindGroupInfo.entries[bindGroupInfo.entriesCount].texture = m.texture->tex;// mat.maps[i.name].texture->tex;
                     bindGroupInfo.entriesCount += 1;
                 } else if(m.type == MaterialMap::Type::Framebuffer){
+                    Assert(m.framebuffer != nullptr);
+                    Assert(m.framebuffer->framebuffer != Gfx::InvalidID);
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].framebuffer = m.framebuffer->framebuffer;
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].framebufferAttacement = m.framebufferAttachment;
+                    bindGroupInfo.entriesCount += 1;
+                } else {
+                    Assert(false);
+                }
+            } else if(mat.globalMaps.count(i.name)){
+                auto& m = mat.globalMaps[i.name];
+
+                if(m.type == MaterialMap::Type::Texture){
+                    Assert(m.texture != nullptr);
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].texture = m.texture->tex;// mat.maps[i.name].texture->tex;
+                    bindGroupInfo.entriesCount += 1;
+                } else if(m.type == MaterialMap::Type::Framebuffer){
+                    Assert(m.framebuffer != nullptr);
                     Assert(m.framebuffer->framebuffer != Gfx::InvalidID);
                     bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
                     bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
@@ -611,7 +646,48 @@ Gfx::BindGroup Graphics::BindMaterial(Material& mat){
         }
 
         if(i.type == Gfx::BindingType::TextureCube){
-            Assert(false);
+            //Assert(false);
+            if(mat.maps.count(i.name)){
+                auto& m = mat.maps[i.name];
+
+                if(m.type == MaterialMap::Type::Cubemap){
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].cubemap = m.cubemap == nullptr ? defaultCubemap : m.cubemap->tex;// mat.maps[i.name].texture->tex;
+                    bindGroupInfo.entriesCount += 1;
+                } else if(m.type == MaterialMap::Type::Framebuffer){
+                    Assert(m.framebuffer != nullptr);
+                    Assert(m.framebuffer->framebuffer != Gfx::InvalidID);
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].framebuffer = m.framebuffer->framebuffer;
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].framebufferAttacement = m.framebufferAttachment;
+                    bindGroupInfo.entriesCount += 1;
+                } else {
+                    Assert(false);
+                }
+            } else if(mat.globalMaps.count(i.name)){
+                auto& m = mat.globalMaps[i.name];
+
+                if(m.type == MaterialMap::Type::Cubemap){
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].cubemap = m.cubemap == nullptr ? defaultCubemap : m.cubemap->tex;
+                    bindGroupInfo.entriesCount += 1;
+                } else if(m.type == MaterialMap::Type::Framebuffer){
+                    Assert(m.framebuffer != nullptr);
+                    Assert(m.framebuffer->framebuffer != Gfx::InvalidID);
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].framebuffer = m.framebuffer->framebuffer;
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].framebufferAttacement = m.framebufferAttachment;
+                    bindGroupInfo.entriesCount += 1;
+                } else {
+                    Assert(false);
+                }
+            } else {
+                Assert(false);
+            }
         }
 
         if(i.type == Gfx::BindingType::Texture2DArray){
@@ -699,7 +775,7 @@ void Graphics::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawD
     cmd->SetVertexBuffer(6, mesh.weightsVbo);
     cmd->SetVertexBuffer(7, emptyInstacingVbo);
 
-    if(mesh.ebo == INVALID_ID){
+    if(mesh.indiceCount == 0){ //mesh.ebo == INVALID_ID){
         cmd->Draw(mesh.vertexCount);
     } else {
         cmd->SetIndexBuffer(mesh.ebo);

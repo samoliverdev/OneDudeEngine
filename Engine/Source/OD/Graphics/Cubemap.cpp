@@ -9,6 +9,7 @@
 namespace OD{
 
 extern GraphicsDevice* graphicsDevice;
+extern Gfx::Device* gfxDevice;
 
 Cubemap::Cubemap(){
     //LogInfo("OnCreation");
@@ -16,15 +17,71 @@ Cubemap::Cubemap(){
 
 Cubemap::~Cubemap(){
     //LogInfo("OnDestroy: {}", path);
+    #ifdef TestNewGPU_API
+    if(tex != Gfx::InvalidID) gfxDevice->DestroyCubemap(tex);
+    #endif
 }
 
 Ref<Cubemap> Cubemap::CreateFromFile(const char* right, const char* left, const char* top, const char* bottom, const char* front, const char* back){
+    #ifdef TestNewGPU_API
+    constexpr size_t CubemapFaceCount = 6;
+    const char* faces[CubemapFaceCount] = {right, left, top, bottom, front, back};
+    int width = 0;
+    int height = 0;
+    std::vector<uint8_t> pixels;
+
+    stbi_set_flip_vertically_on_load(0);
+
+    for(size_t face = 0; face < CubemapFaceCount; ++face){
+        int faceWidth = 0;
+        int faceHeight = 0;
+        int channels = 0;
+        unsigned char* data = stbi_load(faces[face], &faceWidth, &faceHeight, &channels, 4);
+        if(data == nullptr){
+            LogError("Cubemap tex failed to load at path: {}", faces[face]);
+            return nullptr;
+        }
+
+        if(face == 0){
+            width = faceWidth;
+            height = faceHeight;
+            pixels.resize(static_cast<size_t>(width) * height * 4 * CubemapFaceCount);
+        } else if(faceWidth != width || faceHeight != height){
+            LogError("Cubemap face dimensions do not match at path: {}", faces[face]);
+            stbi_image_free(data);
+            return nullptr;
+        }
+
+        const size_t faceSize = static_cast<size_t>(width) * height * 4;
+        std::memcpy(pixels.data() + face * faceSize, data, faceSize);
+        stbi_image_free(data);
+    }
+
+    Ref<Cubemap> out = CreateRef<Cubemap>();
+    Gfx::CubemapInfo info = {};
+    info.width = static_cast<uint32_t>(width);
+    info.height = static_cast<uint32_t>(height);
+    info.format = Gfx::ImageFormat::R8G8B8A8_UNORM;
+    info.filter = Gfx::TextureFilter::Linear;
+    info.wrapping = Gfx::TextureWrapping::ClampToEdge;
+    info.mipmap = true;
+
+    out->tex = gfxDevice->CreateCubemap(info);
+    if(out->tex == Gfx::InvalidID) return nullptr;
+
+    gfxDevice->UploadCubemap(out->tex, pixels.data(), pixels.size());
+    out->mipmap = info.mipmap;
+    out->ramUsage = pixels.size();
+    out->vramUsage = pixels.size();
+    return out;
+    #else
     bool mipmap = true;
     Ref<Cubemap> out = CreateRef<Cubemap>();
     if(graphicsDevice->CubemapCreateFromFile(*out, right, left, top, bottom, front, back) == false){
         return nullptr;
     }
     return out;
+    #endif
 }
 
 Ref<Cubemap> Cubemap::CreateFromFileHDR(const char* hdri){
