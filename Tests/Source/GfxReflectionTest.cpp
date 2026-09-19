@@ -85,6 +85,29 @@ TEST(GfxReflection, ReflectsShaderVariableTypes)
     EXPECT_EQ(variables[9].type, Gfx::ShaderVariable::Type::Buffer);
 }
 
+TEST(GfxReflection, DetectsSampler2DArray)
+{
+    const char* shader = R"(
+        layout(set = 0, binding = 0) uniform sampler2DArray textureArray;
+
+        #ifdef VERTEX
+        void main(){
+        }
+        #endif
+
+        #ifdef FRAGMENT
+        void main(){
+        }
+        #endif
+    )";
+
+    Gfx::ShaderReflection reflection;
+    Gfx::Reflect(shader, reflection);
+
+    ASSERT_EQ(reflection.bindings.size(), 1u);
+    EXPECT_EQ(reflection.bindings.front().type, Gfx::BindingType::Texture2DArray);
+}
+
 TEST(GfxFramebuffer, RecordsAttachmentLayerAndMip)
 {
     Gfx::CommandBuffer commands;

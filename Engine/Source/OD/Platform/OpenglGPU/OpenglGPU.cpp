@@ -1444,7 +1444,6 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
 
                 if(bindGroupLayout.info.entries[i].type == BindingType::Texture2D){
                     const BindingEntry& binding = bindGroup.info.entries[i];
-                    Assert(binding.buffer != InvalidID);
 
                     if(binding.texture != InvalidID){
                         const Texture2DData& tex = texture2DPool.Get(binding.texture);
@@ -1469,6 +1468,26 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                         glActiveTexture(GL_TEXTURE0 + curTextureIndex);
                         glBindTexture(GL_TEXTURE_2D, binding.framebufferAttacement < 0 ? tex.depthAttachment : tex.colorAttachments[binding.framebufferAttacement]);
                         glUniform1i(uniformLoc, curTextureIndex); // set it manually
+                        glCheckError();
+
+                        curTextureIndex += 1;
+                    } else {
+                        Assert(false);
+                    }
+                }
+
+                if(bindGroupLayout.info.entries[i].type == BindingType::Texture2DArray){
+                    const BindingEntry& binding = bindGroup.info.entries[i];
+                    if(binding.framebuffer != InvalidID){
+                        const FramebufferData& tex = framebufferPool.Get(binding.framebuffer);
+
+                        const PipelineData& pipeline = pipelinePool.Get(currentPipeline);
+                        GLuint uniformLoc = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].uniformLoc;
+                        Assert(uniformLoc >= 0);
+
+                        glActiveTexture(GL_TEXTURE0 + curTextureIndex);
+                        glBindTexture(GL_TEXTURE_2D_ARRAY, binding.framebufferAttacement < 0 ? tex.depthAttachment : tex.colorAttachments[binding.framebufferAttacement]);
+                        glUniform1i(uniformLoc, curTextureIndex);
                         glCheckError();
 
                         curTextureIndex += 1;

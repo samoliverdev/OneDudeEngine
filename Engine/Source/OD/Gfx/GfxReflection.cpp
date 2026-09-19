@@ -118,11 +118,19 @@ static bool ReflectBindingType(const SpvReflectDescriptorBinding& binding, Bindi
             return true;
 
         case SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-            result = binding.image.dim == SpvDimCube ? BindingType::TextureCube : BindingType::Texture2D;
+            if(binding.image.dim == SpvDim2D && binding.image.arrayed){
+                result = BindingType::Texture2DArray;
+            } else {
+                result = binding.image.dim == SpvDimCube ? BindingType::TextureCube : BindingType::Texture2D;
+            }
             return true;
 
         case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-            result = binding.image.dim == SpvDimCube ? BindingType::TextureCube : BindingType::Texture2D;
+            if(binding.image.dim == SpvDim2D && binding.image.arrayed){
+                result = BindingType::Texture2DArray;
+            } else {
+                result = binding.image.dim == SpvDimCube ? BindingType::TextureCube : BindingType::Texture2D;
+            }
             return true;
 
         default:

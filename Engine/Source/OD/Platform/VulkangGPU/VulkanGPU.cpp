@@ -422,6 +422,7 @@ VkDescriptorType GetVulkanDescriptorType(BindingType type){
     switch(type){
         case BindingType::UniformBuffer: return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         case BindingType::Texture2D: return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        case BindingType::Texture2DArray: return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         case BindingType::TextureCube: return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     }
     Assert(false);
@@ -495,6 +496,9 @@ bool VulkanGPUDevice::_CreatePipeline(PipelineData& data, const char* source, co
                                            (info.colorMask.z > 0 ? VK_COLOR_COMPONENT_B_BIT : 0) |
                                            (info.colorMask.w > 0 ? VK_COLOR_COMPONENT_A_BIT : 0);
 
+    const uint32_t colorAttachmentCount = info.framebufferLayout.colorAttachmentsCount;
+    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments(colorAttachmentCount, colorBlendAttachment);
+
     VkPipelineDepthStencilStateCreateInfo depthStencil{};
     depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
     depthStencil.depthTestEnable = (info.depthTest != DepthTest::DISABLE) ? VK_TRUE : VK_FALSE;
@@ -524,11 +528,10 @@ bool VulkanGPUDevice::_CreatePipeline(PipelineData& data, const char* source, co
     VkPipelineColorBlendStateCreateInfo colorBlending = {};
     colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlending.pNext = nullptr;
-
     colorBlending.logicOpEnable = VK_FALSE;
     colorBlending.logicOp = VK_LOGIC_OP_COPY;
-    colorBlending.attachmentCount = 1;
-    colorBlending.pAttachments = &colorBlendAttachment;
+    colorBlending.attachmentCount = colorBlendAttachments.size();// 1;
+    colorBlending.pAttachments = colorBlendAttachments.data();// //&colorBlendAttachment;
 
     VkPipelineViewportStateCreateInfo viewportState = {};
     viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -1265,7 +1268,10 @@ bool VulkanGPUDevice::_CreateBindGroup(BindGroupData& data, BindGroupInfo& info,
     writes.resize(info.entriesCount);
 
     for(int i = 0; i < info.entriesCount; i++){
+        Assert(layoutData.info.entries[i].binding == info.entries[i].binding);
+        
         if(layoutData.info.entries[i].type == BindingType::UniformBuffer){
+            Assert(info.entries[i].buffer != Gfx::InvalidID);
             BufferData& bufferData = bufferPool.Get(info.entries[i].buffer);
 
             VkDescriptorBufferInfo& binfo = bInfos[i];
@@ -1291,13 +1297,13 @@ bool VulkanGPUDevice::_CreateBindGroup(BindGroupData& data, BindGroupInfo& info,
                 Texture2DData& texData = texture2DPool.Get(info.entries[i].texture);
                 imageView = texData.imageView;
                 sampler = texData.sampler;
-            }
-
-            if(info.entries[i].framebuffer != InvalidID){
+            } else if(info.entries[i].framebuffer != InvalidID){
                 FramebufferData& framebufferData = framebufferPool.Get(info.entries[i].framebuffer);
                 int attacment = info.entries[i].framebufferAttacement;
                 imageView = attacment < 0 ? framebufferData.depthAttachment.imageView : framebufferData.colorAttachments[attacment].imageView;
                 sampler = attacment < 0 ? framebufferData.depthAttachment.sampler : framebufferData.colorAttachments[attacment].sampler;
+            } else {
+                Assert(false);
             }
 
             VkDescriptorImageInfo& imageBufferInfo = imageInfos[i];
@@ -1312,7 +1318,25 @@ bool VulkanGPUDevice::_CreateBindGroup(BindGroupData& data, BindGroupInfo& info,
                 &imageBufferInfo, 
                 info.entries[i].binding
             );
+        } else if(layoutData.info.entries[i].type == BindingType::Texture2DArray){
+            if(info.entries[i].framebuffer != InvalidID){
+                FramebufferData& framebufferData = framebufferPool.Get(info.entries[i].framebuffer);
+                int attacment = info.entries[i].framebufferAttacement;
+                VkDescriptorImageInfo& imageInfo = imageInfos[i];
+                imageInfo.sampler = attacment < 0 ? framebufferData.depthAttachment.sampler : framebufferData.colorAttachments[attacment].sampler;
+                imageInfo.imageView = attacment < 0 ? framebufferData.depthAttachment.imageView : framebufferData.colorAttachments[attacment].imageView;
+                imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                writes[i] = vkinit::write_descriptor_image(
+                    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                    data.descriptorSet,
+                    &imageInfo,
+                    info.entries[i].binding
+                );
+            } else {
+                Assert(false);
+            }
         } else if(layoutData.info.entries[i].type == BindingType::TextureCube){
+            Assert(info.entries[i].cubemap != Gfx::InvalidID);
             CubemapData& cube = cubemapPool.Get(info.entries[i].cubemap);
             VkDescriptorImageInfo& imageInfo = imageInfos[i];
             imageInfo.sampler = cube.sampler;
@@ -1326,7 +1350,6 @@ bool VulkanGPUDevice::_CreateBindGroup(BindGroupData& data, BindGroupInfo& info,
     }
 
     vkUpdateDescriptorSets(_device, writes.size(), writes.data(), 0, nullptr);
-
     return true;
 }
 

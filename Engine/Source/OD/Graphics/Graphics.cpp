@@ -105,7 +105,9 @@ int curFramebufferRenderPassIndex = -1;
 
 Gfx::BindGroup curCameraBindGroup;
 
+Gfx::Texture2D defaultTex;
 Gfx::Cubemap defaultCubemap;
+Gfx::Buffer defaultBuffer;
 
 struct UniformBufferPool{
     Gfx::BindGroupLayout layout;
@@ -257,6 +259,20 @@ void Graphics::Initialize(){
     drawMeshPool.layout = drawDrawMeshGroupLayout;
     camDataPool.layout = camGroupLayout;
 
+    defaultBuffer = gfxDevice->CreateBuffer(1024, Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
+    Assert(defaultBuffer != Gfx::InvalidID);
+    std::vector<uint8_t> bufferData(1024, 0);
+    gfxDevice->UpdatedBuffer(defaultBuffer, bufferData.data(), bufferData.size());
+
+    std::vector<uint8_t> texPixels(static_cast<size_t>(256) * 256 * 4, 255);
+    Gfx::Texture2DInfo texInfo{};
+    texInfo.width = 256;
+    texInfo.height = 256;
+    texInfo.format = Gfx::ImageFormat::R8G8B8A8_SRGB;
+    texInfo.mipmap = false;
+    defaultTex = gfxDevice->CreateTexture2D(texInfo);
+    Assert(defaultTex != Gfx::InvalidID);
+    gfxDevice->UploadTexture2D(defaultTex, texPixels.data(), texPixels.size());
 
     std::vector<uint8_t> pixels(static_cast<size_t>(256) * 256 * 6 * 4, 255);
     Gfx::CubemapInfo cubeInfo{};
@@ -575,6 +591,7 @@ Gfx::BindGroup Graphics::BindMaterial(Material& mat){
 
         if(i.type == Gfx::BindingType::UniformBuffer){
             if(i.blockName == "Main"){
+                Assert(mat.materialBuffer != Gfx::InvalidID);
                 bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
                 bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
                 bindGroupInfo.entries[bindGroupInfo.entriesCount].buffer = mat.materialBuffer;
@@ -582,20 +599,27 @@ Gfx::BindGroup Graphics::BindMaterial(Material& mat){
                 bindGroupInfo.entriesCount += 1;
             }  else if(mat.maps.count(i.blockName)){
                 auto& m = mat.maps[i.blockName];
+                //Assert(m.buffer != nullptr);
                 bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
                 bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
-                bindGroupInfo.entries[bindGroupInfo.entriesCount].buffer = m.buffer->buffer;
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].buffer = m.buffer == nullptr ? defaultBuffer : m.buffer->buffer;
                 bindGroupInfo.entries[bindGroupInfo.entriesCount].size = i.size;
                 bindGroupInfo.entriesCount += 1;
             } else if(mat.globalMaps.count(i.blockName)){
                 auto& m = mat.globalMaps[i.blockName];
+                //Assert(m.buffer != nullptr);
                 bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
                 bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
-                bindGroupInfo.entries[bindGroupInfo.entriesCount].buffer = m.buffer->buffer;
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].buffer = m.buffer == nullptr ? defaultBuffer : m.buffer->buffer;
                 bindGroupInfo.entries[bindGroupInfo.entriesCount].size = i.size;
                 bindGroupInfo.entriesCount += 1;
             } else {
-                Assert(false);
+                //Assert(false);
+                bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].buffer = defaultBuffer;
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].size = i.size;
+                bindGroupInfo.entriesCount += 1;
             }
         }
 
@@ -604,10 +628,10 @@ Gfx::BindGroup Graphics::BindMaterial(Material& mat){
                 auto& m = mat.maps[i.name];
 
                 if(m.type == MaterialMap::Type::Texture){
-                    Assert(m.texture != nullptr);
+                    //Assert(m.texture != nullptr);
                     bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
                     bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
-                    bindGroupInfo.entries[bindGroupInfo.entriesCount].texture = m.texture->tex;// mat.maps[i.name].texture->tex;
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].texture = m.texture == nullptr ? defaultTex : m.texture->tex;// mat.maps[i.name].texture->tex;
                     bindGroupInfo.entriesCount += 1;
                 } else if(m.type == MaterialMap::Type::Framebuffer){
                     Assert(m.framebuffer != nullptr);
@@ -624,10 +648,10 @@ Gfx::BindGroup Graphics::BindMaterial(Material& mat){
                 auto& m = mat.globalMaps[i.name];
 
                 if(m.type == MaterialMap::Type::Texture){
-                    Assert(m.texture != nullptr);
+                    //Assert(m.texture != nullptr);
                     bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
                     bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
-                    bindGroupInfo.entries[bindGroupInfo.entriesCount].texture = m.texture->tex;// mat.maps[i.name].texture->tex;
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].texture = m.texture == nullptr ? defaultTex : m.texture->tex;// mat.maps[i.name].texture->tex;
                     bindGroupInfo.entriesCount += 1;
                 } else if(m.type == MaterialMap::Type::Framebuffer){
                     Assert(m.framebuffer != nullptr);
@@ -646,7 +670,6 @@ Gfx::BindGroup Graphics::BindMaterial(Material& mat){
         }
 
         if(i.type == Gfx::BindingType::TextureCube){
-            //Assert(false);
             if(mat.maps.count(i.name)){
                 auto& m = mat.maps[i.name];
 
@@ -683,15 +706,41 @@ Gfx::BindGroup Graphics::BindMaterial(Material& mat){
                     bindGroupInfo.entries[bindGroupInfo.entriesCount].framebufferAttacement = m.framebufferAttachment;
                     bindGroupInfo.entriesCount += 1;
                 } else {
+                    //Assert(false);
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].cubemap = defaultCubemap;
+                    bindGroupInfo.entriesCount += 1;
+                }
+            } else {
+                //Assert(false);
+                bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
+                bindGroupInfo.entries[bindGroupInfo.entriesCount].cubemap = defaultCubemap;
+                bindGroupInfo.entriesCount += 1;
+            }
+        }
+
+        if(i.type == Gfx::BindingType::Texture2DArray){
+            //Assert(false);
+
+            if(mat.globalMaps.count(i.name)){
+                auto& m = mat.globalMaps[i.name];
+
+                if(m.type == MaterialMap::Type::Framebuffer){
+                    Assert(m.framebuffer != nullptr);
+                    Assert(m.framebuffer->framebuffer != Gfx::InvalidID);
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].framebuffer = m.framebuffer->framebuffer;
+                    bindGroupInfo.entries[bindGroupInfo.entriesCount].framebufferAttacement = m.framebufferAttachment;
+                    bindGroupInfo.entriesCount += 1;
+                } else {
                     Assert(false);
                 }
             } else {
                 Assert(false);
             }
-        }
-
-        if(i.type == Gfx::BindingType::Texture2DArray){
-            Assert(false);
         }
 
         if(i.type == Gfx::BindingType::TextureCubeArray){

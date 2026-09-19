@@ -306,12 +306,12 @@ struct BindGroupLayoutInfo{
 //////////////////////////////////////
 
 struct BindingEntry{
-    uint32_t binding;
+    uint32_t binding = 0;
 
-    Buffer buffer;
-    size_t offset;
-    size_t size;
-    bool dynamicOffset;
+    Buffer buffer = InvalidID;
+    size_t offset = 0;
+    size_t size = 0;
+    bool dynamicOffset = false;
 
     Texture2D texture = InvalidID;
     Cubemap cubemap = InvalidID;
