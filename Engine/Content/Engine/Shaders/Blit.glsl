@@ -35,7 +35,7 @@ BeginPass
     void main() {
         mat4 targetModelMatrix = GetModelMatrix();
         _texCoord = texCoord.xy;
-        OutPosition = /*projection * view * targetModelMatrix **/ GetLocalPos();
+        OutPosition = GetLocalPos();
     }
     EndVertex
 

@@ -13,9 +13,8 @@ Texture2D(0, 0, mainTex, mainTexSampler)
 	Out(0) vec2 _texCoord;
 
     void main() {
-        mat4 targetModelMatrix = GetModelMatrix();
         _texCoord = texCoord.xy;
-        OutPosition = projection * view * targetModelMatrix * GetLocalPos();
+        OutPosition = GetLocalPos();
     }
 #endif
 

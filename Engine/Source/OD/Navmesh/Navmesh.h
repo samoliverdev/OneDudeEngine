@@ -400,10 +400,13 @@ struct OD_API NavmeshAgentComponent{
 
 	float speed = 2;
 	float stopDistance = 0.25f;
+	float nextPathCornerDistance = 0.3f;
 	
 	bool manualUpdate = false;
 
 	Vector3 desiredVelocity;
+
+	inline bool Reach(){ return reach; } 
 
 	Vector3 GetDestination();
 	void SetDestination(Vector3 d);
@@ -414,6 +417,7 @@ struct OD_API NavmeshAgentComponent{
     void serialize(Archive& ar){
 		ArchiveDumpNVP(ar, speed);
 		ArchiveDumpNVP(ar, stopDistance);
+		ArchiveDumpNVP(ar, nextPathCornerDistance);
 
 		if constexpr(std::is_same_v<Archive, cereal::ImGuiArchive>){
             ArchiveDumpNVP(ar, destination);

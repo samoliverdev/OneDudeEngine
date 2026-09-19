@@ -2180,6 +2180,46 @@ void NavmeshSystem::LateUpdate(Scene& scene){
 	Assert(navmeshCount <= 1);
 	if(navmesh == nullptr) return;
 
+	auto FindPathUpdate = [&](NavmeshAgentComponent& navmeshComponent, TransformComponent& transform){
+		if(navmeshComponent.path.status == NavMeshPathStatus::PathComplete){
+			if(navmeshComponent.path.corners.size() <= 1){
+				navmeshComponent.reach = true;
+				navmeshComponent.desiredVelocity = Vector3Zero;
+				return;
+			}
+
+			Assert(navmeshComponent.path.corners.size() > 1);
+			if(navmeshComponent.reach) return;
+
+			Vector3 pos = transform.Position();
+			Vector3 dir = navmeshComponent.path.corners[navmeshComponent.curPathIndex] - pos;
+			if(math::length(dir) > 0.1f) dir = math::normalizeSafe(dir);
+			Assert(Mathf::HasNaN(dir) == false);
+
+			float distance = math::distance(pos, navmeshComponent.path.corners[navmeshComponent.curPathIndex]);
+			float targetDistance = navmeshComponent.curPathIndex > (navmeshComponent.path.corners.size()-1) ? navmeshComponent.stopDistance : navmeshComponent.nextPathCornerDistance;
+
+			if(distance <= targetDistance){
+				navmeshComponent.curPathIndex += 1;
+				if(navmeshComponent.curPathIndex >= navmeshComponent.path.corners.size()){
+					navmeshComponent.curPathIndex += navmeshComponent.path.corners.size()-1;
+					navmeshComponent.reach = true;
+					navmeshComponent.desiredVelocity = Vector3Zero;
+					return;
+				}
+			}
+
+			navmeshComponent.desiredVelocity = dir * navmeshComponent.speed;
+			
+			if(navmeshComponent.manualUpdate == false){
+				transform.Position(pos + dir * (navmeshComponent.speed * Application::DeltaTime()));
+			}
+		} else {
+			navmeshComponent.curPathIndex = -1;
+			navmeshComponent.reach = false;
+		}
+	};
+
 	if(updateMode == NavmeshComponent::AgentUpdateMode::FindPath){
 		OD_PROFILE_SCOPE("NavmeshSystem::Update::FindPath");
 		#if InternalSystemsMulthread
@@ -2205,7 +2245,8 @@ void NavmeshSystem::LateUpdate(Scene& scene){
 				#if InternalSystemsMulthread
 				subflow.emplace([&](){ 
 				#endif
-					if(navmeshComponent.path.status == NavMeshPathStatus::PathComplete){
+					FindPathUpdate(navmeshComponent, transform);
+					/*if(navmeshComponent.path.status == NavMeshPathStatus::PathComplete){
 						if(navmeshComponent.path.corners.size() <= 1){
 							navmeshComponent.reach = true;
 							navmeshComponent.desiredVelocity = Vector3Zero;
@@ -2221,8 +2262,9 @@ void NavmeshSystem::LateUpdate(Scene& scene){
 						Assert(Mathf::HasNaN(dir) == false);
 
 						float distance = math::distance(pos, navmeshComponent.path.corners[navmeshComponent.curPathIndex]);
+						float targetDistance = navmeshComponent.curPathIndex > (navmeshComponent.path.corners.size()-1) ? navmeshComponent.stopDistance : navmeshComponent.nextPathCornerDistance;
 
-						if(distance <= navmeshComponent.stopDistance){
+						if(distance <= targetDistance){
 							navmeshComponent.curPathIndex += 1;
 							if(navmeshComponent.curPathIndex >= navmeshComponent.path.corners.size()){
 								navmeshComponent.curPathIndex += navmeshComponent.path.corners.size()-1;
@@ -2240,7 +2282,7 @@ void NavmeshSystem::LateUpdate(Scene& scene){
 					} else {
 						navmeshComponent.curPathIndex = -1;
 						navmeshComponent.reach = false;
-					}
+					}*/
 				#if InternalSystemsMulthread
 				});
 				#endif

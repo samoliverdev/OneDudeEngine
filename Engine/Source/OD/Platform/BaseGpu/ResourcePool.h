@@ -12,9 +12,8 @@ struct DebugRWGuard {
     std::atomic<int> readers{0};
     std::atomic<bool> writer{false};
 
-    void BeginRead() {
+    void BeginRead(){
         Assert(!writer.load(std::memory_order_acquire) && "Reading while another thread is writing");
-
         readers.fetch_add(1, std::memory_order_acquire);
 
         // Writer could theoretically start between the
@@ -22,31 +21,28 @@ struct DebugRWGuard {
         Assert(!writer.load(std::memory_order_acquire) && "Writer started while reading");
     }
 
-    void EndRead() {
+    void EndRead(){
         readers.fetch_sub(1, std::memory_order_release);
     }
 
-    void BeginWrite() {
+    void BeginWrite(){
         bool expected = false;
-
         bool success = writer.compare_exchange_strong(expected, true, std::memory_order_acq_rel);
 
         Assert(success && "Multiple writers detected");
-
         Assert(readers.load(std::memory_order_acquire) == 0 && "Writing while another thread is reading");
     }
 
-    void EndWrite() {
+    void EndWrite(){
         writer.store(false, std::memory_order_release);
     }
 #else
-    void BeginRead() {}
-    void EndRead() {}
-    void BeginWrite() {}
-    void EndWrite() {}
+    void BeginRead(){}
+    void EndRead(){}
+    void BeginWrite(){}
+    void EndWrite(){}
 #endif
 };
-
 
 template <typename T, uint32_t ChunkSize = 1024>
 struct ResourcePool{
@@ -57,21 +53,22 @@ struct ResourcePool{
     inline bool IsValid(uint32_t id){
         if(id == InvalidID) return false;
 
-        poolGuard.BeginRead();
-
         uint32_t chunkIndex = id / ChunkSize;
         uint32_t index      = id % ChunkSize;
+
+        chunks[chunkIndex]->guards[index].BeginRead();
+
         if(chunks[chunkIndex]->isValid[index] == false){
-            poolGuard.EndRead();
+            chunks[chunkIndex]->guards[index].EndRead();
             return false;
         }
 
-        poolGuard.EndRead();
+        chunks[chunkIndex]->guards[index].EndRead();
         return true;
     }
 
     inline uint32_t AllocId(){
-        poolGuard.BeginWrite();
+        //poolGuard.BeginWrite();
 
         if(!freeIds.empty()){
             uint32_t id = freeIds.back();
@@ -87,15 +84,17 @@ struct ResourcePool{
         EnsureChunk(id);
 
         SetIsValid(id, true);
-        poolGuard.EndWrite();
+        //poolGuard.EndWrite();
         return id;
     }
 
     inline void EnsureChunk(uint32_t id){
         uint32_t chunkIndex = id / ChunkSize;
 
-        if(chunkIndex >= chunks.size()){
-            chunks.resize(chunkIndex + 1);
+        if(chunkIndex >= chunkSize){
+            Assert((chunkIndex + 1) <= chunks.size());
+            //chunks.resize(chunkIndex + 1);
+            chunkSize += 1;
 
             if(!chunks[chunkIndex]) chunks[chunkIndex] = std::make_unique<Chunk>();
         }
@@ -110,13 +109,25 @@ struct ResourcePool{
     inline T& Get(uint32_t id){
         uint32_t chunkIndex = id / ChunkSize;
         uint32_t index      = id % ChunkSize;
-        return chunks[chunkIndex]->data[index];
+
+        chunks[chunkIndex]->guards[index].BeginWrite();
+        T& r = chunks[chunkIndex]->data[index];
+        chunks[chunkIndex]->guards[index].EndWrite();
+
+        return r;
     }
 
     inline const T& Get(uint32_t id) const {
         uint32_t chunkIndex = id / ChunkSize;
         uint32_t index      = id % ChunkSize;
-        return chunks[chunkIndex]->data[index];
+
+        //return chunks[chunkIndex]->data[index];
+
+        chunks[chunkIndex]->guards[index].BeginWrite();
+        T& r = chunks[chunkIndex]->data[index];
+        chunks[chunkIndex]->guards[index].EndWrite();
+
+        return r;
     }
 
     inline void CpuPushResource(uint32_t id, T& resource){
@@ -183,12 +194,14 @@ struct ResourcePool{
 
 private:
     struct Chunk{
+        std::array<DebugRWGuard, ChunkSize> guards;
         std::array<T, ChunkSize> data;
         std::array<bool, ChunkSize> isValid;
         std::array<Gfx::ResourceStats, ChunkSize> status;
     };
 
-    std::vector<std::unique_ptr<Chunk>> chunks;
+    std::array<std::unique_ptr<Chunk>, 5000> chunks;
+    int chunkSize = 0;
 
     std::vector<uint32_t> freeIds;
     std::vector<uint32_t> idsDestred;
