@@ -1024,7 +1024,7 @@ struct OD_API CommandBuffer{
         commands.push_back(cmd);
     }
 
-    inline void BlitFramebuffer(Framebuffer src, Framebuffer dst = InvalidID, int srcPass = -1){
+    inline void BlitFramebuffer(Framebuffer src, Framebuffer dst = InvalidID, int srcPass = 0){
         Command cmd{};
         cmd.type = Type::BlitFramebuffer;
         cmd.blitFramebuffer.src = src;

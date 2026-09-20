@@ -589,11 +589,11 @@ CameraRenderer::CameraRenderer(){
     cubemapSkyMaterial = ResourceManager::Get().Create<Material>();
     cubemapSkyMaterial->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/SkyboxCubemap.glsl"));
 
-    Ref<Texture2D> _brdfLUT = ResourceManager::Get().LoadByPath<Texture2D>("brdfLUT");
-    if(_brdfLUT == nullptr){
+    //Ref<Texture2D> _brdfLUT = ResourceManager::Get().LoadByPath<Texture2D>("brdfLUT");
+    /*if(_brdfLUT == nullptr){
         _brdfLUT = Texture2D::CreateBrdfLUTTexture2D();
         ResourceManager::Get().AddByPath<Texture2D>("brdfLUT", _brdfLUT);
-    }
+    }*/
 
     brdfLUT = Texture2D::CreateBrdfLUTTexture2D(); //_brdfLUT; 
     

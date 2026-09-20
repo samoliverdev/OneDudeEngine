@@ -1,6 +1,7 @@
 #pragma BeginPassDef
     Name MainPass
     DepthTest DISABLE
+    RenderPass PostProssing
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl

@@ -208,7 +208,9 @@ Ref<Cubemap> Cubemap::CreateFromFileHDR(const char* hdri){
     int width = 0;
     int height = 0;
     int channels = 0;
-    stbi_set_flip_vertically_on_load(0);
+    // The equirectangular conversion shader follows the LearnOpenGL
+    // convention, which expects the HDR image to be loaded bottom-up.
+    stbi_set_flip_vertically_on_load(true);
     float* data = stbi_loadf(hdri, &width, &height, &channels, 4);
     if(data == nullptr){
         LogError("Failed to load HDR image: {}", hdri);

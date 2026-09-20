@@ -1,6 +1,7 @@
 BeginPass
     #pragma Name MainPass
     #pragma DepthTest DISABLE
+    #pragma RenderPass DefaultWindows PostProssing
 
     #include Engine/ShaderLibrary/Base.glsl
     #include Engine/ShaderLibrary/Vertex.glsl

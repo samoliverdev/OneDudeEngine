@@ -2,6 +2,7 @@ BeginPass
     #pragma Name MainPass
     #pragma CullFace BACK
     #pragma DepthTest DISABLE
+    #pragma RenderPass PostProssing
 
     #include Engine/ShaderLibrary/Base.glsl
     #include Engine/ShaderLibrary/Vertex.glsl

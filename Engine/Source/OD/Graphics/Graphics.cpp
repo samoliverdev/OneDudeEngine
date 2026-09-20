@@ -108,6 +108,9 @@ Gfx::BindGroup curCameraBindGroup;
 Gfx::Texture2D defaultTex;
 Gfx::Cubemap defaultCubemap;
 Gfx::Buffer defaultBuffer;
+#ifdef TestNewGPU_API
+Ref<Mesh> fullScreenQuad;
+#endif
 
 struct UniformBufferPool{
     Gfx::BindGroupLayout layout;
@@ -283,10 +286,17 @@ void Graphics::Initialize(){
     defaultCubemap = gfxDevice->CreateCubemap(cubeInfo);
     Assert(defaultCubemap != Gfx::InvalidID);
     gfxDevice->UploadCubemap(defaultCubemap, pixels.data(), pixels.size());
+
+    fullScreenQuad = Mesh::FullScreenQuad();
     #endif
 }
 
 void Graphics::Shutdown(){
+    Material::CleanGlobalUniformsData();
+    
+#ifdef TestNewGPU_API
+    fullScreenQuad.reset();
+#endif
     graphicsDevice->Shutdown();
     delete graphicsDevice;
     graphicsDevice = nullptr;
@@ -980,19 +990,44 @@ void Graphics::DrawText(Font& f, Material& s, std::string text, Matrix4 model, b
 }
 
 void Graphics::DrawFullScreenQuad(Material& mat, Matrix4 modelMatrix){
+    #ifdef TestNewGPU_API
+    Assert(fullScreenQuad != nullptr);
+    DrawMesh(*fullScreenQuad, mat, modelMatrix);
+    #else
     graphicsDevice->DrawFullScreenQuad(mat, modelMatrix); 
+    #endif
 }
 
 void Graphics::DrawQuadPostProcessing(Framebuffer* src, Framebuffer* dst, Material& mat, int pass){ 
+    #ifdef TestNewGPU_API
+    Assert(false);
+    #else
     graphicsDevice->DrawQuadPostProcessing(src, dst, mat, pass); 
+    #endif
+
 }
 
 void Graphics::DrawQuadPostProcessing(Framebuffer* dst, Material& mat, int pass){ 
+    #ifdef TestNewGPU_API
+    Assert(false);
+    #else
     graphicsDevice->DrawQuadPostProcessing(dst, mat, pass); 
+    #endif
 }
 
 void Graphics::BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass){ 
+    #ifdef TestNewGPU_API
+    Assert(src != nullptr);
+    Assert(src->framebuffer != Gfx::InvalidID);
+    if(dst != nullptr) Assert(dst->framebuffer != Gfx::InvalidID);
+    gfxDevice->GetCommandBuffer()->BlitFramebuffer(
+        src->framebuffer,
+        dst == nullptr ? Gfx::InvalidID : dst->framebuffer,
+        srcPass
+    );
+    #else
     graphicsDevice->BlitFramebuffer(src, dst, srcPass); 
+    #endif
 }
 
 void Graphics::BeginFramebuffer(Framebuffer& frambuffer, bool clean, Vector4 clearColor, int layer, int mip){ 

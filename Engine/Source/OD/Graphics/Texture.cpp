@@ -440,9 +440,8 @@ Ref<Texture2D> Texture2D::LoadDefautlTexture2D(){
 
 Ref<Texture2D> Texture2D::CreateBrdfLUTTexture2D(){
     #ifdef TestNewGPU_API
-    static Ref<Texture2D> cached;
-    if(cached != nullptr) return cached;
-    if(gfxDevice == nullptr) return nullptr;
+    Ref<Texture2D> cached;
+    Assert(gfxDevice != nullptr);
 
     constexpr uint32_t brdfSize = 512;
     struct BrdfUniform{
@@ -534,6 +533,7 @@ Ref<Texture2D> Texture2D::CreateBrdfLUTTexture2D(){
     commands->EndFramebuffer();
     commands->CopyTexture(framebuffer, 0, cached->tex);
 
+    cached->path = "#BrdfLUT";
     return cached;
     #else
     return graphicsDevice->Texture2DCreateBrdfLUTTexture2D();
@@ -612,6 +612,7 @@ Texture2D::~Texture2D(){
     //LogInfo("OnDestroy: {}", path);
     #ifdef TestNewGPU_API
     //Assert(false);
+    Assert(gfxDevice != nullptr);
     if(tex != Gfx::InvalidID) gfxDevice->DestroyTexture2D(tex);
     #else
     Assert(graphicsDevice != nullptr);

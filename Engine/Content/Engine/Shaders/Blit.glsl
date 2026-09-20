@@ -16,26 +16,16 @@ BeginPass
     Texture2D(0, 1, mainTex, mainSampler)
 
     BeginVertex
-    /*In(0) vec3 vPos;
-    In(1) vec2 vTexCoord;
-    Out(0) vec3 pos;
-    Out(1) vec2 texCoord;
-
-    void main() {
-        pos = vPos;
-        #if defined(WebGPU_API)
-        texCoord = vec2(vTexCoord.x, 1.0 - vTexCoord.y);
-        #else
-        texCoord = vTexCoord;
-        #endif
-        OutPosition = vec4(pos, 1.0);
-    }*/
     Out(0) vec2 _texCoord;
 
-    void main() {
+    void main(){
         mat4 targetModelMatrix = GetModelMatrix();
         _texCoord = texCoord.xy;
         OutPosition = GetLocalPos();
+
+        #if defined(DefaultWindows) && defined(Vulkan_API)
+	    gl_Position.y = -gl_Position.y;	 
+        #endif
     }
     EndVertex
 

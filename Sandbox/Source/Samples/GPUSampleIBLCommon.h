@@ -136,6 +136,9 @@ inline OD::Gfx::Framebuffer CreateTextureFramebuffer(OD::Gfx::Device* device, ui
 
 inline OD::Gfx::Texture2D LoadHDR(OD::Gfx::Device* device, const char* path){
     int width = 0, height = 0, channels = 0;
+    // Keep the source orientation consistent with the equirectangular
+    // conversion shader and the LearnOpenGL IBL workflow.
+    stbi_set_flip_vertically_on_load(true);
     float* data = stbi_loadf(path, &width, &height, &channels, 4);
     if(data == nullptr) return OD::Gfx::InvalidID;
     OD::Gfx::Texture2DInfo info{};

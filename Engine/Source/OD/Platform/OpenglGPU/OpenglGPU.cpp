@@ -1566,7 +1566,7 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
 
                     GLuint blockIndex = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].blockIndex;
                     Assert(blockIndex != GL_INVALID_INDEX);
-                    Assert(pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].bufferSize == buffer.size);
+                    Assert(pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].bufferSize <= buffer.size);
 
                     glBindBufferRange(
                         GL_UNIFORM_BUFFER,
