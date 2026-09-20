@@ -11,6 +11,123 @@ namespace OD{
 extern GraphicsDevice* graphicsDevice;
 extern Gfx::Device* gfxDevice;
 
+#ifdef TestNewGPU_API
+namespace {
+
+struct IblEnvironmentUniform{
+    Matrix4 projection;
+    Matrix4 view;
+};
+
+struct IblCaptureUniform{
+    Matrix4 projection;
+    Matrix4 view;
+    float roughness = 0.0f;
+    float padding[3] = {};
+};
+
+std::array<Matrix4, 6> IblCaptureViews(){
+    const Vector3 origin(0.0f);
+    return {
+        static_cast<Matrix4>(glm::lookAt(origin, Vector3( 1,  0,  0), Vector3(0, -1,  0))),
+        static_cast<Matrix4>(glm::lookAt(origin, Vector3(-1,  0,  0), Vector3(0, -1,  0))),
+        static_cast<Matrix4>(glm::lookAt(origin, Vector3( 0,  1,  0), Vector3(0,  0,  1))),
+        static_cast<Matrix4>(glm::lookAt(origin, Vector3( 0, -1,  0), Vector3(0,  0, -1))),
+        static_cast<Matrix4>(glm::lookAt(origin, Vector3( 0,  0,  1), Vector3(0, -1,  0))),
+        static_cast<Matrix4>(glm::lookAt(origin, Vector3( 0,  0, -1), Vector3(0, -1,  0)))
+    };
+}
+
+Matrix4 IblCaptureProjection(){
+    return static_cast<Matrix4>(glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f));
+}
+
+std::string IblLoadShader(const char* path){
+    ShaderSourceData source;
+    if(!ShaderLoadFile(path, source)) return {};
+    return "#define Pass_0\n" + source.baseSource;
+}
+
+Gfx::Buffer IblCreateCube(Gfx::Device* device){
+    static const float vertices[] = {
+        -1,-1,-1, 1,-1,-1, 1,1,-1, 1,1,-1, -1,1,-1, -1,-1,-1,
+        -1,-1, 1, -1,1,1, 1,1,1, 1,1,1, 1,-1,1, -1,-1,1,
+        -1,1,1, -1,1,-1, 1,1,-1, 1,1,-1, 1,1,1, -1,1,1,
+        -1,-1,-1, 1,-1,-1, 1,-1,1, 1,-1,1, -1,-1,1, -1,-1,-1,
+        1,-1,-1, 1,1,-1, 1,1,1, 1,1,1, 1,-1,1, 1,-1,-1,
+        -1,-1,-1, -1,-1,1, -1,1,1, -1,1,1, -1,1,-1, -1,-1,-1
+    };
+    const auto buffer = device->CreateBuffer(sizeof(vertices), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
+    device->UpdatedBuffer(buffer, vertices, sizeof(vertices));
+    return buffer;
+}
+
+Gfx::FrameBufferLayout IblFramebufferLayout(uint32_t mipLevels){
+    Gfx::FrameBufferLayout layout{};
+    layout.type = Gfx::FramebufferAttachmentType::CUBEMAP;
+    layout.colorAttachments[0].format = Gfx::FramebufferTextureFormat::RGBA16F;
+    layout.colorAttachments[0].mipLevels = static_cast<uint8_t>(mipLevels);
+    layout.colorAttachmentsCount = 1;
+    layout.depthAttachment.format = Gfx::FramebufferDepthTextureFormat::DEPTH_COMPONENT16;
+    layout.depthAttachment.mipLevels = static_cast<uint8_t>(mipLevels);
+    return layout;
+}
+
+Gfx::Framebuffer IblCreateFramebuffer(Gfx::Device* device, uint32_t size, uint32_t mipLevels){
+    Gfx::FrameBufferCreateInfo info{};
+    info.width = size;
+    info.height = size;
+    info.layout = IblFramebufferLayout(mipLevels);
+    return device->CreateFramebuffer(info);
+}
+
+Gfx::BindGroupLayout IblCreateLayout(Gfx::Device* device, Gfx::BindingType textureType, uint32_t uniformSize){
+    Gfx::BindGroupLayoutInfo info{};
+    info.entries[0] = {0, Gfx::BindingType::UniformBuffer, uniformSize, false};
+    info.entries[1] = {1, textureType, 0, false};
+    info.entriesCount = 2;
+    return device->CreateBindGroupLayout(info);
+}
+
+Gfx::BindGroup IblCreateTextureGroup(Gfx::Device* device, Gfx::BindGroupLayout layout,
+                                     Gfx::Buffer uniforms, Gfx::Texture2D texture, uint32_t uniformSize){
+    Gfx::BindGroupInfo info{};
+    info.layout = layout;
+    info.entries[0] = {0, uniforms, 0, uniformSize, false};
+    info.entries[1].binding = 1;
+    info.entries[1].texture = texture;
+    info.entriesCount = 2;
+    return device->CreateBindGroup(info);
+}
+
+Gfx::BindGroup IblCreateCubemapGroup(Gfx::Device* device, Gfx::BindGroupLayout layout,
+                                     Gfx::Buffer uniforms, Gfx::Cubemap texture){
+    Gfx::BindGroupInfo info{};
+    info.layout = layout;
+    info.entries[0] = {0, uniforms, 0, sizeof(IblCaptureUniform), false};
+    info.entries[1].binding = 1;
+    info.entries[1].cubemap = texture;
+    info.entriesCount = 2;
+    return device->CreateBindGroup(info);
+}
+
+Gfx::Pipeline IblCreatePipeline(Gfx::Device* device, const std::string& source,
+                                Gfx::BindGroupLayout layout, const Gfx::FrameBufferLayout& framebufferLayout){
+    Gfx::PipelineInfo info{};
+    info.vertexLayout.attributes[0] = {Gfx::VertexSemantic::Position, Gfx::VertexFormat::Float3, 0, 0};
+    info.vertexLayout.attributeCount = 1;
+    info.vertexLayout.buffers[0] = {sizeof(float) * 3, Gfx::VertexInputRate::Vertex};
+    info.vertexLayout.bufferCount = 1;
+    info.bindGroupLayouts[0] = layout;
+    info.bindGroupLayoutCount = 1;
+    info.framebufferLayout = framebufferLayout;
+    info.cullFace = Gfx::CullFace::NONE;
+    return device->CreatePipeline(source.c_str(), info);
+}
+
+}
+#endif
+
 Cubemap::Cubemap(){
     //LogInfo("OnCreation");
 }
@@ -85,230 +202,199 @@ Ref<Cubemap> Cubemap::CreateFromFile(const char* right, const char* left, const 
 }
 
 Ref<Cubemap> Cubemap::CreateFromFileHDR(const char* hdri){
-    return graphicsDevice->CubemapCreateFromFileHDR(hdri);
+#ifdef TestNewGPU_API
+    if(gfxDevice == nullptr) return nullptr;
 
-    Assert(false && "Not Work for now");
-    return nullptr;
-    /*
-    Assert(Graphics::HasBegin() == false);
-    
-    // pbr: setup framebuffer
-    // ----------------------
-    unsigned int captureFBO;
-    unsigned int captureRBO;
-    glGenFramebuffers(1, &captureFBO);
-    glGenRenderbuffers(1, &captureRBO);
-    glCheckError();
-
-    glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
-    glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, captureRBO);
-    glCheckError();
-
-    // pbr: load the HDR environment map
-    // ---------------------------------
-    stbi_set_flip_vertically_on_load(true);
-    int width, height, nrComponents;
-    float *data = stbi_loadf(hdri, &width, &height, &nrComponents, 0);
-    unsigned int hdrTexture;
-    if(data){
-        glGenTextures(1, &hdrTexture);
-        glBindTexture(GL_TEXTURE_2D, hdrTexture);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, data); // note how we specify the texture's data value to be float
-        glCheckError();
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glCheckError();
-
-        stbi_image_free(data);
-    } else {
-        std::cout << "Failed to load HDR image." << std::endl;
-        LogError("Failed to load HDR image.");
+    int width = 0;
+    int height = 0;
+    int channels = 0;
+    stbi_set_flip_vertically_on_load(0);
+    float* data = stbi_loadf(hdri, &width, &height, &channels, 4);
+    if(data == nullptr){
+        LogError("Failed to load HDR image: {}", hdri);
         return nullptr;
     }
 
-    // pbr: setup cubemap to render to and attach to framebuffer
-    // ---------------------------------------------------------
-    unsigned int envCubemap;
-    glGenTextures(1, &envCubemap);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
-    glCheckError();
-    for(unsigned int i = 0; i < 6; ++i){
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 512, 512, 0, GL_RGB, GL_FLOAT, nullptr);
-        glCheckError();
-    }
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR); 
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glCheckError();
+    Gfx::Texture2DInfo sourceInfo{};
+    sourceInfo.width = static_cast<uint32_t>(width);
+    sourceInfo.height = static_cast<uint32_t>(height);
+    sourceInfo.format = Gfx::ImageFormat::RGBA32F;
+    sourceInfo.filter = Gfx::TextureFilter::Linear;
+    sourceInfo.wrapping = Gfx::TextureWrapping::ClampToEdge;
+    sourceInfo.mipmap = false;
+    sourceInfo.mipLevels = 1;
+    const auto sourceTexture = gfxDevice->CreateTexture2D(sourceInfo);
+    gfxDevice->UploadTexture2D(sourceTexture, data, static_cast<size_t>(width) * static_cast<size_t>(height) * 4 * sizeof(float));
+    stbi_image_free(data);
+    if(sourceTexture == Gfx::InvalidID) return nullptr;
 
-    // pbr: convert HDR equirectangular environment map to cubemap equivalent
-    // ----------------------------------------------------------------------
-    Ref<SubShader> equirectangularToCubemapShader = SubShader::CreateFromFile("Engine/Shaders/EquirectangularToCubemap.glsl");
-    SubShader::Bind(*equirectangularToCubemapShader);
-    equirectangularToCubemapShader->SetInt("equirectangularMap", 0);
-    equirectangularToCubemapShader->SetMatrix4("projection", captureProjection);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, hdrTexture);
-    glCheckError();
-
-    unsigned int cubeVAO = 0;
-    unsigned int cubeVBO = 0;
-
-    glViewport(0, 0, 512, 512); // don't forget to configure the viewport to the capture dimensions.
-    glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
-    glCheckError();
-    for(unsigned int i = 0; i < 6; ++i){
-        equirectangularToCubemapShader->SetMatrix4("view", captureViews[i]);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, envCubemap, 0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glCheckError();
-
-        renderCube(cubeVAO, cubeVBO);
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glCheckError();
-
-    // pbr: create an irradiance cubemap, and re-scale capture FBO to irradiance scale.
-    // --------------------------------------------------------------------------------
-    unsigned int irradianceMap;
-    glGenTextures(1, &irradianceMap);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap);
-    glCheckError();
-    for (unsigned int i = 0; i < 6; ++i){
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 32, 32, 0, GL_RGB, GL_FLOAT, nullptr);
-        glCheckError();
-    }
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glCheckError();
-
-    glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
-    glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 32, 32);
-    glCheckError();
-
-    // pbr: solve diffuse integral by convolution to create an irradiance (cube)map.
-    // -----------------------------------------------------------------------------
-    Ref<SubShader> irradianceShader = SubShader::CreateFromFile("Engine/Shaders/IrradianceConvolution.glsl");
-    SubShader::Bind(*irradianceShader);
-    irradianceShader->SetInt("environmentMap", 0);
-    irradianceShader->SetMatrix4("projection", captureProjection);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
-    glCheckError();
-
-    glViewport(0, 0, 32, 32); // don't forget to configure the viewport to the capture dimensions.
-    glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
-    glCheckError();
-
-    for(unsigned int i = 0; i < 6; ++i){
-        irradianceShader->SetMatrix4("view", captureViews[i]);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, irradianceMap, 0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glCheckError();
-
-        renderCube(cubeVAO, cubeVBO);
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glCheckError();
+    constexpr uint32_t size = 512;
+    constexpr uint32_t mipLevels = 10;
+    Gfx::CubemapInfo destinationInfo{};
+    destinationInfo.width = size;
+    destinationInfo.height = size;
+    destinationInfo.format = Gfx::ImageFormat::RGBA16F;
+    destinationInfo.filter = Gfx::TextureFilter::Linear;
+    destinationInfo.wrapping = Gfx::TextureWrapping::ClampToEdge;
+    destinationInfo.mipmap = true;
+    destinationInfo.mipLevels = mipLevels;
 
     Ref<Cubemap> out = CreateRef<Cubemap>();
-    out->renderId = envCubemap;
-    //out->renderId = irradianceMap;
-    return out;
-    */
-}
+    out->tex = gfxDevice->CreateCubemap(destinationInfo);
+    if(out->tex == Gfx::InvalidID) return nullptr;
+    out->mipmap = true;
 
-Ref<Cubemap> Cubemap::CreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap){
-    return graphicsDevice->CubemapCreateIrradianceMapFromCubeMap(cubemap);
+    const auto framebuffer = IblCreateFramebuffer(gfxDevice, size, mipLevels);
+    const auto cube = IblCreateCube(gfxDevice);
+    const auto layout = IblCreateLayout(gfxDevice, Gfx::BindingType::Texture2D, sizeof(IblEnvironmentUniform));
+    const auto source = IblLoadShader("Engine/Shaders/EquirectangularToCubemap.glsl");
+    if(source.empty()) return nullptr;
+    const auto pipeline = IblCreatePipeline(gfxDevice, source, layout, IblFramebufferLayout(mipLevels));
+    const auto projection = IblCaptureProjection();
+    const auto views = IblCaptureViews();
+    auto* commands = gfxDevice->GetCommandBuffer();
+
+    for(uint32_t mip = 0; mip < mipLevels; ++mip){
+        const uint32_t mipSize = std::max(1u, size >> mip);
+        for(uint32_t face = 0; face < 6; ++face){
+            IblEnvironmentUniform uniformData{};
+            uniformData.projection = projection;
+            uniformData.view = views[face];
+            const auto uniform = gfxDevice->CreateBuffer(sizeof(uniformData), Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
+            gfxDevice->UpdatedBuffer(uniform, &uniformData, sizeof(uniformData));
+            const auto group = IblCreateTextureGroup(gfxDevice, layout, uniform, sourceTexture, sizeof(uniformData));
+
+            commands->BeginFramebuffer(framebuffer, face, mip, true);
+            commands->Viewport(0, 0, mipSize, mipSize);
+            commands->SetPipeline(pipeline);
+            commands->SetBindGroup(0, group);
+            commands->SetVertexBuffer(0, cube);
+            commands->Draw(36);
+            commands->EndFramebuffer();
+        }
+    }
+    commands->CopyTextureCubemap(framebuffer, 0, out->tex);
+    return out;
+#else
+    return graphicsDevice->CubemapCreateFromFileHDR(hdri);
+#endif
 
     Assert(false && "Not Work for now");
     return nullptr;
-    /*
-    //FIXME: Destrey gl objects
-    Assert(Graphics::HasBegin() == false);
+}
 
-    int size = 32*4;
+Ref<Cubemap> Cubemap::CreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap){
+#ifdef TestNewGPU_API
+    if(gfxDevice == nullptr || cubemap == nullptr || cubemap->tex == Gfx::InvalidID) return nullptr;
 
-    // pbr: setup framebuffer
-    // ----------------------
-    unsigned int captureFBO;
-    unsigned int captureRBO;
-    glGenFramebuffers(1, &captureFBO);
-    glGenRenderbuffers(1, &captureRBO);
-    glCheckError();
-
-    glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
-    glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, captureRBO);
-    glCheckError();
-
-    // pbr: create an irradiance cubemap, and re-scale capture FBO to irradiance scale.
-    // --------------------------------------------------------------------------------
-    unsigned int irradianceMap;
-    glGenTextures(1, &irradianceMap);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, irradianceMap);
-    for (unsigned int i = 0; i < 6; ++i){
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, size, size, 0, GL_RGB, GL_FLOAT, nullptr);
-    }
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glCheckError();
-
-    glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
-    glBindRenderbuffer(GL_RENDERBUFFER, captureRBO);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, size, size);
-    glCheckError();
-
-    // pbr: solve diffuse integral by convolution to create an irradiance (cube)map.
-    // -----------------------------------------------------------------------------
-    Ref<SubShader> irradianceShader = SubShader::CreateFromFile("Engine/Shaders/IrradianceConvolution.glsl");
-    SubShader::Bind(*irradianceShader);
-    
-
-    irradianceShader->SetCubemap("environmentMap", *cubemap, 0);
-    irradianceShader->SetMatrix4("projection", captureProjection);
-    
-    glViewport(0, 0, size, size); // don't forget to configure the viewport to the capture dimensions.
-    glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
-    glCheckError();
-
-    unsigned int cubeVAO = 0;
-    unsigned int cubeVBO = 0;
-
-    for(unsigned int i = 0; i < 6; ++i){
-        irradianceShader->SetMatrix4("view", captureViews[i]);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, irradianceMap, 0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glCheckError();
-
-        renderCube(cubeVAO, cubeVBO);
-    }
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glCheckError();
+    constexpr uint32_t size = 128;
+    constexpr uint32_t mipLevels = 1;
+    Gfx::CubemapInfo destinationInfo{};
+    destinationInfo.width = size;
+    destinationInfo.height = size;
+    destinationInfo.format = Gfx::ImageFormat::RGBA16F;
+    destinationInfo.filter = Gfx::TextureFilter::Linear;
+    destinationInfo.wrapping = Gfx::TextureWrapping::ClampToEdge;
+    destinationInfo.mipmap = false;
+    destinationInfo.mipLevels = mipLevels;
 
     Ref<Cubemap> out = CreateRef<Cubemap>();
-    out->renderId = irradianceMap;
+    out->tex = gfxDevice->CreateCubemap(destinationInfo);
+    if(out->tex == Gfx::InvalidID) return nullptr;
+    out->mipmap = false;
+
+    const auto framebuffer = IblCreateFramebuffer(gfxDevice, size, mipLevels);
+    const auto cube = IblCreateCube(gfxDevice);
+    const auto layout = IblCreateLayout(gfxDevice, Gfx::BindingType::TextureCube, sizeof(IblCaptureUniform));
+    const auto source = IblLoadShader("Engine/Shaders/IrradianceConvolution.glsl");
+    if(source.empty()) return nullptr;
+    const auto pipeline = IblCreatePipeline(gfxDevice, source, layout, IblFramebufferLayout(mipLevels));
+    const auto projection = IblCaptureProjection();
+    const auto views = IblCaptureViews();
+    auto* commands = gfxDevice->GetCommandBuffer();
+
+    for(uint32_t face = 0; face < 6; ++face){
+        IblCaptureUniform uniformData{};
+        uniformData.projection = projection;
+        uniformData.view = views[face];
+        const auto uniform = gfxDevice->CreateBuffer(sizeof(uniformData), Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
+        gfxDevice->UpdatedBuffer(uniform, &uniformData, sizeof(uniformData));
+        const auto group = IblCreateCubemapGroup(gfxDevice, layout, uniform, cubemap->tex);
+
+        commands->BeginFramebuffer(framebuffer, face, 0, true);
+        commands->Viewport(0, 0, size, size);
+        commands->SetPipeline(pipeline);
+        commands->SetBindGroup(0, group);
+        commands->SetVertexBuffer(0, cube);
+        commands->Draw(36);
+        commands->EndFramebuffer();
+    }
+    commands->CopyTextureCubemap(framebuffer, 0, out->tex);
     return out;
-    */
+#else
+    return graphicsDevice->CubemapCreateIrradianceMapFromCubeMap(cubemap);
+#endif
+
+    Assert(false && "Not Work for now");
+    return nullptr;
 }
 
 Ref<Cubemap> Cubemap::CreatePrefilterMapFromCubeMap(const Ref<Cubemap>& cubemap){
+#ifdef TestNewGPU_API
+    if(gfxDevice == nullptr || cubemap == nullptr || cubemap->tex == Gfx::InvalidID) return nullptr;
+
+    constexpr uint32_t size = 128;
+    constexpr uint32_t mipLevels = 5;
+    Gfx::CubemapInfo destinationInfo{};
+    destinationInfo.width = size;
+    destinationInfo.height = size;
+    destinationInfo.format = Gfx::ImageFormat::RGBA16F;
+    destinationInfo.filter = Gfx::TextureFilter::Linear;
+    destinationInfo.wrapping = Gfx::TextureWrapping::ClampToEdge;
+    destinationInfo.mipmap = true;
+    destinationInfo.mipLevels = mipLevels;
+
+    Ref<Cubemap> out = CreateRef<Cubemap>();
+    out->tex = gfxDevice->CreateCubemap(destinationInfo);
+    if(out->tex == Gfx::InvalidID) return nullptr;
+    out->mipmap = true;
+
+    const auto framebuffer = IblCreateFramebuffer(gfxDevice, size, mipLevels);
+    const auto cube = IblCreateCube(gfxDevice);
+    const auto layout = IblCreateLayout(gfxDevice, Gfx::BindingType::TextureCube, sizeof(IblCaptureUniform));
+    const auto source = IblLoadShader("Engine/Shaders/Prefilter.glsl");
+    if(source.empty()) return nullptr;
+    const auto pipeline = IblCreatePipeline(gfxDevice, source, layout, IblFramebufferLayout(mipLevels));
+    const auto projection = IblCaptureProjection();
+    const auto views = IblCaptureViews();
+    auto* commands = gfxDevice->GetCommandBuffer();
+
+    for(uint32_t mip = 0; mip < mipLevels; ++mip){
+        const uint32_t mipSize = std::max(1u, size >> mip);
+        const float roughness = static_cast<float>(mip) / static_cast<float>(mipLevels - 1);
+        for(uint32_t face = 0; face < 6; ++face){
+            IblCaptureUniform uniformData{};
+            uniformData.projection = projection;
+            uniformData.view = views[face];
+            uniformData.roughness = roughness;
+            const auto uniform = gfxDevice->CreateBuffer(sizeof(uniformData), Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
+            gfxDevice->UpdatedBuffer(uniform, &uniformData, sizeof(uniformData));
+            const auto group = IblCreateCubemapGroup(gfxDevice, layout, uniform, cubemap->tex);
+
+            commands->BeginFramebuffer(framebuffer, face, mip, true);
+            commands->Viewport(0, 0, mipSize, mipSize);
+            commands->SetPipeline(pipeline);
+            commands->SetBindGroup(0, group);
+            commands->SetVertexBuffer(0, cube);
+            commands->Draw(36);
+            commands->EndFramebuffer();
+        }
+    }
+    commands->CopyTextureCubemap(framebuffer, 0, out->tex);
+    return out;
+#else
     return graphicsDevice->CubemapCreatePrefilterMapFromCubeMap(cubemap);
+#endif
 
     Assert(false && "Not Work for now");
     return nullptr;

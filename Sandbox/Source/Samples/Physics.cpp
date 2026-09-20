@@ -5,6 +5,7 @@
 #include <OD/Core/Application.h>
 #include <OD/Core/Input.h>
 #include <OD/Graphics/Model.h>
+#include <OD/Graphics/Cubemap.h>
 #include <OD/Scene/SceneManager.h>
 #include <OD/RenderPipeline/EnvironmentComponent.h>
 #include <OD/RenderPipeline/CameraComponent.h>
@@ -135,14 +136,23 @@ void PhysicsSample::OnInit(){
     scene->SetParent(uiImage3, uiText);*/
 
     Entity env = scene->AddEntity("Env");
-    scene->AddComponent<EnvironmentComponent>(env).settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+    EnvironmentComponent& envComp = scene->AddComponent<EnvironmentComponent>(env);
+    envComp.settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+
+    envComp.settings.environmentLight = EnvironmentLight::SkyCubemap;
+    envComp.settings.toneMapping.enable = true;
+    envComp.settings.toneMapping.mode = ToneMappingFeature::Mode::Neutral;
+    envComp.settings.colorGrading.enable = true;
+    envComp.settings.colorGrading.contrast = 18;
+    envComp.settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+    envComp.settings.skyCubemap = Cubemap::CreateFromFileHDR("Sandbox/HDRIs/industrial_sunset_puresky_2k.hdr");
 
     Entity light = scene->AddEntity("Light");
     LightComponent& lightComponent = scene->AddComponent<LightComponent>(light);
     lightComponent.color = {1,1,1};
     scene->GetComponent<TransformComponent>(light).Position(Vector3(-2, 4, -1));
     scene->GetComponent<TransformComponent>(light).LocalEulerAngles(Vector3(45, -125, 0));
-    lightComponent.renderShadow = false;
+    lightComponent.renderShadow = true;
 
     camera = scene->AddEntity("Camera");
     CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);

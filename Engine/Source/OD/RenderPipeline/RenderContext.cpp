@@ -2926,11 +2926,13 @@ void RenderContext::DrawRenderersBuffer(RendererList& commandBuffer, bool sort, 
 
         if(material.MainPass() != -1) material.SetPass(material.MainPass());
 
+        #ifndef TestNewGPU_API
         if(deferred){
             material.EnableKeyword("Deferred");
         } else {
             material.EnableKeyword("Forward");
         }
+        #endif
 
         if(isDecal){
             Ref<Framebuffer> deferred = deferredOutColor;

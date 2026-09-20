@@ -10,7 +10,7 @@ BeginPass
         layout (location = 0) in vec3 aPos;
         layout (location = 1) in vec2 aTexCoords;
 
-        out vec2 TexCoords;
+        Out(0) vec2 TexCoords;
 
         void main(){
             TexCoords = aTexCoords;
@@ -19,8 +19,8 @@ BeginPass
     EndVertex
 
     BeginFrag
-        out vec2 FragColor;
-        in vec2 TexCoords;
+        Out(0) vec2 FragColor;
+        In(0) vec2 TexCoords;
 
         const float PI = 3.14159265359;
         // ----------------------------------------------------------------------------

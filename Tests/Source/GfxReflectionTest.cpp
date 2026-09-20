@@ -154,6 +154,31 @@ TEST(GfxFramebuffer, RecordsBlitCommand)
     EXPECT_EQ(blit.blitFramebuffer.srcPass, 3);
 }
 
+TEST(GfxFramebuffer, RecordsCopyTextureCommands)
+{
+    Gfx::CommandBuffer commands;
+    commands.CopyTexture(11, 2, 23);
+    ASSERT_EQ(commands.commands.size(), 1u);
+    EXPECT_EQ(commands.commands.front().type, Gfx::CommandBuffer::Type::CopyTexture2D);
+    EXPECT_EQ(commands.commands.front().copyTexture2D.src, 11u);
+    EXPECT_EQ(commands.commands.front().copyTexture2D.attachment, 2);
+    EXPECT_EQ(commands.commands.front().copyTexture2D.dst, 23u);
+
+    commands.ClearCmds();
+    commands.CopyTexture(11, -1, 23);
+    EXPECT_EQ(commands.commands.front().copyTexture2D.attachment, -1);
+}
+
+TEST(GfxFramebuffer, RecordsCopyCubemapCommand)
+{
+    Gfx::CommandBuffer commands;
+    commands.CopyTextureCubemap(11, 0, 24);
+    ASSERT_EQ(commands.commands.size(), 1u);
+    EXPECT_EQ(commands.commands.front().type, Gfx::CommandBuffer::Type::CopyCubemap);
+    EXPECT_EQ(commands.commands.front().copyCubemap.src, 11u);
+    EXPECT_EQ(commands.commands.front().copyCubemap.dst, 24u);
+}
+
 TEST(GfxCubemap, RecordsUploadCommand)
 {
     Gfx::ResourceCommands commands;
@@ -179,6 +204,8 @@ TEST(GfxTextureSampling, CreateInfosExposeIndependentSamplingDefaults)
     EXPECT_EQ(cubemap.filter, Gfx::TextureFilter::Linear);
     EXPECT_EQ(cubemap.wrapping, Gfx::TextureWrapping::Repeat);
     EXPECT_TRUE(cubemap.mipmap);
+    EXPECT_EQ(texture.mipLevels, 0u);
+    EXPECT_EQ(cubemap.mipLevels, 0u);
     EXPECT_EQ(framebuffer.filter, Gfx::TextureFilter::Linear);
     EXPECT_EQ(framebuffer.wrapping, Gfx::TextureWrapping::Repeat);
 

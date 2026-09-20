@@ -10,7 +10,7 @@
     CullFace BACK
     Tags ForwardOnly
     DrawType _ SKINNED INSTANCING INSTANCINGMATRIX43
-    RenderPass Forward 
+    RenderPass DefaultWindows Forward 
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl

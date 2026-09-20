@@ -103,6 +103,24 @@ std::vector<VkSemaphore> _renderSemaphores;
 VkDescriptorPool _descriptorPool;
 VkDescriptorPool frameDescriptorPools;
 
+VKAPI_ATTR VkBool32 VKAPI_CALL VulkanValidationCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT, const VkDebugUtilsMessengerCallbackDataEXT* callbackData, void*){
+    const char* messageId = callbackData != nullptr && callbackData->pMessageIdName != nullptr ? callbackData->pMessageIdName : "unknown";
+    const char* message = callbackData != nullptr && callbackData->pMessage != nullptr ? callbackData->pMessage : "No validation message supplied";
+
+    if((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) != 0){
+        LogError("Vulkan validation error [{}]: {}", messageId, message);
+        Assert(false && "Vulkan validation error");
+    } else if((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) != 0){
+        LogWarning("Vulkan validation warning [{}]: {}", messageId, message);
+    } else if((messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) != 0){
+        LogInfo("Vulkan validation info [{}]: {}", messageId, message);
+    } else {
+        LogInfo("Vulkan validation message [{}]: {}", messageId, message);
+    }
+
+    return VK_FALSE;
+}
+
 struct FrameData {
 	VkSemaphore _presentSemaphore;
 	VkFence _renderFence;	
@@ -936,10 +954,37 @@ VkFormat GetImageFormat(ImageFormat f){
 
         case ImageFormat::R8G8B8A8_UNORM: return VK_FORMAT_R8G8B8A8_UNORM;
         case ImageFormat::R8G8B8A8_SRGB: return VK_FORMAT_R8G8B8A8_SRGB;
+        case ImageFormat::RGB11B10F: return VK_FORMAT_B10G11R11_UFLOAT_PACK32;
+        case ImageFormat::RGB16F: return VK_FORMAT_R16G16B16A16_SFLOAT;
+        case ImageFormat::RGBA16F: return VK_FORMAT_R16G16B16A16_SFLOAT;
+        case ImageFormat::RGB32F: return VK_FORMAT_R32G32B32_SFLOAT;
+        case ImageFormat::RGBA32F: return VK_FORMAT_R32G32B32A32_SFLOAT;
+        case ImageFormat::RED_INTEGER: return VK_FORMAT_R32_SINT;
+        case ImageFormat::DEPTH24_STENCIL8: return VK_FORMAT_D24_UNORM_S8_UINT;
+        case ImageFormat::DEPTH32F_STENCIL8: return VK_FORMAT_D32_SFLOAT_S8_UINT;
+        case ImageFormat::DEPTH_COMPONENT16: return VK_FORMAT_D16_UNORM;
+        case ImageFormat::DEPTH_COMPONENT24: return VK_FORMAT_D24_UNORM_S8_UINT;
+        case ImageFormat::DEPTH_COMPONENT32:
+        case ImageFormat::DEPTH_COMPONENT32F: return VK_FORMAT_D32_SFLOAT;
     }
 
     Assert(false);
     return VK_FORMAT_R8G8B8A8_UNORM;
+}
+
+VkImageAspectFlags GetImageAspect(ImageFormat f){
+    switch(f){
+        case ImageFormat::DEPTH24_STENCIL8:
+        case ImageFormat::DEPTH32F_STENCIL8:
+            return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+        case ImageFormat::DEPTH_COMPONENT16:
+        case ImageFormat::DEPTH_COMPONENT24:
+        case ImageFormat::DEPTH_COMPONENT32:
+        case ImageFormat::DEPTH_COMPONENT32F:
+            return VK_IMAGE_ASPECT_DEPTH_BIT;
+        default:
+            return VK_IMAGE_ASPECT_COLOR_BIT;
+    }
 }
 
 std::vector<uint8_t> ConvertRGBToRGBA(const uint8_t* rgb, uint32_t width, uint32_t height){
@@ -979,7 +1024,8 @@ VkSamplerCreateInfo CreateTextureSampler(const TextureFilter filter, const Textu
     return sampler;
 }
 
-uint32_t GetTextureMipLevels(uint32_t width, uint32_t height, bool mipmap){
+static uint32_t GetTextureMipLevels(uint32_t width, uint32_t height, bool mipmap, uint32_t requested = 0){
+    if(requested > 0) return requested;
     if(!mipmap) return 1;
     uint32_t levels = 1;
     for(uint32_t size = std::max(width, height); size > 1; size >>= 1)
@@ -1001,7 +1047,7 @@ bool VulkanGPUDevice::_CreateTexture2D(Texture2DData& texData, const Texture2DIn
     imageExtent.height = info.height;
     imageExtent.depth = 1;
 
-    const uint32_t mipLevels = GetTextureMipLevels(info.width, info.height, info.mipmap);
+    const uint32_t mipLevels = GetTextureMipLevels(info.width, info.height, info.mipmap, info.mipLevels);
     VkImageCreateInfo dimg_info = vkinit::image_create_info(image_format,
         VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
         (info.mipmap ? VK_IMAGE_USAGE_TRANSFER_SRC_BIT : 0), imageExtent);
@@ -1013,7 +1059,7 @@ bool VulkanGPUDevice::_CreateTexture2D(Texture2DData& texData, const Texture2DIn
     //allocate and create the image
     VK_CHECK(vmaCreateImage(_allocator, &dimg_info, &dimg_allocinfo, &texData.image, &texData.allocation, nullptr));
 
-    VkImageViewCreateInfo imageinfo = vkinit::imageview_create_info(image_format, texData.image, VK_IMAGE_ASPECT_COLOR_BIT);
+    VkImageViewCreateInfo imageinfo = vkinit::imageview_create_info(image_format, texData.image, GetImageAspect(info.format));
     imageinfo.subresourceRange.levelCount = mipLevels;
     VK_CHECK(vkCreateImageView(_device, &imageinfo, nullptr, &texData.imageView));
 
@@ -1027,7 +1073,7 @@ bool VulkanGPUDevice::_CreateTexture2D(Texture2DData& texData, const Texture2DIn
 bool VulkanGPUDevice::_CreateCubemap(CubemapData& data, const CubemapInfo& info){
     data.info = info;
     VkExtent3D extent{info.width, info.height, 1};
-    const uint32_t mipLevels = GetTextureMipLevels(info.width, info.height, info.mipmap);
+    const uint32_t mipLevels = GetTextureMipLevels(info.width, info.height, info.mipmap, info.mipLevels);
     VkImageCreateInfo imageInfo = vkinit::image_create_info(GetImageFormat(info.format),
         VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
         (info.mipmap ? VK_IMAGE_USAGE_TRANSFER_SRC_BIT : 0), extent);
@@ -1037,7 +1083,7 @@ bool VulkanGPUDevice::_CreateCubemap(CubemapData& data, const CubemapInfo& info)
     VmaAllocationCreateInfo allocInfo{};
     allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
     VK_CHECK(vmaCreateImage(_allocator, &imageInfo, &allocInfo, &data.image, &data.allocation, nullptr));
-    VkImageViewCreateInfo viewInfo = vkinit::imageview_create_info(GetImageFormat(info.format), data.image, VK_IMAGE_ASPECT_COLOR_BIT);
+    VkImageViewCreateInfo viewInfo = vkinit::imageview_create_info(GetImageFormat(info.format), data.image, GetImageAspect(info.format));
     viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
     viewInfo.subresourceRange.layerCount = 6;
     viewInfo.subresourceRange.levelCount = mipLevels;
@@ -1056,7 +1102,7 @@ void VulkanGPUDevice::_UploadCubemap(CubemapData& data, const void* rawData, siz
     vmaMapMemory(_allocator, staging._allocation, &mapped);
     memcpy(mapped, rawData, size);
     vmaUnmapMemory(_allocator, staging._allocation);
-    const uint32_t mipLevels = GetTextureMipLevels(data.info.width, data.info.height, data.info.mipmap);
+    const uint32_t mipLevels = GetTextureMipLevels(data.info.width, data.info.height, data.info.mipmap, data.info.mipLevels);
     immediate_submit([&](VkCommandBuffer command){
         VkImageSubresourceRange range{VK_IMAGE_ASPECT_COLOR_BIT, 0, mipLevels, 0, 6};
         VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
@@ -1133,7 +1179,7 @@ void VulkanGPUDevice::_UploadTexture2D(Texture2DData& texData, const void* data,
     memcpy(mapped, data, size);
     vmaUnmapMemory(_allocator, staging._allocation);
     VkExtent3D extent{texData.width, texData.height, 1};
-    const uint32_t mipLevels = GetTextureMipLevels(texData.width, texData.height, texData.info.mipmap);
+    const uint32_t mipLevels = GetTextureMipLevels(texData.width, texData.height, texData.info.mipmap, texData.info.mipLevels);
     immediate_submit([&](VkCommandBuffer command){
         VkImageSubresourceRange range{VK_IMAGE_ASPECT_COLOR_BIT, 0, mipLevels, 0, 1};
         VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
@@ -1700,7 +1746,7 @@ void init_vulkan(){
     auto inst_ret = builder.set_app_name("OD Engine Vulkan")
         .require_api_version(1, 1, 0)
         .request_validation_layers(true)
-        .use_default_debug_messenger()
+        .set_debug_callback(VulkanValidationCallback)
         .build();
 
     vkb::Instance vkb_inst = inst_ret.value();
@@ -2794,6 +2840,77 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                 break;
             }
 
+            case CommandBuffer::Type::CopyTexture2D:
+            case CommandBuffer::Type::CopyCubemap:{
+                const bool cube = renderCmd.type == CommandBuffer::Type::CopyCubemap;
+                const Framebuffer sourceId = cube ? renderCmd.copyCubemap.src : renderCmd.copyTexture2D.src;
+                const int attachment = cube ? renderCmd.copyCubemap.attachment : renderCmd.copyTexture2D.attachment;
+                Assert(framebufferPool.IsValid(sourceId));
+                auto& sourceFramebuffer = framebufferPool.Get(sourceId);
+                Assert(sourceFramebuffer.layout.type == (cube ? FramebufferAttachmentType::CUBEMAP : FramebufferAttachmentType::TEXTURE_2D));
+                VkImage destinationImage = VK_NULL_HANDLE;
+                ImageFormat destinationFormat = ImageFormat::R8_UNORM;
+                uint32_t destinationWidth = 0, destinationHeight = 0, destinationMipLevels = 0;
+                if(cube){
+                    const auto& destination = cubemapPool.Get(renderCmd.copyCubemap.dst);
+                    destinationImage = destination.image; destinationFormat = destination.info.format;
+                    destinationWidth = destination.info.width; destinationHeight = destination.info.height;
+                    destinationMipLevels = GetTextureMipLevels(destinationWidth, destinationHeight, destination.info.mipmap, destination.info.mipLevels);
+                } else {
+                    const auto& destination = texture2DPool.Get(renderCmd.copyTexture2D.dst);
+                    destinationImage = destination.image; destinationFormat = destination.info.format;
+                    destinationWidth = destination.info.width; destinationHeight = destination.info.height;
+                    destinationMipLevels = GetTextureMipLevels(destinationWidth, destinationHeight, destination.info.mipmap, destination.info.mipLevels);
+                }
+                Assert(attachment < 0 || static_cast<uint32_t>(attachment) < sourceFramebuffer.layout.colorAttachmentsCount);
+                VulkanFramebufferAttachment* source = attachment < 0 ? &sourceFramebuffer.depthAttachment : &sourceFramebuffer.colorAttachments[attachment];
+                const uint32_t sourceMipLevels = attachment < 0 ? sourceFramebuffer.layout.depthAttachment.mipLevels : sourceFramebuffer.layout.colorAttachments[attachment].mipLevels;
+                Assert(sourceFramebuffer.width == destinationWidth && sourceFramebuffer.height == destinationHeight);
+                Assert(sourceMipLevels == destinationMipLevels);
+                ImageFormat sourceFormat = ImageFormat::R8_UNORM;
+                if(attachment < 0){
+                    Assert(sourceFramebuffer.layout.depthAttachment.format == FramebufferDepthTextureFormat::DEPTH_COMPONENT16);
+                    sourceFormat = ImageFormat::DEPTH_COMPONENT16;
+                } else {
+                    switch(sourceFramebuffer.layout.colorAttachments[attachment].format){
+                        case FramebufferTextureFormat::RGBA8: sourceFormat = ImageFormat::R8G8B8A8_UNORM; break;
+                        case FramebufferTextureFormat::RGB: sourceFormat = ImageFormat::R8G8B8_UNORM; break;
+                        case FramebufferTextureFormat::RGB11B10F: sourceFormat = ImageFormat::RGB11B10F; break;
+                        case FramebufferTextureFormat::RGB16F: sourceFormat = ImageFormat::RGB16F; break;
+                        case FramebufferTextureFormat::RGBA16F: sourceFormat = ImageFormat::RGBA16F; break;
+                        case FramebufferTextureFormat::RGB32F: sourceFormat = ImageFormat::RGB32F; break;
+                        case FramebufferTextureFormat::RGBA32F: sourceFormat = ImageFormat::RGBA32F; break;
+                        case FramebufferTextureFormat::RED_INTEGER: sourceFormat = ImageFormat::RED_INTEGER; break;
+                        default: Assert(false); break;
+                    }
+                }
+                Assert(sourceFormat == destinationFormat);
+                const VkImageAspectFlags aspect = attachment < 0 ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+                const uint32_t layers = cube ? 6u : 1u;
+                VkImageMemoryBarrier barriers[2]{};
+                barriers[0] = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+                barriers[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT; barriers[0].dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+                barriers[0].oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; barriers[0].newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                barriers[0].image = source->image; barriers[0].subresourceRange = {aspect, 0, sourceMipLevels, 0, layers};
+                barriers[1] = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+                barriers[1].dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; barriers[1].oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                barriers[1].newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL; barriers[1].image = destinationImage;
+                barriers[1].subresourceRange = {aspect, 0, destinationMipLevels, 0, layers};
+                vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 2, barriers);
+                for(uint32_t mip = 0; mip < sourceMipLevels; ++mip){
+                    VkImageCopy copy{};
+                    copy.srcSubresource = {aspect, mip, 0, layers}; copy.dstSubresource = {aspect, mip, 0, layers};
+                    copy.extent = {std::max(1u, sourceFramebuffer.width >> mip), std::max(1u, sourceFramebuffer.height >> mip), 1};
+                    vkCmdCopyImage(cmd, source->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, destinationImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+                }
+                barriers[0].srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT; barriers[0].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                barriers[0].oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL; barriers[0].newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                barriers[1].srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; barriers[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                barriers[1].oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL; barriers[1].newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 2, barriers);
+                break;
+            }
+
             case CommandBuffer::Type::RenderImGui:{
                 const uint32_t index = renderCmd.renderImGui.snapshotIndex;
                 Assert(index < frame.imguiSnapshots.size());
@@ -2985,9 +3102,21 @@ void VulkanGPUDevice::SyncSingleThreadData(){
 }
 
 Pipeline VulkanGPUDevice::CreatePipeline(const char* source, PipelineInfo info){   
+    #ifdef DONT_DEFERRED_RESOURCE_CREATION
+
+    PipelineData data;
+    if(!_CreatePipeline(data, source, info)) return InvalidID;
+    auto id = pipelinePool.AllocId();
+    pipelinePool.CpuPushResource(id, data);
+    return id;
+
+    #else
+
     auto id = pipelinePool.AllocId();
     multithreadRendererContext.simulationFrame->resourceCommands.CreatePipeline(id, source, info);
     return id;
+
+    #endif
 }
 
 void VulkanGPUDevice::DestroyPipeline(Pipeline id){

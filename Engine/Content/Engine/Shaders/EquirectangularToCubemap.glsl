@@ -11,7 +11,7 @@ BeginPass
 
     BeginVertex
     layout (location = 0) in vec3 _pos;
-    out vec3 pos;
+    Out(0) vec3 pos;
 
     void main(){
         pos = _pos;
@@ -20,8 +20,8 @@ BeginPass
     EndVertex
 
     BeginFrag
-    out vec4 FragColor;
-    in vec3 pos;
+    Out(0) vec4 FragColor;
+    In(0) vec3 pos;
 
     const vec2 invAtan = vec2(0.1591, 0.3183);
     vec2 SampleSphericalMap(vec3 v){

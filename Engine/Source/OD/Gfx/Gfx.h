@@ -100,7 +100,10 @@ enum class ImageFormat{
     R8G8B8_SRGB,
 
     R8G8B8A8_UNORM,
-    R8G8B8A8_SRGB
+    R8G8B8A8_SRGB,
+    RGB11B10F, RGB16F, RGBA16F, RGB32F, RGBA32F, RED_INTEGER,
+    DEPTH24_STENCIL8, DEPTH32F_STENCIL8, DEPTH_COMPONENT16,
+    DEPTH_COMPONENT24, DEPTH_COMPONENT32, DEPTH_COMPONENT32F
 };
 
 struct OD_API Texture2DInfo{
@@ -110,6 +113,7 @@ struct OD_API Texture2DInfo{
     TextureFilter filter = TextureFilter::Linear;
     TextureWrapping wrapping = TextureWrapping::Repeat;
     bool mipmap = true;
+    uint32_t mipLevels = 0;
 };
 
 struct OD_API CubemapInfo{
@@ -119,6 +123,7 @@ struct OD_API CubemapInfo{
     TextureFilter filter = TextureFilter::Linear;
     TextureWrapping wrapping = TextureWrapping::Repeat;
     bool mipmap = true;
+    uint32_t mipLevels = 0;
 };
 
 //////////////////////////////////////
@@ -824,6 +829,8 @@ struct OD_API CommandBuffer{
         BeginFramebuffer,
         EndFramebuffer,
         BlitFramebuffer,
+        CopyTexture2D,
+        CopyCubemap,
 
         CreateBindGroup,
     };
@@ -895,6 +902,9 @@ struct OD_API CommandBuffer{
                 Framebuffer dst;
                 int srcPass;
             } blitFramebuffer;
+
+            struct { Framebuffer src; int attachment; Texture2D dst; } copyTexture2D;
+            struct { Framebuffer src; int attachment; Cubemap dst; } copyCubemap;
         };
     };
 
@@ -1020,6 +1030,24 @@ struct OD_API CommandBuffer{
         cmd.blitFramebuffer.src = src;
         cmd.blitFramebuffer.dst = dst;
         cmd.blitFramebuffer.srcPass = srcPass;
+        commands.push_back(cmd);
+    }
+
+    inline void CopyTexture(Framebuffer src, int attachment, Texture2D dst){
+        Command cmd{};
+        cmd.type = Type::CopyTexture2D;
+        cmd.copyTexture2D.src = src;
+        cmd.copyTexture2D.attachment = attachment;
+        cmd.copyTexture2D.dst = dst;
+        commands.push_back(cmd);
+    }
+
+    inline void CopyTextureCubemap(Framebuffer src, int attachment, Cubemap dst){
+        Command cmd{};
+        cmd.type = Type::CopyCubemap;
+        cmd.copyCubemap.src = src;
+        cmd.copyCubemap.attachment = attachment;
+        cmd.copyCubemap.dst = dst;
         commands.push_back(cmd);
     }
 

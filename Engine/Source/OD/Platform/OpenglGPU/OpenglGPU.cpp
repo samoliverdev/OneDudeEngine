@@ -10,6 +10,7 @@
 #include <algorithm>
 
 #define OPENGL_CHECK_ERRORS 1
+#define ENABLE_OPENL_ERROR 1
 
 namespace OD{
 namespace Gfx{  
@@ -33,7 +34,7 @@ int glCheckError_(const char *file, int line, std::function<void()> callback = n
         switch (errorCode){
             case GL_INVALID_ENUM:                  error = "INVALID_ENUM"; break;
             case GL_INVALID_VALUE:                 error = "INVALID_VALUE"; break;
-            //case GL_INVALID_OPERATION:             error = "INVALID_OPERATION"; break;
+            case GL_INVALID_OPERATION:             error = "INVALID_OPERATION"; break;
             //case GL_STACK_OVERFLOW:                error = "STACK_OVERFLOW"; break;
             //case GL_STACK_UNDERFLOW:               error = "STACK_UNDERFLOW"; break;
             case GL_OUT_OF_MEMORY:                 error = "OUT_OF_MEMORY"; break;
@@ -50,6 +51,53 @@ int glCheckError_(const char *file, int line, std::function<void()> callback = n
 
     return errorCode;
 }
+
+#if defined(OpenGL46) && !defined(__EMSCRIPTEN__) && ENABLE_OPENL_ERROR
+static const char* OpenGLDebugSource(GLenum source){
+    switch(source){
+        case GL_DEBUG_SOURCE_API: return "API";
+        case GL_DEBUG_SOURCE_WINDOW_SYSTEM: return "WINDOW_SYSTEM";
+        case GL_DEBUG_SOURCE_SHADER_COMPILER: return "SHADER_COMPILER";
+        case GL_DEBUG_SOURCE_THIRD_PARTY: return "THIRD_PARTY";
+        case GL_DEBUG_SOURCE_APPLICATION: return "APPLICATION";
+        case GL_DEBUG_SOURCE_OTHER: return "OTHER";
+        default: return "UNKNOWN";
+    }
+}
+
+static const char* OpenGLDebugType(GLenum type){
+    switch(type){
+        case GL_DEBUG_TYPE_ERROR: return "ERROR";
+        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: return "DEPRECATED_BEHAVIOR";
+        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: return "UNDEFINED_BEHAVIOR";
+        case GL_DEBUG_TYPE_PORTABILITY: return "PORTABILITY";
+        case GL_DEBUG_TYPE_PERFORMANCE: return "PERFORMANCE";
+        case GL_DEBUG_TYPE_MARKER: return "MARKER";
+        case GL_DEBUG_TYPE_PUSH_GROUP: return "PUSH_GROUP";
+        case GL_DEBUG_TYPE_POP_GROUP: return "POP_GROUP";
+        case GL_DEBUG_TYPE_OTHER: return "OTHER";
+        default: return "UNKNOWN";
+    }
+}
+
+static const char* OpenGLDebugSeverity(GLenum severity){
+    switch(severity){
+        case GL_DEBUG_SEVERITY_HIGH: return "HIGH";
+        case GL_DEBUG_SEVERITY_MEDIUM: return "MEDIUM";
+        case GL_DEBUG_SEVERITY_LOW: return "LOW";
+        case GL_DEBUG_SEVERITY_NOTIFICATION: return "NOTIFICATION";
+        default: return "UNKNOWN";
+    }
+}
+
+static void APIENTRY OpenGLDebugCallback(GLenum source, GLenum type, GLuint id,
+                                         GLenum severity, GLsizei, const GLchar* message,
+                                         const void*){
+    LogError("OpenGL debug: source={} type={} id={} severity={} message={}",
+        OpenGLDebugSource(source), OpenGLDebugType(type), id,
+        OpenGLDebugSeverity(severity), message != nullptr ? message : "<null>");
+}
+#endif
 
 ////////////////////////////////////
 
@@ -369,6 +417,18 @@ GLenum GetTextureDataType(ImageFormat f){
 
         case ImageFormat::R8G8B8A8_UNORM: return GL_UNSIGNED_BYTE;
         case ImageFormat::R8G8B8A8_SRGB: return GL_UNSIGNED_BYTE;
+        case ImageFormat::RGB11B10F:
+        case ImageFormat::RGB16F:
+        case ImageFormat::RGBA16F:
+        case ImageFormat::RGB32F:
+        case ImageFormat::RGBA32F: return GL_FLOAT;
+        case ImageFormat::RED_INTEGER: return GL_INT;
+        case ImageFormat::DEPTH24_STENCIL8: return GL_UNSIGNED_INT_24_8;
+        case ImageFormat::DEPTH32F_STENCIL8: return GL_FLOAT_32_UNSIGNED_INT_24_8_REV;
+        case ImageFormat::DEPTH_COMPONENT16: return GL_UNSIGNED_SHORT;
+        case ImageFormat::DEPTH_COMPONENT24: return GL_UNSIGNED_INT;
+        case ImageFormat::DEPTH_COMPONENT32:
+        case ImageFormat::DEPTH_COMPONENT32F: return GL_FLOAT;
     }
 
     Assert(false);
@@ -384,6 +444,18 @@ GLenum GetTextureInternalFormat(ImageFormat f){
 
         case ImageFormat::R8G8B8A8_UNORM: return GL_RGBA8;
         case ImageFormat::R8G8B8A8_SRGB: return GL_SRGB8_ALPHA8;
+        case ImageFormat::RGB11B10F: return GL_R11F_G11F_B10F;
+        case ImageFormat::RGB16F: return GL_RGB16F;
+        case ImageFormat::RGBA16F: return GL_RGBA16F;
+        case ImageFormat::RGB32F: return GL_RGB32F;
+        case ImageFormat::RGBA32F: return GL_RGBA32F;
+        case ImageFormat::RED_INTEGER: return GL_R32I;
+        case ImageFormat::DEPTH24_STENCIL8: return GL_DEPTH24_STENCIL8;
+        case ImageFormat::DEPTH32F_STENCIL8: return GL_DEPTH32F_STENCIL8;
+        case ImageFormat::DEPTH_COMPONENT16: return GL_DEPTH_COMPONENT16;
+        case ImageFormat::DEPTH_COMPONENT24: return GL_DEPTH_COMPONENT24;
+        case ImageFormat::DEPTH_COMPONENT32: return GL_DEPTH_COMPONENT32;
+        case ImageFormat::DEPTH_COMPONENT32F: return GL_DEPTH_COMPONENT32F;
     }
 
     Assert(false);
@@ -399,6 +471,18 @@ GLint GetTextureFormat(ImageFormat f){
 
         case ImageFormat::R8G8B8A8_UNORM: return GL_RGBA;
         case ImageFormat::R8G8B8A8_SRGB: return GL_RGBA;
+        case ImageFormat::RGB11B10F:
+        case ImageFormat::RGB16F:
+        case ImageFormat::RGB32F: return GL_RGB;
+        case ImageFormat::RGBA16F:
+        case ImageFormat::RGBA32F: return GL_RGBA;
+        case ImageFormat::RED_INTEGER: return GL_RED_INTEGER;
+        case ImageFormat::DEPTH24_STENCIL8:
+        case ImageFormat::DEPTH32F_STENCIL8: return GL_DEPTH_STENCIL;
+        case ImageFormat::DEPTH_COMPONENT16:
+        case ImageFormat::DEPTH_COMPONENT24:
+        case ImageFormat::DEPTH_COMPONENT32:
+        case ImageFormat::DEPTH_COMPONENT32F: return GL_DEPTH_COMPONENT;
     }
 
     Assert(false);
@@ -421,9 +505,17 @@ GLenum ToGLTextureWrapping(TextureWrapping wrapping){
     return GL_REPEAT;
 }
 
+static uint32_t GetTextureMipLevels(uint32_t width, uint32_t height, bool mipmap, uint32_t requested = 0){
+    if(requested > 0) return requested;
+    if(!mipmap) return 1;
+    uint32_t levels = 1;
+    for(uint32_t size = std::max(width, height); size > 1; size >>= 1) ++levels;
+    return levels;
+}
+
 
 bool OpenglGPUDevice::_CreateTexture2D(Texture2DData& texData, const Texture2DInfo& info){
-    texData.info = info;
+    /*texData.info = info;
 
     glGenTextures(1, &texData.tex);  
     glBindTexture(GL_TEXTURE_2D, texData.tex);  
@@ -445,6 +537,29 @@ bool OpenglGPUDevice::_CreateTexture2D(Texture2DData& texData, const Texture2DIn
     );
     glCheckError();
     if(texData.info.mipmap) glGenerateMipmap(GL_TEXTURE_2D);
+    glCheckError();*/
+    
+    texData.info = info;
+
+    glGenTextures(1, &texData.tex);  
+    glBindTexture(GL_TEXTURE_2D, texData.tex);  
+    glCheckError();
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, ToGLTextureWrapping(info.wrapping));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, ToGLTextureWrapping(info.wrapping));
+    const uint32_t mipLevels = GetTextureMipLevels(info.width, info.height, info.mipmap, info.mipLevels);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(mipLevels - 1));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, ToGLTextureFilter(info.filter, mipLevels > 1));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, ToGLTextureFilter(info.filter));
+    glCheckError();
+
+    for(uint32_t mip = 0; mip < mipLevels; ++mip)
+        glTexImage2D(GL_TEXTURE_2D, mip, GetTextureInternalFormat(texData.info.format),
+            std::max(1u, texData.info.width >> mip), std::max(1u, texData.info.height >> mip), 0,
+            GetTextureFormat(texData.info.format), GetTextureDataType(texData.info.format), nullptr);
+    glCheckError();
+    if(mipLevels > 1 && texData.info.mipmap && texData.info.mipLevels == 0) glGenerateMipmap(GL_TEXTURE_2D);
     glCheckError();
 
     return true;
@@ -464,7 +579,7 @@ void OpenglGPUDevice::_DestroyTexture2D(Texture2DData& data){
 } 
 
 bool OpenglGPUDevice::_CreateCubemap(CubemapData& data, const CubemapInfo& info){
-    data.info = info;
+    /*data.info = info;
     glGenTextures(1, &data.tex);
     glBindTexture(GL_TEXTURE_CUBE_MAP, data.tex);
     for(int face = 0; face < 6; ++face){
@@ -477,7 +592,25 @@ bool OpenglGPUDevice::_CreateCubemap(CubemapData& data, const CubemapInfo& info)
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, ToGLTextureWrapping(info.wrapping));
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, ToGLTextureWrapping(info.wrapping));
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, ToGLTextureWrapping(info.wrapping));
-    if(info.mipmap) glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+    if(info.mipmap) glGenerateMipmap(GL_TEXTURE_CUBE_MAP);*/
+
+    data.info = info;
+    glGenTextures(1, &data.tex);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, data.tex);
+    const uint32_t mipLevels = GetTextureMipLevels(info.width, info.height, info.mipmap, info.mipLevels);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, ToGLTextureFilter(info.filter, mipLevels > 1));
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, ToGLTextureFilter(info.filter));
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, ToGLTextureWrapping(info.wrapping));
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, ToGLTextureWrapping(info.wrapping));
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, ToGLTextureWrapping(info.wrapping));
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(mipLevels - 1));
+    for(uint32_t mip = 0; mip < mipLevels; ++mip)
+        for(int face = 0; face < 6; ++face)
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, mip, GetTextureInternalFormat(info.format),
+                std::max(1u, info.width >> mip), std::max(1u, info.height >> mip), 0,
+                GetTextureFormat(info.format), GetTextureDataType(info.format), nullptr);
+    if(mipLevels > 1 && info.mipmap && info.mipLevels == 0) glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
     return true;
 }
 
@@ -830,6 +963,13 @@ void OpenglGPUDevice::_Init(){
     LogInfo("GL_VENDOR: {}", (char*)glGetString(GL_VENDOR));
     LogInfo("GL_RENDERER: {}", (char*)glGetString(GL_RENDERER));
     LogInfo("GL_SHADING_LANGUAGE_VERSION: {}", (char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
+
+#if defined(OpenGL46) && !defined(__EMSCRIPTEN__) && ENABLE_OPENL_ERROR
+    glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+    glDebugMessageCallback(OpenGLDebugCallback, nullptr);
+    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+#endif
     
     glGenVertexArrays(1, &globalVAO);
 	glBindVertexArray(globalVAO);
@@ -1627,6 +1767,69 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                 const uint32_t dstHeight = blit.dst == InvalidID ? src.height : framebufferPool.Get(blit.dst).height;
                 glBlitFramebuffer(0, 0, src.width, src.height, 0, 0, dstWidth, dstHeight,
                     GL_COLOR_BUFFER_BIT, GL_NEAREST);
+            }
+            glCheckError();
+            break;
+        }
+
+        case CommandBuffer::Type::CopyTexture2D:
+        case CommandBuffer::Type::CopyCubemap:{
+            const bool cube = cmd.type == CommandBuffer::Type::CopyCubemap;
+            const Framebuffer sourceId = cube ? cmd.copyCubemap.src : cmd.copyTexture2D.src;
+            const int attachment = cube ? cmd.copyCubemap.attachment : cmd.copyTexture2D.attachment;
+            Assert(framebufferPool.IsValid(sourceId));
+            const auto& source = framebufferPool.Get(sourceId);
+            Assert(source.layout.type == (cube ? FramebufferAttachmentType::CUBEMAP : FramebufferAttachmentType::TEXTURE_2D));
+            uint32_t destinationWidth = 0, destinationHeight = 0, destinationMipLevels = 0;
+            ImageFormat destinationFormat = ImageFormat::R8_UNORM;
+            GLuint destinationTexture = 0;
+            if(cube){
+                const auto& destination = cubemapPool.Get(cmd.copyCubemap.dst);
+                destinationWidth = destination.info.width; destinationHeight = destination.info.height;
+                destinationMipLevels = GetTextureMipLevels(destinationWidth, destinationHeight, destination.info.mipmap, destination.info.mipLevels);
+                destinationFormat = destination.info.format; destinationTexture = destination.tex;
+            } else {
+                const auto& destination = texture2DPool.Get(cmd.copyTexture2D.dst);
+                destinationWidth = destination.info.width; destinationHeight = destination.info.height;
+                destinationMipLevels = GetTextureMipLevels(destinationWidth, destinationHeight, destination.info.mipmap, destination.info.mipLevels);
+                destinationFormat = destination.info.format; destinationTexture = destination.tex;
+            }
+            Assert(attachment < 0 || static_cast<uint32_t>(attachment) < source.layout.colorAttachmentsCount);
+            const uint32_t sourceMipLevels = attachment < 0 ? source.layout.depthAttachment.mipLevels : source.layout.colorAttachments[attachment].mipLevels;
+            Assert(source.width == destinationWidth && source.height == destinationHeight);
+            Assert(sourceMipLevels == destinationMipLevels);
+            ImageFormat sourceFormat = ImageFormat::R8_UNORM;
+            if(attachment < 0){
+                Assert(source.layout.depthAttachment.format == FramebufferDepthTextureFormat::DEPTH_COMPONENT16);
+                sourceFormat = ImageFormat::DEPTH_COMPONENT16;
+            } else {
+                switch(source.layout.colorAttachments[attachment].format){
+                    case FramebufferTextureFormat::RGBA8: sourceFormat = ImageFormat::R8G8B8A8_UNORM; break;
+                    case FramebufferTextureFormat::RGB: sourceFormat = ImageFormat::R8G8B8_UNORM; break;
+                    case FramebufferTextureFormat::RGB11B10F: sourceFormat = ImageFormat::RGB11B10F; break;
+                    case FramebufferTextureFormat::RGB16F: sourceFormat = ImageFormat::RGB16F; break;
+                    case FramebufferTextureFormat::RGBA16F: sourceFormat = ImageFormat::RGBA16F; break;
+                    case FramebufferTextureFormat::RGB32F: sourceFormat = ImageFormat::RGB32F; break;
+                    case FramebufferTextureFormat::RGBA32F: sourceFormat = ImageFormat::RGBA32F; break;
+                    case FramebufferTextureFormat::RED_INTEGER: sourceFormat = ImageFormat::RED_INTEGER; break;
+                    default: Assert(false); break;
+                }
+            }
+            Assert(sourceFormat == destinationFormat);
+            const GLuint sourceTexture = attachment < 0 ? source.depthAttachment : source.colorAttachments[attachment];
+            const GLenum target = cube ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D;
+            for(uint32_t mip = 0; mip < sourceMipLevels; ++mip){
+                const uint32_t width = std::max(1u, source.width >> mip);
+                const uint32_t height = std::max(1u, source.height >> mip);
+                if(cube){
+                    for(uint32_t face = 0; face < 6; ++face){
+                        glCopyImageSubData(sourceTexture, target, mip, 0, 0, face,
+                            destinationTexture, target, mip, 0, 0, face, width, height, 1);
+                    }
+                } else {
+                    glCopyImageSubData(sourceTexture, target, mip, 0, 0, 0,
+                        destinationTexture, target, mip, 0, 0, 0, width, height, 1);
+                }
             }
             glCheckError();
             break;

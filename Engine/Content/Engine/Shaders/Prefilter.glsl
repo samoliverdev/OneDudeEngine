@@ -14,7 +14,7 @@ BeginPass
 
     BeginVertex
     layout (location = 0) in vec3 _pos;
-    out vec3 WorldPos;
+    Out(0) vec3 WorldPos;
 
     //uniform mat4 projection;
     //uniform mat4 view;
@@ -26,8 +26,8 @@ BeginPass
     EndVertex
 
     BeginFrag
-    out vec4 FragColor;
-    in vec3 WorldPos;
+    Out(0) vec4 FragColor;
+    In(0) vec3 WorldPos;
 
     //uniform samplerCube environmentMap;
     //uniform float roughness;

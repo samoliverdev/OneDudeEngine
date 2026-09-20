@@ -440,8 +440,101 @@ Ref<Texture2D> Texture2D::LoadDefautlTexture2D(){
 
 Ref<Texture2D> Texture2D::CreateBrdfLUTTexture2D(){
     #ifdef TestNewGPU_API
-    //Assert(false);
-    return nullptr;
+    static Ref<Texture2D> cached;
+    if(cached != nullptr) return cached;
+    if(gfxDevice == nullptr) return nullptr;
+
+    constexpr uint32_t brdfSize = 512;
+    struct BrdfUniform{
+        float noBug = 0.0f;
+        float padding[3] = {};
+    };
+
+    cached = CreateRef<Texture2D>();
+    cached->width = brdfSize;
+    cached->height = brdfSize;
+    cached->settings.filter = TextureFilter::Linear;
+    cached->settings.wrap = TextureWrapping::ClampToEdge;
+    cached->settings.mipmap = false;
+    cached->settings.textureFormat = TextureFormat::RGBA16F;
+
+    Gfx::Texture2DInfo textureInfo{};
+    textureInfo.width = brdfSize;
+    textureInfo.height = brdfSize;
+    textureInfo.format = Gfx::ImageFormat::RGBA16F;
+    textureInfo.filter = Gfx::TextureFilter::Linear;
+    textureInfo.wrapping = Gfx::TextureWrapping::ClampToEdge;
+    textureInfo.mipmap = false;
+    textureInfo.mipLevels = 1;
+    cached->tex = gfxDevice->CreateTexture2D(textureInfo);
+    if(cached->tex == Gfx::InvalidID){
+        cached.reset();
+        return nullptr;
+    }
+
+    Gfx::FrameBufferCreateInfo framebufferInfo{};
+    framebufferInfo.width = brdfSize;
+    framebufferInfo.height = brdfSize;
+    framebufferInfo.layout.colorAttachments[0].format = Gfx::FramebufferTextureFormat::RGBA16F;
+    framebufferInfo.layout.colorAttachmentsCount = 1;
+    framebufferInfo.layout.depthAttachment.format = Gfx::FramebufferDepthTextureFormat::DEPTH_COMPONENT16;
+    auto framebuffer = gfxDevice->CreateFramebuffer(framebufferInfo);
+
+    const float quadVertices[] = {
+        -1, -1, 0, 0, 0,  1, -1, 0, 1, 0,  1, 1, 0, 1, 1,
+         1,  1, 0, 1, 1, -1,  1, 0, 0, 1, -1, -1, 0, 0, 0
+    };
+    auto quad = gfxDevice->CreateBuffer(sizeof(quadVertices), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
+    gfxDevice->UpdatedBuffer(quad, quadVertices, sizeof(quadVertices));
+
+    auto uniforms = gfxDevice->CreateBuffer(sizeof(BrdfUniform), Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
+    BrdfUniform uniformData{};
+    gfxDevice->UpdatedBuffer(uniforms, &uniformData, sizeof(uniformData));
+
+    Gfx::BindGroupLayoutInfo bindGroupLayoutInfo{};
+    bindGroupLayoutInfo.entries[0] = {0, Gfx::BindingType::UniformBuffer, sizeof(BrdfUniform), false};
+    bindGroupLayoutInfo.entriesCount = 1;
+    auto bindGroupLayout = gfxDevice->CreateBindGroupLayout(bindGroupLayoutInfo);
+
+    Gfx::BindGroupInfo bindGroupInfo{};
+    bindGroupInfo.layout = bindGroupLayout;
+    bindGroupInfo.entries[0] = {0, uniforms, 0, sizeof(BrdfUniform), false};
+    bindGroupInfo.entriesCount = 1;
+    auto bindGroup = gfxDevice->CreateBindGroup(bindGroupInfo);
+
+    ShaderSourceData shaderSource;
+    if(!ShaderLoadFile("Engine/Shaders/brdf.glsl", shaderSource)){
+        cached.reset();
+        return nullptr;
+    }
+    const std::string source = "#define Pass_0\n" + shaderSource.baseSource;
+
+    Gfx::FrameBufferLayout pipelineFramebufferLayout = framebufferInfo.layout;
+    Gfx::PipelineInfo pipelineInfo{};
+    pipelineInfo.vertexLayout.attributes[0] = {Gfx::VertexSemantic::Position, Gfx::VertexFormat::Float3, 0, 0};
+    pipelineInfo.vertexLayout.attributes[1] = {Gfx::VertexSemantic::UV0, Gfx::VertexFormat::Float2, 0, sizeof(float) * 3};
+    pipelineInfo.vertexLayout.attributeCount = 2;
+    pipelineInfo.vertexLayout.buffers[0] = {sizeof(float) * 5, Gfx::VertexInputRate::Vertex};
+    pipelineInfo.vertexLayout.bufferCount = 1;
+    pipelineInfo.bindGroupLayouts[0] = bindGroupLayout;
+    pipelineInfo.bindGroupLayoutCount = 1;
+    pipelineInfo.framebufferLayout = pipelineFramebufferLayout;
+    auto pipeline = gfxDevice->CreatePipeline(source.c_str(), pipelineInfo);
+
+    auto* commands = gfxDevice->GetCommandBuffer();
+    commands->BeginFramebuffer(
+        framebuffer, 0, 0, true,
+        Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth,
+        {{0, 0, 0, 1}});
+    commands->Viewport(0, 0, brdfSize, brdfSize);
+    commands->SetPipeline(pipeline);
+    commands->SetBindGroup(0, bindGroup);
+    commands->SetVertexBuffer(0, quad);
+    commands->Draw(6);
+    commands->EndFramebuffer();
+    commands->CopyTexture(framebuffer, 0, cached->tex);
+
+    return cached;
     #else
     return graphicsDevice->Texture2DCreateBrdfLUTTexture2D();
     #endif
