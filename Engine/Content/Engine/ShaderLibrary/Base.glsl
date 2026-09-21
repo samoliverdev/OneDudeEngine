@@ -49,7 +49,7 @@
     #define Texture2DArray(inset, inbinding, name, nameSampler) layout(set = inset, binding = inbinding) uniform sampler2DArray name;
     #define TextureCube(inset, inbinding, name, nameSampler) layout(set = inset, binding = inbinding) uniform samplerCube name;
 
-    #define TextureSize(tex, lod) vec3(1) //textureSize(tex, lod)
+    #define TextureSize(tex, lod) textureSize(tex, lod)
 
     #define SampleTexture2D(tex, sample, uv) texture(tex, uv)
     #define SampleTexture2DArray(tex, sample, uv) texture(tex, uv)

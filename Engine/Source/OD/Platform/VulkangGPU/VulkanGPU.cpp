@@ -4,6 +4,7 @@
 #include "OD/Platform/Platform.h"
 #include "OD/Platform/BaseGpu/ResourcePool.h"
 #include "OD/Core/Instrumentor.h"
+#include "VulkanSwapchainUtils.h"
 
 #include <vulkan/vulkan.h>
 #include <vk-bootstrap/VkBootstrap.h>
@@ -19,6 +20,7 @@
 #include <vector>
 #include <stdexcept>
 #include <unordered_map>
+#include <algorithm>
 
 //#define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
@@ -1019,10 +1021,10 @@ VkSamplerAddressMode ToVkTextureWrapping(TextureWrapping wrapping){
 }
 
 VkSamplerCreateInfo CreateTextureSampler(const TextureFilter filter, const TextureWrapping wrapping){
-    VkSamplerCreateInfo sampler = vkinit::sampler_create_info(
-        ToVkTextureFilter(filter), ToVkTextureWrapping(wrapping));
-    if(wrapping == TextureWrapping::ClampToBorder)
+    VkSamplerCreateInfo sampler = vkinit::sampler_create_info(ToVkTextureFilter(filter), ToVkTextureWrapping(wrapping));
+    if(wrapping == TextureWrapping::ClampToBorder){
         sampler.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+    }
     return sampler;
 }
 
@@ -1778,6 +1780,23 @@ void init_swapchain(VulkanPresentMode presentMode){
     _swapchainImageFormat = vkbSwapchain.image_format;
 }
 
+void destroy_render_semaphores(){
+    for(VkSemaphore semaphore : _renderSemaphores){
+        if(semaphore != VK_NULL_HANDLE)
+            vkDestroySemaphore(_device, semaphore, nullptr);
+    }
+    _renderSemaphores.clear();
+}
+
+void init_render_semaphores(){
+    VkSemaphoreCreateInfo semaphoreCreateInfo{};
+    semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    _renderSemaphores.resize(_swapchainImages.size());
+    for(VkSemaphore& semaphore : _renderSemaphores)
+        VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &semaphore));
+}
+
 FramebufferDepthTextureFormat FindSupportedWindowDepthFormat(){
     const FramebufferDepthTextureFormat candidates[] = {
         FramebufferDepthTextureFormat::DEPTH32F_STENCIL8,
@@ -1900,7 +1919,6 @@ void VulkanGPUDevice::InitDefaultRenderpass(){
 
     VK_CHECK(vkCreateRenderPass(_device, &render_pass_info, nullptr, &_renderPass));
 
-    Assert(renderPasses.size() == 0);
     RenderPasses pass = {};
     pass.hash = GetFramebufferLayoutHash(_windowFrameBufferLayout);
     pass.id = renderPasses.size();
@@ -1936,12 +1954,7 @@ void init_sync_structures(){
     VkSemaphoreCreateInfo semaphoreCreateInfo = {};
     semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-    uint32_t imageCount = _swapchainImages.size();
-    _renderSemaphores.resize(imageCount);
-
-    for(size_t i = 0; i < imageCount; i++){
-        VK_CHECK(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_renderSemaphores[i]));
-    }
+    init_render_semaphores();
 
 	for(int i = 0; i < FRAME_OVERLAP; i++){     
         VK_CHECK(vkCreateFence(_device, &fenceCreateInfo, nullptr, &_frames[i]._renderFence));
@@ -1975,6 +1988,54 @@ void VulkanGPUDevice::InitDescriptors(){
     for(auto& frame : _frames){
         VK_CHECK(vkCreateDescriptorPool(_device, &pool_info, nullptr, &frame._descriptorPool));
     }
+}
+
+bool VulkanGPUDevice::RecreateSwapchain(){
+    int width = 0;
+    int height = 0;
+    Platform::GetFramebufferSize(&width, &height);
+
+    // GLFW reports zero dimensions while the window is minimized. Retry on
+    // the next render iteration instead of creating a zero-sized swapchain.
+    if(width <= 0 || height <= 0)
+        return false;
+
+    const VkExtent2D requestedExtent{
+        static_cast<uint32_t>(width),
+        static_cast<uint32_t>(height)
+    };
+    if(!NeedsSwapchainRecreation(VK_SUCCESS, _windowExtent, requestedExtent))
+        return false;
+
+    vkDeviceWaitIdle(_device);
+
+    for(VkFramebuffer framebuffer : _framebuffers)
+        vkDestroyFramebuffer(_device, framebuffer, nullptr);
+    _framebuffers.clear();
+
+    if(_windowDepthImageView != VK_NULL_HANDLE)
+        vkDestroyImageView(_device, _windowDepthImageView, nullptr);
+    if(_windowDepthImage != VK_NULL_HANDLE)
+        vmaDestroyImage(_allocator, _windowDepthImage, _windowDepthAllocation);
+    _windowDepthImageView = VK_NULL_HANDLE;
+    _windowDepthImage = VK_NULL_HANDLE;
+    _windowDepthAllocation = VK_NULL_HANDLE;
+
+    destroy_render_semaphores();
+    for(VkImageView imageView : _swapchainImageViews)
+        vkDestroyImageView(_device, imageView, nullptr);
+    _swapchainImageViews.clear();
+    _swapchainImages.clear();
+    if(_swapchain != VK_NULL_HANDLE)
+        vkDestroySwapchainKHR(_device, _swapchain, nullptr);
+    _swapchain = VK_NULL_HANDLE;
+
+    _windowExtent = requestedExtent;
+    init_swapchain(presentMode);
+    init_window_depth_buffer();
+    InitFramebuffers();
+    init_render_semaphores();
+    return true;
 }
 
 void VulkanGPUDevice::Cleanup(){
@@ -2240,10 +2301,24 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
     Pipeline currentPipeline = INVALID_ID;
     bool skipNextEndFramebuffer = false;
 
+    int framebufferWidth = 0;
+    int framebufferHeight = 0;
+    Platform::GetFramebufferSize(&framebufferWidth, &framebufferHeight);
+    const VkExtent2D requestedExtent{
+        static_cast<uint32_t>(std::max(framebufferWidth, 0)),
+        static_cast<uint32_t>(std::max(framebufferHeight, 0))
+    };
+    if(NeedsSwapchainRecreation(VK_SUCCESS, _windowExtent, requestedExtent)){
+        RecreateSwapchain();
+        return;
+    }
+
+    if(framebufferWidth <= 0 || framebufferHeight <= 0)
+        return;
+
     {
         SimpleTimer timer([&](float t){ profilesGpu.push_back({"FenceWait", t}); });
         VK_CHECK(vkWaitForFences(_device, 1, &get_current_frame()._renderFence, true, 1000000000));
-        VK_CHECK(vkResetFences(_device, 1, &get_current_frame()._renderFence));
     }
 
     SimpleTimer commandTimer([&](float t){ profilesGpu.push_back({"RecordAndPrepare", t}); });
@@ -2419,7 +2494,13 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
     uint32_t swapchainImageIndex;
     {
         SimpleTimer timer([&](float t){ profilesGpu.push_back({"AcquireImage", t}); });
-        VK_CHECK(vkAcquireNextImageKHR(_device, _swapchain, 1000000000, get_current_frame()._presentSemaphore, nullptr, &swapchainImageIndex));
+        VkResult acquireResult = vkAcquireNextImageKHR(_device, _swapchain, 1000000000, get_current_frame()._presentSemaphore, nullptr, &swapchainImageIndex);
+        if(acquireResult == VK_ERROR_OUT_OF_DATE_KHR || acquireResult == VK_SUBOPTIMAL_KHR){
+            RecreateSwapchain();
+            return;
+        }
+        VK_CHECK(acquireResult);
+        VK_CHECK(vkResetFences(_device, 1, &get_current_frame()._renderFence));
     }
 
     VkCommandBufferBeginInfo cmdBeginInfo = {};
@@ -3145,7 +3226,11 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
     presentInfo.waitSemaphoreCount = 1;
     presentInfo.pImageIndices = &swapchainImageIndex;
 
-    VK_CHECK(vkQueuePresentKHR(_graphicsQueue, &presentInfo));
+    VkResult presentResult = vkQueuePresentKHR(_graphicsQueue, &presentInfo);
+    if(presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR)
+        RecreateSwapchain();
+    else
+        VK_CHECK(presentResult);
     _frameNumber++;
 
     for(auto i: frameBindGroups){

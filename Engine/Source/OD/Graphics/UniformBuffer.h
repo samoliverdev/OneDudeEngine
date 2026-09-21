@@ -2,6 +2,7 @@
 #include "OD/Core/Resource.h"
 #include "OD/Gfx/Gfx.h"
 #include "OD/Platform/OpenGL/GL.h"
+#include <vector>
 
 namespace OD{
 
@@ -25,6 +26,7 @@ public:
 private:
     size_t vramUsage;
     UniformBufferDataGL;
+    //std::vector<uint8_t> cpuData;
     //unsigned int rendererId = 0;
     //int bind = 0;
 

@@ -53,11 +53,11 @@ OD::ApplicationConfig GetStartAppConfig(){
 }
 
 OD::Module* CreateMainModule(){
-    int i = 5; //10; //-1; //35;
+    int i = 10; //10; //-1; //35;
     //if(OD::Application::GetArgs().size() > 1) i = atoi(OD::Application::GetArgs()[1].c_str());
 
     #ifdef TestNewGPU_API
-    i = 22; //-4; //-3; //-2;
+    i = -9; //-4; //-3; //-2;
     #endif
     
     if(i == -2) return new GPUSample1();

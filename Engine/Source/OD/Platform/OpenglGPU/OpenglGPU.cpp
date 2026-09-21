@@ -323,7 +323,9 @@ bool OpenglGPUDevice::_CreatePipeline(PipelineData& data, const char* _source, c
             if(_bind.set == 2) Assert(_bind.size == 256);
         }
 
-        if(_bind.type == BindingType::Texture2D || _bind.type == BindingType::TextureCube){
+        if(_bind.type == BindingType::Texture2D ||
+           _bind.type == BindingType::Texture2DArray ||
+           _bind.type == BindingType::TextureCube){
             GLint uniformLoc = glGetUniformLocation(data.program, _bind.name.c_str());
             glCheckError();
 
@@ -1187,7 +1189,7 @@ void ApplyVertexAttribute(GLuint location, VertexFormat format, size_t offset, s
             break;
 
         case VertexFormat::Int4:
-            glVertexAttribPointer(location, 4, GL_INT, GL_FALSE, stride, (void*)offset);
+            glVertexAttribIPointer(location, 4, GL_INT, stride, (void*)offset);
             break;
 
         default:

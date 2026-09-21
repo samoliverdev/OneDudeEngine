@@ -121,9 +121,21 @@ float SampleDirectionalShadowAtlas(vec4 positionSTS){
 */
 
 
-float SampleDirectionalShadowAtlas(vec4 positionSTS, int layer, float diffuseFactor){
+vec3 GetShadowProjectionCoordinates(vec4 positionSTS){
     vec3 projCoords = positionSTS.xyz / positionSTS.w;
-    projCoords = projCoords * 0.5 + 0.5;
+    projCoords.xy = projCoords.xy * 0.5 + 0.5;
+
+    // OpenGL maps NDC Z from [-1, 1] to the depth range. Vulkan uses
+    // [0, 1], so its depth value must not be remapped here.
+    #ifndef Vulkan_API
+        projCoords.z = projCoords.z * 0.5 + 0.5;
+    #endif
+
+    return projCoords;
+}
+
+float SampleDirectionalShadowAtlas(vec4 positionSTS, int layer, float diffuseFactor){
+    vec3 projCoords = GetShadowProjectionCoordinates(positionSTS);
     float closestDepth = SampleTexture2DArray(_DirectionalShadowAtlas, _DirectionalShadowAtlasSampler, vec3(projCoords.xy, layer)).r; 
     
     float currentDepth = projCoords.z;
@@ -144,8 +156,7 @@ float SampleDirectionalShadowAtlas(vec4 positionSTS, int layer, float diffuseFac
     float FilterDirectionalShadow(vec4 positionSTS, int layer, float diffuseFactor){
     #if defined(_DIRECTIONAL_PCF)
 
-        vec3 projCoords = positionSTS.xyz / positionSTS.w;
-        projCoords = projCoords * 0.5 + 0.5;
+        vec3 projCoords = GetShadowProjectionCoordinates(positionSTS);
 
         if(projCoords.z > 1.0)
             return 1.0;

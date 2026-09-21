@@ -179,6 +179,7 @@ private:
     void InitDefaultRenderpass();
     void InitFramebuffers();
     void InitDescriptors();
+    bool RecreateSwapchain();
 
     void Cleanup();
 

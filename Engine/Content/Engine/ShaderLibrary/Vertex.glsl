@@ -19,12 +19,13 @@ EndUniform()
 
 BeginUniform(1, 0, PerDraw)
     Uniform mat4 model;
-
-    #if defined(GFX_API) && (defined(SKINNED) || defined(SKINNED2))
-    mat4 animated[MAX_BONES];
-    #endif
-
 EndUniform()
+
+#if defined(GFX_API) && (defined(SKINNED) || defined(SKINNED2))
+BeginUniform(1, 1, PerDrawSkin)
+    mat4 animated[MAX_BONES];
+EndUniform()
+#endif
 
 #endif
 

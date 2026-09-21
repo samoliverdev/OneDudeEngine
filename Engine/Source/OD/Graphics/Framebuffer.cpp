@@ -185,6 +185,8 @@ Framebuffer::Framebuffer(const std::string& name, int width, int height, int lay
     info.layout = data->layout;
     info.width = width;
     info.height = height;
+    info.filter = Gfx::TextureFilter::Nearest;
+    info.wrapping = Gfx::TextureWrapping::ClampToBorder;
     framebuffer = gfxDevice->CreateFramebuffer(info);
     Assert(framebuffer != Gfx::InvalidID);
     InitializeGfxFramebuffer(framebuffer, data->layout);
@@ -229,6 +231,8 @@ void Framebuffer::Resize(int width, int height){
     info.layout = data->layout;
     info.width = width;
     info.height = height;
+    info.filter = Gfx::TextureFilter::Nearest;
+    info.wrapping = Gfx::TextureWrapping::ClampToBorder;
     framebuffer = gfxDevice->CreateFramebuffer(info);
     Assert(framebuffer != Gfx::InvalidID);
     InitializeGfxFramebuffer(framebuffer, data->layout);

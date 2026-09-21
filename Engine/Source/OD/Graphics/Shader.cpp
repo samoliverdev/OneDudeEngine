@@ -16,6 +16,7 @@ extern Gfx::Device* gfxDevice;
 extern Gfx::BindGroupLayout emptyLayout;
 extern Gfx::BindGroupLayout camGroupLayout;
 extern Gfx::BindGroupLayout drawDrawMeshGroupLayout;
+extern Gfx::BindGroupLayout drawMeshSkinnedGroupLayout;
 
 void _Combine_(std::vector<std::vector<std::string>> terms, std::string accum, std::vector<std::string>& combinations){
     bool last = (terms.size() == 1);
@@ -631,8 +632,13 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
 
         pipelineInfo.framebufferLayout = FramebufferRenderPass::GetRenderPassLayout(renderPassIndex);// gfxDevice->GetWindowFrameBufferLayout();
 
+        auto bindGroupLayout = drawDrawMeshGroupLayout;
+        if(drawType == Shader::DrawType::SkinnedDraw || drawType == Shader::DrawType::SkinnedDraw2){
+            bindGroupLayout = drawMeshSkinnedGroupLayout;
+        }
+
         pipelineInfo.bindGroupLayouts[0] = materialBindGroupLayout; //layoutsOut[0].entriesCount == 0 ? emptyLayout : gfxDevice->CreateBindGroupLayout(layoutsOut[0]);
-        pipelineInfo.bindGroupLayouts[1] = drawDrawMeshGroupLayout;
+        pipelineInfo.bindGroupLayouts[1] = bindGroupLayout; //drawDrawMeshGroupLayout;
         pipelineInfo.bindGroupLayouts[2] = camGroupLayout;
         pipelineInfo.bindGroupLayoutCount = 3;
         

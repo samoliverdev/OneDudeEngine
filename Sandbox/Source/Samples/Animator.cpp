@@ -538,6 +538,7 @@ void AnimatorSample::OnInit(){
 
     camera = scene->AddEntity("Camera");
     CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
+    cam.renderingPath = RenderingPath::Forward;
     scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(0, 15, 15));
     scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-25, 0, 0));
     scene->AddComponent<ScriptComponent>(camera).AddScript<CameraMovementScript>()->moveSpeed = 60;
@@ -565,7 +566,7 @@ void AnimatorSample::OnInit(){
         //"res/Game/Animations/SillyDancing.fbx"
         //"res/Game/Animations/UnarmedWalkForward.dae"
     );
-    charModel->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl"));
+    charModel->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/LitGfx.glsl"));
 
     
     /*OD::BoneMap bm = OD::RearrangeSkeleton(charModel->skeleton);
@@ -615,7 +616,7 @@ void AnimatorSample::OnInit(){
 
     //scene->Start();
     //RenderContext::GetSettings().enableGizmos = false;
-    Application::AddModule<Editor>();
+    Application::AddModule<Editor>(false);
 
     LogInfo("Animation Count: {}", charModel->animationClips.size());
 

@@ -24,6 +24,7 @@
 #include <GLFW/glfw3.h>
 
 #include <fstream>
+#include <atomic>
 
 /*#define OPENGL_DEBUG 1
 #define OpenglMajorVer 4
@@ -44,6 +45,13 @@ int windowPosX, windowPosY;
 bool vSync = false;
 bool fullscreen = false;
 bool hidden = false;
+
+// GLFW window functions, including framebuffer queries, are kept on the
+// application thread. The Vulkan render thread reads this cache instead of
+// calling GLFW concurrently with ImGui_ImplGlfw_NewFrame/PollEvents.
+std::atomic<int> framebufferWidth{0};
+std::atomic<int> framebufferHeight{0};
+std::recursive_mutex imguiMutex;
 
 ImDrawData* CloneImGuiDrawData(const ImDrawData* source){
     if(source == nullptr)
@@ -192,6 +200,11 @@ void Platform::ImguiBegin(){
         return;
     }
 
+    // Keep the ImGui context and both backends synchronized with Vulkan
+    // swapchain recreation. The lock spans the whole frame because callers
+    // issue their ImGui commands between Begin and End.
+    imguiMutex.lock();
+
     /*#if defined(__EMSCRIPTEN__)
     return;
     #endif*/
@@ -233,10 +246,12 @@ void Platform::ImguiEnd(){
     if(gfxDevice != nullptr){
         ImDrawData* snapshot = CloneImGuiDrawData(ImGui::GetDrawData());
         gfxDevice->SubmitImGuiDrawData(snapshot, DestroyImGuiDrawData);
+        imguiMutex.unlock();
         return;
     }
 
     graphicsDevice->ImGuiRenderDrawData(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
+    imguiMutex.unlock();
     return;
 
     // Update and Render additional Platform Windows
@@ -265,7 +280,13 @@ void imguiOnDestroy(){
 
 void FramebufferSizeCallback(GLFWwindow* window, int width, int height){
     //glViewport(0, 0, width, height);
+    framebufferWidth.store(width, std::memory_order_release);
+    framebufferHeight.store(height, std::memory_order_release);
     Application::_OnResize(width, height);
+}
+
+std::recursive_mutex& Platform::GetImGuiMutex(){
+    return imguiMutex;
 }
 
 void MouseCallback(GLFWwindow* window, double xpos, double ypos){
@@ -312,7 +333,7 @@ bool Platform::SystemStartup(const ApplicationConfig& config){
         }
     } else{
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // <-- extra info for glfwCreateWindow
-	    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     }
     
     glfwWindowHint(GLFW_VISIBLE, hidden == false ? GLFW_TRUE : GLFW_FALSE);
@@ -354,6 +375,12 @@ bool Platform::SystemStartup(const ApplicationConfig& config){
 
         return false;
     }
+
+    int initialFramebufferWidth = 0;
+    int initialFramebufferHeight = 0;
+    glfwGetFramebufferSize(window, &initialFramebufferWidth, &initialFramebufferHeight);
+    framebufferWidth.store(initialFramebufferWidth, std::memory_order_release);
+    framebufferHeight.store(initialFramebufferHeight, std::memory_order_release);
 
     #if !defined(__EMSCRIPTEN__)
     glfwSwapInterval(0); //vsync on
@@ -550,6 +577,13 @@ IVector2 Platform::GetWindowSize(){
     int windowHeight;
     glfwGetWindowSize(window, &windowWidth, &windowHeight);
     return {windowWidth, windowHeight};
+}
+
+void Platform::GetFramebufferSize(int* width, int* height){
+    if(width)
+        *width = framebufferWidth.load(std::memory_order_acquire);
+    if(height)
+        *height = framebufferHeight.load(std::memory_order_acquire);
 }
 
 std::vector<IVector2> Platform::GetSupportedResolutions(){

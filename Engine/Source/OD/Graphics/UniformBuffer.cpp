@@ -27,8 +27,8 @@ Ref<UniformBuffer> UniformBuffer::Create(size_t size){
 
 UniformBuffer::UniformBuffer(size_t size){
     #ifdef TestNewGPU_API
-    //Assert(false);
-    buffer = gfxDevice->CreateBuffer(size, Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
+    buffer = gfxDevice->CreateBuffer(size, Gfx::BufferUsage::Uniform, Gfx::BufferMemory::CPUToGPU);
+    //cpuData.resize(size);
     #else
     graphicsDevice->UniformBufferCreate(*this, size);
     #endif
@@ -68,7 +68,10 @@ bool UniformBuffer::IsValid(){
 
 void UniformBuffer::SetData(const void* data, size_t size, size_t offset){
     #ifdef TestNewGPU_API
-    //Assert(false);
+    Assert(data != nullptr);
+    /*Assert(offset + size <= cpuData.size());
+    std::memcpy(cpuData.data() + offset, data, size);
+    gfxDevice->UpdatedBuffer(buffer, cpuData.data(), cpuData.size());*/
     gfxDevice->UpdatedBuffer(buffer, data, size);
     #else
     graphicsDevice->UniformBufferSetData(*this, data, size, offset);

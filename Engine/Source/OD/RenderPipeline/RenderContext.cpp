@@ -2868,8 +2868,6 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
 }
 
 void RenderContext::RenderSkyboxLater(Scene& scene){
-    /*#ifdef TestNewGPU_API
-    #else*/
     OD_PROFILE_SCOPE("RenderContext::RenderSkybox"); 
     if(skyMaterial == nullptr) return;
     
@@ -3199,10 +3197,6 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
 }
 
 void RenderContext::DrawShadows(RendererList& commandBuffer, ShadowSplitData& splitData, Ref<Material>& shadowPass){
-    /*#ifdef TestNewGPU_API
-    return;
-    #else*/
-
     OD_PROFILE_SCOPE("RenderContext::DrawShadows");
     commandBuffer.Sort();
     //commandBuffer.SetOverrideMaterial(shadowPass);

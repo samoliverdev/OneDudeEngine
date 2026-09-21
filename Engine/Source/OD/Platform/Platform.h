@@ -1,6 +1,7 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Core/Math.h"
+#include <mutex>
 #include <string>
 
 namespace OD{
@@ -30,6 +31,7 @@ public:
     static bool IsFullscreen();
     static void SetWindowSize(int width, int height);
     static IVector2 GetWindowSize();
+    static void GetFramebufferSize(int* width, int* height);
     static std::vector<IVector2> GetSupportedResolutions();
 
     static CursorState GetCursorState();
@@ -55,6 +57,7 @@ public:
     static void HidePopupProgress();
 
     static void CreateVulkanSurface(void* instance, void* surface);
+    static std::recursive_mutex& GetImGuiMutex();
 
 private:
     static bool SystemStartup(const struct ApplicationConfig& config);

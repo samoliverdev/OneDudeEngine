@@ -83,6 +83,7 @@ std::vector<std::function<GraphicsDevice*()>> supportedGraphicsDevices = {
 };
 
 constexpr int MaxInstancesPerDraw = 1000;
+constexpr int MaxBonesPerDraw = 120;
 
 int curGraphicsDevice = 1;
 GraphicsDevice* graphicsDevice = nullptr;
@@ -91,6 +92,7 @@ Gfx::Device* gfxDevice = nullptr;
 Gfx::BindGroupLayout emptyLayout;
 Gfx::BindGroupLayout camGroupLayout;
 Gfx::BindGroupLayout drawDrawMeshGroupLayout;
+Gfx::BindGroupLayout drawMeshSkinnedGroupLayout;
 
 Gfx::BindGroup emptyBindGroup;
 Gfx::BindGroup camBindGroup;
@@ -167,22 +169,28 @@ struct UniformBufferPool{
     std::vector<Gfx::Buffer> buffers;
     uint32_t curIndex = 0;
 
-    inline Gfx::BindGroup GetBindGroup(Gfx::Device& device, void* data, size_t size){
+    inline Gfx::Buffer GetBuffer(Gfx::Device& device, void* data, size_t size){
         if(buffers.size() <= curIndex){
             auto buffer = device.CreateBuffer(size, Gfx::BufferUsage::Uniform, Gfx::BufferMemory::CPUToGPU);
             Assert(buffer != Gfx::InvalidID);
             buffers.push_back(buffer);
         }
 
-        device.UpdatedBuffer(buffers[curIndex], data, size);
+        auto buffer = buffers[curIndex];
+        device.UpdatedBuffer(buffer, data, size);
+        curIndex += 1;
+        return buffer;
+    }
+
+    inline Gfx::BindGroup GetBindGroup(Gfx::Device& device, void* data, size_t size){
+        auto buffer = GetBuffer(device, data, size);
 
         Gfx::BindGroupInfo bindGroupInfo = {};
         bindGroupInfo.layout = layout;
-        bindGroupInfo.entries[0].buffer = buffers[curIndex];
+        bindGroupInfo.entries[0].buffer = buffer;
         bindGroupInfo.entries[0].size = size;
         bindGroupInfo.entriesCount = 1;
         auto bindGroup = device.CreateFrameBindGroup(bindGroupInfo);
-        curIndex += 1;
         return bindGroup;
     }
 };
@@ -213,6 +221,7 @@ struct InstancingBufferPool{
 
 UniformBufferPool camDataPool;
 UniformBufferPool drawMeshPool;
+UniformBufferPool drawMeshSkinnedPool;
 InstancingBufferPool drawMeshInstancingPool;
 
 Material* curMat = nullptr;
@@ -290,6 +299,12 @@ void Graphics::Initialize(){
     bindGroupLayoutInfo.entries[0] = {0, Gfx::BindingType::UniformBuffer, sizeof(Matrix4), false};
     bindGroupLayoutInfo.entriesCount = 1;
     drawDrawMeshGroupLayout = gfxDevice->CreateBindGroupLayout(bindGroupLayoutInfo);
+
+    bindGroupLayoutInfo = {};
+    bindGroupLayoutInfo.entries[0] = {0, Gfx::BindingType::UniformBuffer, sizeof(Matrix4), false};
+    bindGroupLayoutInfo.entries[1] = {1, Gfx::BindingType::UniformBuffer, sizeof(Matrix4) * MaxBonesPerDraw, false};
+    bindGroupLayoutInfo.entriesCount = 2;
+    drawMeshSkinnedGroupLayout = gfxDevice->CreateBindGroupLayout(bindGroupLayoutInfo);
 
     Gfx::BindGroupInfo bindGroupInfo = {};
     bindGroupInfo.layout = emptyLayout;
@@ -463,6 +478,7 @@ void Graphics::_Begin(){
     graphicsDevice->_Begin(); 
 
     drawMeshPool.curIndex = 0;
+    drawMeshSkinnedPool.curIndex = 0;
     drawMeshInstancingPool.curIndex = 0;
 
     curFramebufferRenderPassIndex = -1;
@@ -901,11 +917,116 @@ void Graphics::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawD
 }
 
 void Graphics::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, Matrix4* animMatrix, int count, PerDrawData* perDrawData){ 
+    #ifdef TestNewGPU_API
+    Assert(count >= 0 && count <= MaxBonesPerDraw);
+
+    Matrix4 bones[MaxBonesPerDraw]{};
+    for(int i = 0; i < count; i++){
+        bones[i] = animMatrix[i];
+    }
+
+    auto modelBuffer = drawMeshPool.GetBuffer(*gfxDevice, &model, sizeof(Matrix4));
+    auto bonesBuffer = drawMeshSkinnedPool.GetBuffer(*gfxDevice, bones, sizeof(bones));
+
+    Gfx::BindGroupInfo bindGroupInfo = {};
+    bindGroupInfo.layout = drawMeshSkinnedGroupLayout;
+    bindGroupInfo.entries[0].binding = 0;
+    bindGroupInfo.entries[0].buffer = modelBuffer;
+    bindGroupInfo.entries[0].size = sizeof(Matrix4);
+    bindGroupInfo.entries[1].binding = 1;
+    bindGroupInfo.entries[1].buffer = bonesBuffer;
+    bindGroupInfo.entries[1].size = sizeof(bones);
+    bindGroupInfo.entriesCount = 2;
+    auto perDrawBindGroup = gfxDevice->CreateFrameBindGroup(bindGroupInfo);
+
+    if(curMat != &mat || curMat->isDirty || curMat->currentShader.drawTypes[(int)Shader::DrawType::SkinnedDraw].get() != curShader){
+        curMat = &mat;
+        curMat->isDirty = false;
+        curShader = curMat->currentShader.drawTypes[(int)Shader::DrawType::SkinnedDraw].get();
+        curBindGroup = BindMaterial(*curMat);
+    }
+
+    Assert(mat.currentShader.drawTypes[(int)Shader::DrawType::SkinnedDraw]->_pipelines[curFramebufferRenderPassIndex] != Gfx::InvalidID);
+
+    auto* cmd = gfxDevice->GetCommandBuffer();
+    SetPipelineCached(cmd, mat.currentShader.drawTypes[(int)Shader::DrawType::SkinnedDraw]->_pipelines[curFramebufferRenderPassIndex]);
+    SetBindGroupCached(cmd, 0, curBindGroup);
+    SetBindGroupCached(cmd, 1, perDrawBindGroup);
+    SetBindGroupCached(cmd, 2, curCameraBindGroup);
+
+    SetVertexBufferCached(cmd, 0, mesh.vertexVbo);
+    SetVertexBufferCached(cmd, 1, mesh.uvVbo);
+    SetVertexBufferCached(cmd, 2, mesh.normalVbo);
+    SetVertexBufferCached(cmd, 3, mesh.colorVbo);
+    SetVertexBufferCached(cmd, 4, mesh.tangentVbo);
+    SetVertexBufferCached(cmd, 5, mesh.influencesVbo);
+    SetVertexBufferCached(cmd, 6, mesh.weightsVbo);
+    SetVertexBufferCached(cmd, 7, emptyInstacingVbo);
+
+    if(mesh.indiceCount == 0){
+        cmd->Draw(mesh.vertexCount);
+    } else {
+        SetIndexBufferCached(cmd, mesh.ebo);
+        cmd->DrawIndexed(mesh.indiceCount);
+    }
+    #else
     graphicsDevice->DrawMeshSkinned(mesh, mat, model, animMatrix, count, perDrawData); 
+    #endif
 }
 
 void Graphics::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, UniformBuffer* data, int count, PerDrawData* perDrawData){
+    #ifdef TestNewGPU_API
+    Assert(data != nullptr);
+    Assert(count >= 0 && count <= MaxBonesPerDraw);
+
+    auto modelBuffer = drawMeshPool.GetBuffer(*gfxDevice, &model, sizeof(Matrix4));
+
+    Gfx::BindGroupInfo bindGroupInfo = {};
+    bindGroupInfo.layout = drawMeshSkinnedGroupLayout;
+    bindGroupInfo.entries[0].binding = 0;
+    bindGroupInfo.entries[0].buffer = modelBuffer;
+    bindGroupInfo.entries[0].size = sizeof(Matrix4);
+    bindGroupInfo.entries[1].binding = 1;
+    bindGroupInfo.entries[1].buffer = data->buffer;
+    bindGroupInfo.entries[1].size = sizeof(Matrix4) * MaxBonesPerDraw;
+    bindGroupInfo.entriesCount = 2;
+    auto perDrawBindGroup = gfxDevice->CreateFrameBindGroup(bindGroupInfo);
+
+    if(curMat != &mat || curMat->isDirty || curMat->currentShader.drawTypes[(int)Shader::DrawType::SkinnedDraw2].get() != curShader){
+        curMat = &mat;
+        curMat->isDirty = false;
+        curShader = curMat->currentShader.drawTypes[(int)Shader::DrawType::SkinnedDraw2].get();
+        curBindGroup = BindMaterial(*curMat);
+    }
+
+    auto* shader = mat.currentShader.drawTypes[(int)Shader::DrawType::SkinnedDraw2].get();
+    Assert(shader != nullptr);
+    Assert(shader->_pipelines[curFramebufferRenderPassIndex] != Gfx::InvalidID);
+
+    auto* cmd = gfxDevice->GetCommandBuffer();
+    SetPipelineCached(cmd, shader->_pipelines[curFramebufferRenderPassIndex]);
+    SetBindGroupCached(cmd, 0, curBindGroup);
+    SetBindGroupCached(cmd, 1, perDrawBindGroup);
+    SetBindGroupCached(cmd, 2, curCameraBindGroup);
+
+    SetVertexBufferCached(cmd, 0, mesh.vertexVbo);
+    SetVertexBufferCached(cmd, 1, mesh.uvVbo);
+    SetVertexBufferCached(cmd, 2, mesh.normalVbo);
+    SetVertexBufferCached(cmd, 3, mesh.colorVbo);
+    SetVertexBufferCached(cmd, 4, mesh.tangentVbo);
+    SetVertexBufferCached(cmd, 5, mesh.influencesVbo);
+    SetVertexBufferCached(cmd, 6, mesh.weightsVbo);
+    SetVertexBufferCached(cmd, 7, emptyInstacingVbo);
+
+    if(mesh.indiceCount == 0){
+        cmd->Draw(mesh.vertexCount);
+    } else {
+        SetIndexBufferCached(cmd, mesh.ebo);
+        cmd->DrawIndexed(mesh.indiceCount);
+    }
+    #else
     graphicsDevice->DrawMeshSkinned(mesh, mat, model, data, count, perDrawData); 
+    #endif
 }
 
 void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* animMatrixs, int count){ 
