@@ -1039,7 +1039,12 @@ void OpenglGPUDevice::Init(bool inmultithread){
     if(multithread){
         multithreadRendererContext.init = [&](){ _Init(); }; //_Init;
         multithreadRendererContext.shut = [&](){ _Shut(); }; //_Shut;
-        multithreadRendererContext.runRender = [&](RenderFrame& f){ RunRender(f); f.Clear(); Platform::SwapBuffers(); };
+        multithreadRendererContext.runRender = [&](RenderFrame& f){ 
+            SimpleTimer s([&](float t){ profilesGpu.push_back({"RunRender", t}); });
+            RunRender(f); 
+            f.Clear(); 
+            Platform::SwapBuffers(); 
+        };
         multithreadRendererContext.Init();
     } else {
         _Init();
@@ -1064,13 +1069,34 @@ void OpenglGPUDevice::StartRender(){
 
 void OpenglGPUDevice::UpdateRender(){
     if(multithread){
+        {
+        OD_PROFILE_SCOPE("OpenglGPUDevice::UpdateRender::WaitForRender");
         multithreadRendererContext.WaitForRender();
+        }
+
+        {
+        OD_PROFILE_SCOPE("OpenglGPUDevice::UpdateRender::SwapRenderFrames");
         multithreadRendererContext.SwapRenderFrames();
+        }
+        
+        {
+        OD_PROFILE_SCOPE("OpenglGPUDevice::UpdateRender::SyncSingleThreadData");
         SyncSingleThreadData();
+        }
     } else {
+        SimpleTimer s([&](float t){ profilesGpu.push_back({"RunRender", t}); });
+        {
+        OD_PROFILE_SCOPE("OpenglGPUDevice::UpdateRender::RunRender");
         RunRender(*multithreadRendererContext.simulationFrame);
+        }
+        {
+        OD_PROFILE_SCOPE("OpenglGPUDevice::UpdateRender::SimulationFrameClear");
         multithreadRendererContext.simulationFrame->Clear();
+        }
+        {
+        OD_PROFILE_SCOPE("OpenglGPUDevice::UpdateRender::SwapBuffers");
         Platform::SwapBuffers();
+        }
     }
 }
 
@@ -1685,6 +1711,10 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
         }
 
         case CommandBuffer::Type::BeginFramebuffer:{
+            if(!framebufferPool.IsValid(cmd.beginFramebuffer.framebuffer)){
+                LogWarning("Ignoring BeginFramebuffer for a destroyed framebuffer (id={})", cmd.beginFramebuffer.framebuffer);
+                break;
+            }
             FramebufferData& data = framebufferPool.Get(cmd.beginFramebuffer.framebuffer);
 
             Assert(data.framebuffer > 0);
@@ -1865,6 +1895,11 @@ void OpenglGPUDevice::SyncSingleThreadData(){
     pipelinePool.SyncSingleThreadData();
     bindGroupPool.SyncSingleThreadData();
     cubemapPool.SyncSingleThreadData();
+
+    profilesCpu.clear();
+    for(auto& i :profilesGpu) profilesCpu.push_back(i);
+    profilesCpu.push_back({"Multithread Running", multithreadRendererContext.runningProfileTime});
+    profilesGpu.clear();
 }
 
 ///////////////////////////////////
@@ -2015,6 +2050,10 @@ void OpenglGPUDevice::DestroyFramebuffer(Framebuffer framebuffer){
 
 ResourceStats OpenglGPUDevice::GetBufferStats(Buffer id){ 
     return bufferPool.GetStatus(id);// .resourceStatus[id]; 
+}
+
+std::vector<Device::Profile> OpenglGPUDevice::GetProfiles(){
+    return profilesCpu;
 }
 
 #pragma endregion

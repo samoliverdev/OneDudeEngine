@@ -1,6 +1,7 @@
 #pragma once
 #include "OD/Gfx/Gfx.h"
 #include "OD/Platform/Platform.h"
+#include "OD/Core/Instrumentor.h"
 #include <thread>
 #include <mutex>
 #include <functional>
@@ -28,6 +29,8 @@ struct MultithreadRendererContext{
     std::function<void()> init; 
     std::function<void()> shut; 
     std::function<void(RenderFrame&)> runRender;
+
+    float runningProfileTime = 0;
 
     void StartupFrames(){
         simulationFrame = &frames[0];
@@ -91,6 +94,7 @@ struct MultithreadRendererContext{
         condition.notify_one();
 
         while(running){
+            SimpleTimer s([&](float t){ runningProfileTime = t; });
             
             // Wait for this frame's render work.
             {

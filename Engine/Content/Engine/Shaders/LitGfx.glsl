@@ -20,8 +20,6 @@
     Name MainPass
     SupportInstancing true
     DrawType _ SKINNED INSTANCING INSTANCINGMATRIX43 SKINNED2
-    MultiCompile Opaque Blend
-
     RenderPass Forward Deferred DeferredCopy
 
     CullFace BACK
@@ -33,7 +31,6 @@
     Name Transparent
     SupportInstancing true
     DrawType _ SKINNED INSTANCING INSTANCINGMATRIX43 SKINNED2
-
     RenderPass Forward Deferred DeferredCopy
 
     CullFace BACK

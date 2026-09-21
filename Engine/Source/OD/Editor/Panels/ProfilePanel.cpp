@@ -2,6 +2,9 @@
 #include "ProfilePanel.h"
 #include "OD/Core/Instrumentor.h"
 #include "OD/Core/ImGui.h"
+#include "OD/Graphics/Graphics.h"
+#include "OD/Graphics/GraphicsDevice.h"
+#include "OD/Gfx/Gfx.h"
 
 namespace OD{
 
@@ -114,6 +117,22 @@ void ProfilePanel::OnGui(){
                         if(results[i].parent >= 0) continue;
                         DrawNodeGpu(i);
                     }
+                }
+
+                ImGui::EndTabItem();
+            }
+
+            if(ImGui::BeginTabItem("Gfx")){
+                Gfx::Device* gpuDevice = dynamic_cast<Gfx::Device*>(Graphics::GetGraphicsDevice());
+                auto results = gpuDevice->GetProfiles();
+
+                ImGui::Text("Results Count:: %zd", results.size());
+
+                ImGui::Separator();
+
+                for(auto i: results){ 
+                    double durration = i.time; 
+                    ImGui::Text("%s: %.3f.ms", i.name.c_str(), durration);
                 }
 
                 ImGui::EndTabItem();

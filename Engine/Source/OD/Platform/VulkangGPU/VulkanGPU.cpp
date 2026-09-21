@@ -1416,32 +1416,16 @@ uint64_t GetFramebufferLayoutHash(const FrameBufferLayout& layout){
     hash = HashCombineByte(hash, layout.colorAttachmentsCount);
 
     // Color attachments
-    for (uint32_t i = 0; i < layout.colorAttachmentsCount; ++i)
-    {
-        const FramebufferAttachment& attachment =
-            layout.colorAttachments[i];
-
-        hash = HashCombineByte(
-            hash,
-            static_cast<uint8_t>(attachment.format));
-
-        hash = HashCombineByte(
-            hash,
-            attachment.mipLevels);
+    for(uint32_t i = 0; i < layout.colorAttachmentsCount; ++i){
+        const FramebufferAttachment& attachment = layout.colorAttachments[i];
+        hash = HashCombineByte(hash, static_cast<uint8_t>(attachment.format));
+        hash = HashCombineByte(hash, attachment.mipLevels);
     }
 
     // Depth attachment
-    hash = HashCombineByte(
-        hash,
-        static_cast<uint8_t>(layout.depthAttachment.format));
-
-    hash = HashCombineByte(
-        hash,
-        layout.depthAttachment.mipLevels);
-
-    hash = HashCombineByte(
-        hash,
-        layout.samples);
+    hash = HashCombineByte(hash, static_cast<uint8_t>(layout.depthAttachment.format));
+    hash = HashCombineByte(hash, layout.depthAttachment.mipLevels);
+    hash = HashCombineByte(hash, layout.samples);
 
     hash = HashCombineByte(hash, static_cast<uint8_t>(layout.layers));
     hash = HashCombineByte(hash, static_cast<uint8_t>(layout.layers >> 8));
@@ -1603,6 +1587,8 @@ bool VulkanGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
         count = std::max(count, static_cast<uint32_t>(layout.depthAttachment.mipLevels));
         return count;
     }();
+    data.subresourceMipCount = mipCount;
+    data.subresourceLayerCount = layerCount;
 
     for(uint32_t mip = 0; mip < mipCount; ++mip){
         for(uint32_t layer = 0; layer < layerCount; ++layer){
@@ -2207,6 +2193,7 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
     #undef max
 
     Pipeline currentPipeline = INVALID_ID;
+    bool skipNextEndFramebuffer = false;
 
     VK_CHECK(vkWaitForFences(_device, 1, &get_current_frame()._renderFence, true, 1000000000));
 	VK_CHECK(vkResetFences(_device, 1, &get_current_frame()._renderFence));
@@ -2549,19 +2536,29 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
             }
         
             case CommandBuffer::Type::BeginFramebuffer:{
+                if(!framebufferPool.IsValid(renderCmd.beginFramebuffer.framebuffer)){
+                    LogWarning("Ignoring BeginFramebuffer for a destroyed framebuffer (id={})", renderCmd.beginFramebuffer.framebuffer);
+                    skipNextEndFramebuffer = true;
+                    break;
+                }
                 auto& data = framebufferPool.Get(renderCmd.beginFramebuffer.framebuffer); 
                 const auto& layout = data.layout;
 
-                const uint32_t layerCount = layout.type == FramebufferAttachmentType::CUBEMAP ? 6u :
-                    layout.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY ? math::max<uint8_t>(1u, layout.layers) : 1u;
+                const uint32_t layerCount = data.subresourceLayerCount;
                 const uint32_t layer = renderCmd.beginFramebuffer.layer;
                 const uint32_t mip = renderCmd.beginFramebuffer.mip;
                 bool clean = renderCmd.beginFramebuffer.clean;
+                Assert(layerCount != 0);
+                Assert(data.subresourceMipCount != 0);
                 Assert(layer < layerCount);
-                uint32_t mipCount = std::max(1u, static_cast<uint32_t>(layout.depthAttachment.mipLevels));
-                for(uint32_t i = 0; i < layout.colorAttachmentsCount; ++i)
-                    mipCount = std::max(mipCount, static_cast<uint32_t>(layout.colorAttachments[i].mipLevels));
-                Assert(mip < mipCount);
+                Assert(mip < data.subresourceMipCount);
+                const size_t framebufferIndex = static_cast<size_t>(mip) * layerCount + layer;
+                if(framebufferIndex >= data.subresourceFramebuffers.size()){
+                    LogError("Vulkan framebuffer subresource index out of range: mip={}, layer={}, mipCount={}, layerCount={}, framebufferCount={}",
+                        mip, layer, data.subresourceMipCount, layerCount, data.subresourceFramebuffers.size());
+                    Assert(false);
+                    break;
+                }
                 if(!clean && !data.contentsInitialized){
                     LogWarning("Vulkan BeginFramebuffer requested LOAD before framebuffer contents were initialized; using CLEAR."); //TODO: Maybe i can remove this warning later
                     clean = true;
@@ -2700,7 +2697,7 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                 VkRenderPassBeginInfo beginInfo{};
                 beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
                 beginInfo.renderPass = GetOrCreate(layout, clean);
-                beginInfo.framebuffer = data.subresourceFramebuffers[mip * layerCount + layer];
+                beginInfo.framebuffer = data.subresourceFramebuffers[framebufferIndex];
                 beginInfo.renderArea.offset = { 0, 0 };
                 beginInfo.renderArea.extent = { std::max(1u, data.width >> mip), std::max(1u, data.height >> mip) };
                 beginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
@@ -2928,6 +2925,10 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
             }
         
             case CommandBuffer::Type::EndFramebuffer:{
+                if(skipNextEndFramebuffer){
+                    skipNextEndFramebuffer = false;
+                    break;
+                }
                 vkCmdEndRenderPass(cmd);
 
                 // Window framebuffer is handled differently.

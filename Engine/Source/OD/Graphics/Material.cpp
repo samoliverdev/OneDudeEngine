@@ -123,7 +123,7 @@ bool Material::IsBlend(){
 }
 
 bool Material::EnableInstancingValid(){ 
-    return enableInstancing && SupportInstancing(); 
+    return enableInstancing;// && SupportInstancing(); 
 }
 
 bool Material::EnableInstancing(){ 

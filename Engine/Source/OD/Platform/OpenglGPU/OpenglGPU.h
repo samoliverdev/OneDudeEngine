@@ -4,6 +4,7 @@
 #include "OD/Graphics/GraphicsDevice.h"
 #include "OD/Platform/BaseGpu/ResourcePool.h"
 #include "OD/Platform/BaseGpu/MultithreadRendererContext.h"
+#include "OD/Core/Instrumentor.h"
 #include <glad.h>
 
 namespace OD{
@@ -62,7 +63,12 @@ public:
 
     ResourceStats GetBufferStats(Buffer id) override; 
 
+    virtual std::vector<Profile> GetProfiles() override;
+
 private:
+    std::vector<Profile> profilesCpu;
+    std::vector<Profile> profilesGpu;
+
     bool multithread;
 
     struct BufferData{
@@ -165,6 +171,7 @@ private:
     void _DestroyBindGroupLayout(BindGroupLayoutData& data);
 
     bool _CreateBindGroup(BindGroupData& data, BindGroupInfo& info);
+    
 };
 
 }

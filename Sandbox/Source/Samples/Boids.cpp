@@ -5,6 +5,7 @@
 #include <OD/Scene/Scene.h>
 #include <OD/Scene/SceneManager.h>
 #include <OD/Graphics/Graphics.h>
+#include <OD/Graphics/Cubemap.h>
 #include <OD/RenderPipeline/EnvironmentComponent.h>
 #include <OD/RenderPipeline/ModelRendererComponent.h>
 #include <OD/RenderPipeline/CameraComponent.h>
@@ -445,24 +446,33 @@ void BoidsSample::OnInit(){
     OD::Ref<OD::Scene> scene = SceneManager.NewScene();
 
     Ref<Material> floorMaterial = ResourceManager::Get().Create<Material>();
-    floorMaterial->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl"));
+    floorMaterial->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/LitGfx.glsl"));
     floorMaterial->SetVector4("color", Vector4(0.8f, 0.8f, 0.8f, 1));
 
     Ref<Material> boidMaterial = ResourceManager::Get().Create<Material>();
-    boidMaterial->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl"));
+    boidMaterial->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/LitGfx.glsl"));
     boidMaterial->SetVector4("color", Vector4(1, 0, 0, 1));
     boidMaterial->SetEnableInstancing(true);
 
     Ref<Model> floorModel = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/plane.glb");
-    floorModel->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl"));
+    floorModel->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/LitGfx.glsl"));
 
     Ref<Model> boidModel = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/Boid.glb");
-    boidModel->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl"));
+    boidModel->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/LitGfx.glsl"));
 
     Entity env = scene->AddEntity("Env");
     EnvironmentComponent& _env = scene->AddComponent<EnvironmentComponent>(env);
     _env.settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
     _env.settings.shadowDistance = 1000;
+
+    _env.settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+    _env.settings.environmentLight = EnvironmentLight::SkyCubemap;
+    _env.settings.toneMapping.enable = true;
+    _env.settings.toneMapping.mode = ToneMappingFeature::Mode::Neutral;
+    _env.settings.colorGrading.enable = true;
+    _env.settings.colorGrading.contrast = 18;
+    _env.settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};
+    _env.settings.skyCubemap = Cubemap::CreateFromFileHDR("Sandbox/HDRIs/industrial_sunset_puresky_2k.hdr");
 
     Entity e = scene->AddEntity("Floor");
     scene->GetComponent<TransformComponent>(e).Position(Vector3(0, -(boundsSize*2), 0));
@@ -473,7 +483,7 @@ void BoidsSample::OnInit(){
 
     Entity camera = scene->AddEntity("Camera");
     CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
-    cam.viewportRect = Vector4(0, 0, 0.5f, 0.5f);
+    //cam.viewportRect = Vector4(0, 0, 0.5f, 0.5f);
     scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(0, 150, 150));
     scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-25, 0, 0));
     //scene->AddComponent<Standard::FreeCamera>(camera).moveSpeed = 100;
@@ -494,7 +504,7 @@ void BoidsSample::OnInit(){
     float posRange = 200;
     Entity boids = scene->AddEntity("Boids");
     
-    for(int i = 0; i < 1000*20; i++){
+    for(int i = 0; i < 1000*2; i++){
         Entity boid = scene->AddEntity("Boid" + std::to_string(random(0, 200)));
         ModelRendererComponent& mr = scene->AddComponent<ModelRendererComponent>(boid);
         mr.SetModel(boidModel);
@@ -514,7 +524,7 @@ void BoidsSample::OnInit(){
         //scene->SetParent(boids, boid);
     }
 
-    //Application::AddModule<Editor>();
+    Application::AddModule<Editor>(false);
     scene->Start();
 }
 

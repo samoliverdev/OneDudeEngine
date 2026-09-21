@@ -181,12 +181,12 @@ void Application::Loop(){
         GlobalSettings::Get().Load("../GlobalSettings");
     }
 
-    #if OD_PROFILE
+    /*#if OD_PROFILE
     Instrumentor::BeginLoop();
-    #endif
+    #endif*/
 
     {
-    OD_PROFILE_SCOPE("Application::Run");
+    OD_PROFILE_SCOPE("Application::Loop");
 
     float currentFrame = Platform::GetTime();
     deltaTime = currentFrame - lastFrame;
@@ -247,9 +247,9 @@ void Application::Loop(){
     #endif
     }
 
-    #if OD_PROFILE
+    /*#if OD_PROFILE
     Instrumentor::EndLoop();
-    #endif
+    #endif*/
 }
 
 bool Application::Run(){
@@ -313,16 +313,28 @@ bool Application::Run(){
     emscripten_set_main_loop(Loop, 0, true);
 #else
     while(running){
+        #if OD_PROFILE
+        Instrumentor::BeginLoop();
+        #endif
+
         #ifdef TestNewGPU_API
+        
         gpuDevice->StartRender();
         {
             //SimpleTimer s([](float t){ LogInfo("CpuTime: {}", t); });
             Loop();
             Platform::PollEvents();
         }
+        {
+        OD_PROFILE_SCOPE("Application::UpdateRender");
         gpuDevice->UpdateRender();
+        }
         #else
         Loop();
+        #endif
+
+        #if OD_PROFILE
+        Instrumentor::EndLoop();
         #endif
     }
 #endif

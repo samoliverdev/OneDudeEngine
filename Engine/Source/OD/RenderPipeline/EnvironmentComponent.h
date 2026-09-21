@@ -53,7 +53,7 @@ struct OD_API EnvironmentSettings{
     //AntiAliasing antiAliasing;
     //MSAAQuality msaaQuality = MSAAQuality::MSAA_4;
 
-    bool enableSSS;
+    bool enableSSS = false;
     float sssSurfaceThickness = 0.005f;
     float sssBilinearThreshold = 0.02f;
     float sssShadowContrast = 4;

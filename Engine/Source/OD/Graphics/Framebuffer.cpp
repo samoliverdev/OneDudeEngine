@@ -6,11 +6,40 @@
 #include "OD/Defines.h"
 #include "SubShader.h"
 #include "OD/Gfx/Gfx.h"
+#include <algorithm>
 
 namespace OD{
 
 extern GraphicsDevice* graphicsDevice;
 extern Gfx::Device* gfxDevice;
+
+#ifdef TestNewGPU_API
+static void InitializeGfxFramebuffer(Gfx::Framebuffer framebuffer, const Gfx::FrameBufferLayout& layout){
+    const uint32_t layerCount = layout.type == Gfx::FramebufferAttachmentType::CUBEMAP ? 6u :
+        layout.type == Gfx::FramebufferAttachmentType::TEXTURE_2D_ARRAY ? std::max(1u, static_cast<uint32_t>(layout.layers)) : 1u;
+
+    uint32_t mipCount = std::max(1u, static_cast<uint32_t>(layout.depthAttachment.mipLevels));
+    for(uint32_t i = 0; i < layout.colorAttachmentsCount; ++i)
+        mipCount = std::max(mipCount, static_cast<uint32_t>(layout.colorAttachments[i].mipLevels));
+
+    auto* commands = gfxDevice->GetCommandBuffer();
+    // Keep the command order identical to Vulkan's subresource framebuffer
+    // storage order: mip-major, then layer.
+    for(uint32_t mip = 0; mip < mipCount; ++mip){
+        for(uint32_t layer = 0; layer < layerCount; ++layer){
+            commands->BeginFramebuffer(
+                framebuffer,
+                layer,
+                mip,
+                true,
+                Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth,
+                {{0.0f, 0.0f, 0.0f, 1.0f}}
+            );
+            commands->EndFramebuffer();
+        }
+    }
+}
+#endif
 
 struct FramebufferRenderPassData{
     std::string name;
@@ -158,6 +187,7 @@ Framebuffer::Framebuffer(const std::string& name, int width, int height, int lay
     info.height = height;
     framebuffer = gfxDevice->CreateFramebuffer(info);
     Assert(framebuffer != Gfx::InvalidID);
+    InitializeGfxFramebuffer(framebuffer, data->layout);
     #else
     graphicsDevice->FramebufferCreate(*this);
     #endif 
@@ -184,6 +214,7 @@ void Framebuffer::Resize(int width, int height){
     #ifdef TestNewGPU_API
     //Assert(false);
     if(width == 0 || height == 0) return;
+    if(framebuffer != Gfx::InvalidID && specification.width == width && specification.height == height) return;
 
     if(framebuffer != Gfx::InvalidID) gfxDevice->DestroyFramebuffer(framebuffer);
 
@@ -200,6 +231,7 @@ void Framebuffer::Resize(int width, int height){
     info.height = height;
     framebuffer = gfxDevice->CreateFramebuffer(info);
     Assert(framebuffer != Gfx::InvalidID);
+    InitializeGfxFramebuffer(framebuffer, data->layout);
     #else
     if(width == 0 || height == 0) return; // avoid crash
 

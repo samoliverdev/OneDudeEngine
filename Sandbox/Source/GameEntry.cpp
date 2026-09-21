@@ -56,7 +56,7 @@ OD::Module* CreateMainModule(){
     //if(OD::Application::GetArgs().size() > 1) i = atoi(OD::Application::GetArgs()[1].c_str());
 
     #ifdef TestNewGPU_API
-    i = 5; //-4; //-3; //-2;
+    i = 22; //-4; //-3; //-2;
     #endif
     
     if(i == -2) return new GPUSample1();

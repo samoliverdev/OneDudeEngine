@@ -135,6 +135,11 @@ private:
 
         uint32_t width = 0;
         uint32_t height = 0;
+        // Exact dimensions used to build subresourceFramebuffers. Keep these
+        // independent from the layout so command execution cannot calculate a
+        // different vector index after creation.
+        uint32_t subresourceMipCount = 0;
+        uint32_t subresourceLayerCount = 0;
 
         FrameBufferLayout layout;
         uint32_t activeLayer = 0;

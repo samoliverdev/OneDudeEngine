@@ -861,9 +861,10 @@ void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* animMatrix
         Assert(count <= MaxInstancesPerDraw);
         auto intacingBuffer = drawMeshInstancingPool.GetBuffer(*gfxDevice, animMatrixs, sizeof(Matrix4) * count);
 
-        if(curMat != &mat || curMat->isDirty){
+        if(curMat != &mat || curMat->isDirty || curMat->currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw].get() != curShader){
             curMat = &mat;
             curMat->isDirty = false;
+            curShader = curMat->currentShader.drawTypes[(int)Shader::DrawType::DefaultDraw].get();
             curBindGroup = BindMaterial(*curMat);
         }
 
@@ -872,7 +873,7 @@ void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* animMatrix
         auto* cmd = gfxDevice->GetCommandBuffer();
         cmd->SetPipeline(mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipelines[curFramebufferRenderPassIndex]);
         cmd->SetBindGroup(0, curBindGroup);
-        cmd->SetBindGroup(1, emptyModelBuffer);
+        cmd->SetBindGroup(1, emptyModelBindGroup);
         cmd->SetBindGroup(2, curCameraBindGroup);// camBindGroup);
 
         cmd->SetVertexBuffer(0, mesh.vertexVbo);
@@ -928,7 +929,7 @@ void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, InstancingBuffer& b
     auto* cmd = gfxDevice->GetCommandBuffer();
     cmd->SetPipeline(mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipelines[curFramebufferRenderPassIndex]);
     cmd->SetBindGroup(0, curBindGroup);
-    cmd->SetBindGroup(1, emptyModelBuffer);
+    cmd->SetBindGroup(1, emptyModelBindGroup);
     cmd->SetBindGroup(2, curCameraBindGroup);// camBindGroup);
 
     cmd->SetVertexBuffer(0, mesh.vertexVbo);
@@ -938,7 +939,7 @@ void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, InstancingBuffer& b
     cmd->SetVertexBuffer(4, mesh.tangentVbo);
     cmd->SetVertexBuffer(5, mesh.influencesVbo);
     cmd->SetVertexBuffer(6, mesh.weightsVbo);
-    cmd->SetVertexBuffer(7, buffer.buffer);
+    cmd->SetVertexBuffer(10, buffer.buffer);
 
     if(mesh.ebo == INVALID_ID){
         cmd->DrawInstanced(mesh.vertexCount, count);

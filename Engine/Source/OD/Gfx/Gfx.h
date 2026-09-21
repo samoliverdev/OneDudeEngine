@@ -1101,6 +1101,11 @@ struct OD_API RenderFrame{
 
 class OD_API Device{
 public:
+    struct Profile{
+        std::string name;
+        float time;
+    };
+
     virtual ~Device(){}
 
     virtual bool SupportMultithread(){ return false; }
@@ -1144,6 +1149,8 @@ public:
 
     virtual Framebuffer CreateFramebuffer(FrameBufferCreateInfo& info){ return InvalidID; }
     virtual void DestroyFramebuffer(Framebuffer destroy){}
+
+    virtual std::vector<Profile> GetProfiles(){ return {}; }
 };
 
 }
