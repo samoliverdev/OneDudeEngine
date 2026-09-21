@@ -101,7 +101,6 @@ std::vector<VkFramebuffer> _framebuffers;
 std::vector<VkSemaphore> _renderSemaphores;
 
 VkDescriptorPool _descriptorPool;
-VkDescriptorPool frameDescriptorPools;
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VulkanValidationCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT, const VkDebugUtilsMessengerCallbackDataEXT* callbackData, void*){
     const char* messageId = callbackData != nullptr && callbackData->pMessageIdName != nullptr ? callbackData->pMessageIdName : "unknown";
@@ -126,7 +125,10 @@ struct FrameData {
 	VkFence _renderFence;	
 	VkCommandPool _commandPool;
 	VkCommandBuffer _mainCommandBuffer;
+	VkDescriptorPool _descriptorPool;
 };
+// Keep more than one frame in flight so CPU command recording can overlap
+// GPU execution. Each frame owns its synchronization and descriptor state.
 constexpr unsigned int FRAME_OVERLAP = 1;
 FrameData _frames[FRAME_OVERLAP];
 
@@ -1297,6 +1299,14 @@ void VulkanGPUDevice::_DestroyBindGroupLayout(BindGroupLayoutData& data){
 bool VulkanGPUDevice::_CreateBindGroup(BindGroupData& data, BindGroupInfo& info, VkDescriptorPool pool){
     data.info = info;
     BindGroupLayoutData& layoutData = bindGroupLayoutPool.Get(info.layout);
+
+    // BindGroupInfo owns a fixed-size entries array, so allocating temporary
+    // vectors here only adds heap traffic to every frame bind-group creation.
+    constexpr uint32_t MaxBindGroupEntries = static_cast<uint32_t>(std::size(info.entries));
+    Assert(info.entriesCount <= MaxBindGroupEntries);
+    VkDescriptorBufferInfo bInfos[MaxBindGroupEntries]{};
+    VkDescriptorImageInfo imageInfos[MaxBindGroupEntries]{};
+    VkWriteDescriptorSet writes[MaxBindGroupEntries]{};
     
     VkDescriptorSetAllocateInfo allocInfo ={};
     allocInfo.pNext = nullptr;
@@ -1305,13 +1315,6 @@ bool VulkanGPUDevice::_CreateBindGroup(BindGroupData& data, BindGroupInfo& info,
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = &layoutData.layout;
     VK_CHECK(vkAllocateDescriptorSets(_device, &allocInfo, &data.descriptorSet));
-
-    std::vector<VkDescriptorBufferInfo> bInfos;
-    std::vector<VkDescriptorImageInfo> imageInfos;
-    std::vector<VkWriteDescriptorSet> writes;
-    bInfos.resize(info.entriesCount);
-    imageInfos.resize(info.entriesCount);
-    writes.resize(info.entriesCount);
 
     for(int i = 0; i < info.entriesCount; i++){
         Assert(layoutData.info.entries[i].binding == info.entries[i].binding);
@@ -1395,7 +1398,7 @@ bool VulkanGPUDevice::_CreateBindGroup(BindGroupData& data, BindGroupInfo& info,
         }
     }
 
-    vkUpdateDescriptorSets(_device, writes.size(), writes.data(), 0, nullptr);
+    vkUpdateDescriptorSets(_device, info.entriesCount, writes, 0, nullptr);
     return true;
 }
 
@@ -1968,8 +1971,10 @@ void VulkanGPUDevice::InitDescriptors(){
 	pool_info.maxSets = MAX_DescriptorPoolSize;
 	pool_info.poolSizeCount = (uint32_t)sizes.size();
 	pool_info.pPoolSizes = sizes.data();
-	vkCreateDescriptorPool(_device, &pool_info, nullptr, &_descriptorPool);
-    vkCreateDescriptorPool(_device, &pool_info, nullptr, &frameDescriptorPools);
+	VK_CHECK(vkCreateDescriptorPool(_device, &pool_info, nullptr, &_descriptorPool));
+    for(auto& frame : _frames){
+        VK_CHECK(vkCreateDescriptorPool(_device, &pool_info, nullptr, &frame._descriptorPool));
+    }
 }
 
 void VulkanGPUDevice::Cleanup(){
@@ -1984,7 +1989,10 @@ void VulkanGPUDevice::Cleanup(){
 
     vkDestroyCommandPool(_device, _commandPool, nullptr);
     vkDestroyDescriptorPool(_device, _descriptorPool, nullptr);
-    vkDestroyDescriptorPool(_device, frameDescriptorPools, nullptr);
+    for(auto& frame : _frames){
+        vkDestroyDescriptorPool(_device, frame._descriptorPool, nullptr);
+        frame._descriptorPool = VK_NULL_HANDLE;
+    }
     if(imguiDescriptorPool != VK_NULL_HANDLE){
         vkDestroyDescriptorPool(_device, imguiDescriptorPool, nullptr);
         imguiDescriptorPool = VK_NULL_HANDLE;
@@ -2232,15 +2240,22 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
     Pipeline currentPipeline = INVALID_ID;
     bool skipNextEndFramebuffer = false;
 
-    VK_CHECK(vkWaitForFences(_device, 1, &get_current_frame()._renderFence, true, 1000000000));
-	VK_CHECK(vkResetFences(_device, 1, &get_current_frame()._renderFence));
+    {
+        SimpleTimer timer([&](float t){ profilesGpu.push_back({"FenceWait", t}); });
+        VK_CHECK(vkWaitForFences(_device, 1, &get_current_frame()._renderFence, true, 1000000000));
+        VK_CHECK(vkResetFences(_device, 1, &get_current_frame()._renderFence));
+    }
+
+    SimpleTimer commandTimer([&](float t){ profilesGpu.push_back({"RecordAndPrepare", t}); });
 
     /*for(auto i: frameBindGroups){
         bindGroupPool.AddDestroyedId(i);
     }
     frameBindGroups.clear();*/
-    vkResetDescriptorPool(_device, frameDescriptorPools, 0);
+    VK_CHECK(vkResetDescriptorPool(_device, get_current_frame()._descriptorPool, 0));
     
+    SimpleTimer resourceTimer([&](float t){ profilesGpu.push_back({"ResourceCommands", t}); });
+
     // Process Resource Commands first
     for(const ResourceCommands::Command& cmd : frame.resourceCommands.commands){
         switch(cmd.type){
@@ -2365,7 +2380,7 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
             case ResourceCommands::Type::CreateFrameBindGroup:{
                 Assert(bindGroupPool.IsValid(cmd.createFrameBindGroup.id));
                 auto& data = bindGroupPool.Get(cmd.createFrameBindGroup.id);
-                _CreateBindGroup(data, *cmd.createFrameBindGroup.info, frameDescriptorPools);
+                _CreateBindGroup(data, *cmd.createFrameBindGroup.info, get_current_frame()._descriptorPool);
                 frameBindGroups.push_back(cmd.createFrameBindGroup.id);
                 break;
             }
@@ -2388,8 +2403,12 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
             }
         }
     }
+    resourceTimer.Stop();
 
-    flush_pending_buffer_uploads();
+    {
+        SimpleTimer timer([&](float t){ profilesGpu.push_back({"FlushUploads", t}); });
+        flush_pending_buffer_uploads();
+    }
 
     //VK_CHECK(vkWaitForFences(_device, 1, &_renderFence, true, 1000000000));
     //VK_CHECK(vkResetFences(_device, 1, &_renderFence));
@@ -2398,7 +2417,10 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
     VkCommandBuffer cmd = get_current_frame()._mainCommandBuffer;
 
     uint32_t swapchainImageIndex;
-	VK_CHECK(vkAcquireNextImageKHR(_device, _swapchain, 1000000000, get_current_frame()._presentSemaphore, nullptr, &swapchainImageIndex));
+    {
+        SimpleTimer timer([&](float t){ profilesGpu.push_back({"AcquireImage", t}); });
+        VK_CHECK(vkAcquireNextImageKHR(_device, _swapchain, 1000000000, get_current_frame()._presentSemaphore, nullptr, &swapchainImageIndex));
+    }
 
     VkCommandBufferBeginInfo cmdBeginInfo = {};
     cmdBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -2434,6 +2456,7 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
     vkCmdSetScissor(cmd, 0, 1, &scissor);*/
 
     FramebufferData* _currentFramebuffer = nullptr;
+    SimpleTimer commandRecordingTimer([&](float t){ profilesGpu.push_back({"RecordCommands", t}); });
 
     bool hasWindowRenderPass = false;
 
@@ -3096,6 +3119,9 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
 
     //vkCmdEndRenderPass(cmd);
     VK_CHECK(vkEndCommandBuffer(cmd));
+    commandRecordingTimer.Stop();
+    commandTimer.Stop();
+    SimpleTimer submitTimer([&](float t){ profilesGpu.push_back({"SubmitAndPresent", t}); });
 
     VkSubmitInfo submit = {};
     submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -3126,7 +3152,6 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
         bindGroupPool.AddDestroyedId(i);
     }
     frameBindGroups.clear();
-    //vkResetDescriptorPool(_device, frameDescriptorPools, 0);
 }
 
 void VulkanGPUDevice::SyncSingleThreadData(){

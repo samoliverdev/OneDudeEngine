@@ -169,7 +169,7 @@ struct UniformBufferPool{
 
     inline Gfx::BindGroup GetBindGroup(Gfx::Device& device, void* data, size_t size){
         if(buffers.size() <= curIndex){
-            auto buffer = device.CreateBuffer(size, Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
+            auto buffer = device.CreateBuffer(size, Gfx::BufferUsage::Uniform, Gfx::BufferMemory::CPUToGPU);
             Assert(buffer != Gfx::InvalidID);
             buffers.push_back(buffer);
         }
@@ -195,7 +195,10 @@ struct InstancingBufferPool{
         Assert(size <= (sizeof(Matrix4) * MaxInstancesPerDraw));
 
         if(buffers.size() <= curIndex){
-            auto buffer = device.CreateBuffer(sizeof(Matrix4) * MaxInstancesPerDraw, Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
+            // Instance transforms are rewritten every frame. Keep this test path
+            // host-visible so UpdatedBuffer does not allocate a staging buffer
+            // and submit an explicit upload for every instanced draw.
+            auto buffer = device.CreateBuffer(sizeof(Matrix4) * MaxInstancesPerDraw, Gfx::BufferUsage::Vertex, Gfx::BufferMemory::CPUToGPU);
             Assert(buffer != Gfx::InvalidID);
             buffers.push_back(buffer);
         }

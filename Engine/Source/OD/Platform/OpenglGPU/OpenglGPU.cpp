@@ -373,7 +373,7 @@ GLenum GetBufferTarget(BufferUsage usage){
 GLenum GetOpenGLBufferUsage(BufferMemory memory){
     switch(memory){
         case BufferMemory::GPUOnly: return GL_STATIC_DRAW;
-        case BufferMemory::CPUToGPU: return GL_DYNAMIC_DRAW;
+        case BufferMemory::CPUToGPU: return GL_DYNAMIC_DRAW; //TODO: maybe change to GL_STATIC_DRAW, becose on vulkan this CPUToGPU is more fast for dynamic uniform, and dynamic instacing vbo
         case BufferMemory::GPUToCPU: return GL_DYNAMIC_READ;
         case BufferMemory::CPUOnly: return GL_STREAM_DRAW;
     }
