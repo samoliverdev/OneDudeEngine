@@ -1731,8 +1731,8 @@ void init_vulkan(){
     vkb::InstanceBuilder builder;
     auto inst_ret = builder.set_app_name("OD Engine Vulkan")
         .require_api_version(1, 1, 0)
-        .request_validation_layers(true)
-        .set_debug_callback(VulkanValidationCallback)
+        //.request_validation_layers(true).set_debug_callback(VulkanValidationCallback)
+        .request_validation_layers(false)
         .build();
 
     vkb::Instance vkb_inst = inst_ret.value();
@@ -2146,7 +2146,12 @@ void VulkanGPUDevice::Init(bool inmultithread){
     if(multithread){
         multithreadRendererContext.init = [&](){ _Init(); };
         multithreadRendererContext.shut = [&](){ _Shut(); };
-        multithreadRendererContext.runRender = [&](RenderFrame& f){  RunRender(f); f.Clear(); Platform::SwapBuffers(); };
+        multithreadRendererContext.runRender = [&](RenderFrame& f){  
+            SimpleTimer s([&](float t){ profilesGpu.push_back({"RunRender", t}); });
+            RunRender(f); 
+            f.Clear(); 
+            //Platform::SwapBuffers(); 
+        };
         multithreadRendererContext.Init();
     } else {
         _Init();
@@ -2170,14 +2175,46 @@ void VulkanGPUDevice::StartRender(){
 }
 
 void VulkanGPUDevice::UpdateRender(){
-    if(multithread){
+    /*if(multithread){
         multithreadRendererContext.WaitForRender();
         multithreadRendererContext.SwapRenderFrames();
         SyncSingleThreadData();
     } else {
+        SimpleTimer s([&](float t){ profilesGpu.push_back({"RunRender", t}); });
         RunRender(*multithreadRendererContext.simulationFrame);
         multithreadRendererContext.simulationFrame->Clear();
-        Platform::SwapBuffers();
+        //Platform::SwapBuffers();
+    }*/
+
+    if(multithread){
+        {
+        OD_PROFILE_SCOPE("OpenglGPUDevice::UpdateRender::WaitForRender");
+        multithreadRendererContext.WaitForRender();
+        }
+
+        {
+        OD_PROFILE_SCOPE("OpenglGPUDevice::UpdateRender::SwapRenderFrames");
+        multithreadRendererContext.SwapRenderFrames();
+        }
+        
+        {
+        OD_PROFILE_SCOPE("OpenglGPUDevice::UpdateRender::SyncSingleThreadData");
+        SyncSingleThreadData();
+        }
+    } else {
+        SimpleTimer s([&](float t){ 
+            //LogInfo("RunRender: {}", t);
+            profilesGpu.push_back({"RunRender", t}); 
+        });
+        {
+        OD_PROFILE_SCOPE("OpenglGPUDevice::UpdateRender::RunRender");
+        RunRender(*multithreadRendererContext.simulationFrame);
+        }
+        {
+        OD_PROFILE_SCOPE("OpenglGPUDevice::UpdateRender::SimulationFrameClear");
+        multithreadRendererContext.simulationFrame->Clear();
+        }
+
     }
 }
 
@@ -3100,6 +3137,11 @@ void VulkanGPUDevice::SyncSingleThreadData(){
     bindGroupLayoutPool.SyncSingleThreadData();
     bindGroupPool.SyncSingleThreadData();
     framebufferPool.SyncSingleThreadData();
+
+    profilesCpu.clear();
+    for(auto& i :profilesGpu) profilesCpu.push_back(i);
+    profilesCpu.push_back({"Multithread Running", multithreadRendererContext.runningProfileTime});
+    profilesGpu.clear();
 }
 
 Pipeline VulkanGPUDevice::CreatePipeline(const char* source, PipelineInfo info){   
@@ -3268,6 +3310,10 @@ Framebuffer VulkanGPUDevice::CreateFramebuffer(FrameBufferCreateInfo& info){
 
 void VulkanGPUDevice::DestroyFramebuffer(Framebuffer framebuffer){
     multithreadRendererContext.simulationFrame->resourceCommands.DestroyFramebuffer(framebuffer);
+}
+
+std::vector<Device::Profile> VulkanGPUDevice::GetProfiles(){
+    return profilesCpu;
 }
 
 #pragma endregion

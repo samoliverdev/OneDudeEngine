@@ -54,7 +54,7 @@ struct Data{
 const char* shaderSource = R"GLSL(
     #ifdef VERTEX
     layout(location = 0) in vec3 aPos;
-    layout(location = 7) in vec3 aColor;
+    layout(location = 3) in vec3 aColor;
 
     #ifdef Vulkan_API
     layout(location = 0) out vec3 vColor;
@@ -84,6 +84,7 @@ const char* shaderSource = R"GLSL(
 
     void main(){
         gl_Position = proj * view * model * vec4(aPos, 1.0);
+        //gl_Position = model * vec4(aPos, 1.0);
         vColor = aColor;
         //vColor = vec3(1.0, 0.0, 0.0);
     }
@@ -193,7 +194,7 @@ void GPUSample1::OnInit(){
     pipelineInfo.vertexLayout.attributes[0] = {Gfx::VertexSemantic::Position, Gfx::VertexFormat::Float3, 0, 0};
     pipelineInfo.vertexLayout.attributes[1] = {Gfx::VertexSemantic::Color0, Gfx::VertexFormat::Float3, 0, 12};
     pipelineInfo.vertexLayout.attributeCount = 2;
-    pipelineInfo.vertexLayout.buffers[0] = {sizeof(Vector3) * 2, Gfx::VertexInputRate::Vertex};
+    pipelineInfo.vertexLayout.buffers[0] = {sizeof(float) * 6, Gfx::VertexInputRate::Vertex};
     pipelineInfo.vertexLayout.bufferCount = 1;
     pipelineInfo.bindGroupLayouts[0] = bindGroupLayout;
     pipelineInfo.bindGroupLayoutCount = 1;
@@ -207,8 +208,8 @@ void GPUSample1::OnInit(){
     separateInfo.vertexLayout.attributes[0] = {Gfx::VertexSemantic::Position, Gfx::VertexFormat::Float3, 0, 0};
     separateInfo.vertexLayout.attributes[1] = {Gfx::VertexSemantic::Color0, Gfx::VertexFormat::Float3, 1, 0};
     separateInfo.vertexLayout.attributeCount = 2;
-    separateInfo.vertexLayout.buffers[0] = {sizeof(Vector3), Gfx::VertexInputRate::Vertex};
-    separateInfo.vertexLayout.buffers[1] = {sizeof(Vector3), Gfx::VertexInputRate::Vertex};
+    separateInfo.vertexLayout.buffers[0] = {sizeof(float) * 3, Gfx::VertexInputRate::Vertex};
+    separateInfo.vertexLayout.buffers[1] = {sizeof(float) * 3, Gfx::VertexInputRate::Vertex};
     separateInfo.vertexLayout.bufferCount = 2;
     separateInfo.bindGroupLayouts[0] = bindGroupLayout;
     separateInfo.bindGroupLayoutCount = 1;

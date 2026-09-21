@@ -35,6 +35,7 @@ struct GraphicsDeviceInfo{
     std::string apiName;
     int version;
     bool supportUniformBuffer;
+    bool useSharedContext;
 };
 
 class OD_API GraphicsDevice {

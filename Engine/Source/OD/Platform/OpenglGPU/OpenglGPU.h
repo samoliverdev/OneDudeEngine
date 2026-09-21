@@ -30,7 +30,7 @@ public:
     virtual void StartRender() override;
     virtual void UpdateRender() override;
 
-    virtual bool ImGuiSupported() const override { return true; }
+    virtual bool ImGuiSupported() const override;
     virtual void ImGuiInitialize() override;
     virtual void ImGuiNewFrame() override;
     virtual void SubmitImGuiDrawData(void* data, ImGuiDrawDataDestroyFunction destroy) override;

@@ -63,7 +63,12 @@ public:
     virtual Framebuffer CreateFramebuffer(FrameBufferCreateInfo& info) override;
     virtual void DestroyFramebuffer(Framebuffer destroy) override;
 
+    virtual std::vector<Profile> GetProfiles() override;
+
 private:
+    std::vector<Profile> profilesCpu;
+    std::vector<Profile> profilesGpu;
+
     struct BufferData{
         VkBuffer buffer = VK_NULL_HANDLE;
         VmaAllocation allocation = VK_NULL_HANDLE;

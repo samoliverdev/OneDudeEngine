@@ -39,6 +39,7 @@
 #include "Samples/GPUSample7.h"
 #include "Samples/GPUSample8.h"
 #include "Samples/GPUSample9.h"
+#include "Samples/GPUSample10.h"
 
 #include <OD/Graphics/Texture.h>
 
@@ -68,6 +69,7 @@ OD::Module* CreateMainModule(){
     if(i == -8) return new GPUSample7();
     if(i == -9) return new GPUSample8();
     if(i == -10) return new GPUSample9();
+    if(i == -11) return new GPUSample10();
 
     if(i == -1) return new LoadSceneSample();
     

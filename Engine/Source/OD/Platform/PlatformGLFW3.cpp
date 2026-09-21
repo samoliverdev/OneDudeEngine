@@ -397,13 +397,15 @@ bool Platform::SystemStartup(const ApplicationConfig& config){
 
 void Platform::StopCurrentContext(){
     auto graphicsDeviceInfo = graphicsDevice->GetInfo();
-    if(graphicsDeviceInfo.apiName == "OpenGL"){
+    if(graphicsDeviceInfo.apiName == "OpenGL" && graphicsDeviceInfo.useSharedContext){
         //glfwMakeContextCurrent(nullptr);
 
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
         sharedContextWindow = glfwCreateWindow(1, 1, "SharedContext", nullptr, window);// Share all compatible OpenGL objects with the main context.
         Assert(sharedContextWindow != nullptr);
         glfwMakeContextCurrent(sharedContextWindow);
+    } else if(graphicsDeviceInfo.apiName == "OpenGL"){
+        glfwMakeContextCurrent(nullptr);
     }
 }
 

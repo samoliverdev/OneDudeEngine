@@ -105,6 +105,56 @@ int curFramebufferRenderPassIndex = -1;
 
 Gfx::BindGroup curCameraBindGroup;
 
+constexpr uint32_t MaxCachedVertexBufferSlots = 16;
+Gfx::Pipeline cachedPipeline = Gfx::InvalidID;
+Gfx::Buffer cachedVertexBuffers[MaxCachedVertexBufferSlots];
+Gfx::Buffer cachedIndexBuffer = Gfx::InvalidID;
+Gfx::BindGroup cachedBindGroups[4];
+
+void ResetBindingCache(){
+    cachedPipeline = Gfx::InvalidID;
+    cachedIndexBuffer = Gfx::InvalidID;
+
+    for(auto& buffer : cachedVertexBuffers) buffer = Gfx::InvalidID;
+    for(auto& bindGroup : cachedBindGroups) bindGroup = Gfx::InvalidID;
+}
+
+void SetPipelineCached(Gfx::CommandBuffer* cmd, Gfx::Pipeline pipeline){
+    if(cachedPipeline == pipeline) return;
+
+    cmd->SetPipeline(pipeline);
+    cachedPipeline = pipeline;
+
+    // OpenGL configures vertex attributes against the active pipeline, so all
+    // vertex bindings must be reapplied after a pipeline change.
+    cachedIndexBuffer = Gfx::InvalidID;
+    for(auto& buffer : cachedVertexBuffers) buffer = Gfx::InvalidID;
+    for(auto& bindGroup : cachedBindGroups) bindGroup = Gfx::InvalidID;
+}
+
+void SetBindGroupCached(Gfx::CommandBuffer* cmd, uint8_t slot, Gfx::BindGroup bindGroup){
+    Assert(slot < 4);
+    if(cachedBindGroups[slot] == bindGroup) return;
+
+    cmd->SetBindGroup(slot, bindGroup);
+    cachedBindGroups[slot] = bindGroup;
+}
+
+void SetVertexBufferCached(Gfx::CommandBuffer* cmd, uint32_t slot, Gfx::Buffer buffer){
+    Assert(slot < MaxCachedVertexBufferSlots);
+    if(cachedVertexBuffers[slot] == buffer) return;
+
+    cmd->SetVertexBuffer(slot, buffer);
+    cachedVertexBuffers[slot] = buffer;
+}
+
+void SetIndexBufferCached(Gfx::CommandBuffer* cmd, Gfx::Buffer buffer){
+    if(cachedIndexBuffer == buffer) return;
+
+    cmd->SetIndexBuffer(buffer);
+    cachedIndexBuffer = buffer;
+}
+
 Gfx::Texture2D defaultTex;
 Gfx::Cubemap defaultCubemap;
 Gfx::Buffer defaultBuffer;
@@ -417,6 +467,7 @@ void Graphics::_Begin(){
     curMat = nullptr;
     curShader = nullptr;
     curBindGroup = emptyBindGroup;
+    ResetBindingCache();
 }
 
 void Graphics::_End(){
@@ -448,6 +499,7 @@ Camera Graphics::GetCamera(){
 
 void Graphics::BeginRenderToScreen(Vector4 clearColor){
     #ifdef TestNewGPU_API
+    ResetBindingCache();
     curFramebufferRenderPassIndex = FramebufferRenderPass::GetRenderPassIndex("DefaultWindows");
     Assert(curFramebufferRenderPassIndex  != -1);
 
@@ -820,24 +872,24 @@ void Graphics::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawD
     Assert(mat.currentShader.drawTypes[(int)Shader::DrawType::DefaultDraw]->_pipelines[curFramebufferRenderPassIndex] != Gfx::InvalidID);
 
     auto* cmd = gfxDevice->GetCommandBuffer();
-    cmd->SetPipeline(mat.currentShader.drawTypes[(int)Shader::DrawType::DefaultDraw]->_pipelines[curFramebufferRenderPassIndex]);
-    cmd->SetBindGroup(0, curBindGroup);
-    cmd->SetBindGroup(1, perDrawBindGroup);
-    cmd->SetBindGroup(2, curCameraBindGroup);// camBindGroup);
+    SetPipelineCached(cmd, mat.currentShader.drawTypes[(int)Shader::DrawType::DefaultDraw]->_pipelines[curFramebufferRenderPassIndex]);
+    SetBindGroupCached(cmd, 0, curBindGroup);
+    SetBindGroupCached(cmd, 1, perDrawBindGroup);
+    SetBindGroupCached(cmd, 2, curCameraBindGroup);
 
-    cmd->SetVertexBuffer(0, mesh.vertexVbo);
-    cmd->SetVertexBuffer(1, mesh.uvVbo);
-    cmd->SetVertexBuffer(2, mesh.normalVbo);
-    cmd->SetVertexBuffer(3, mesh.colorVbo);
-    cmd->SetVertexBuffer(4, mesh.tangentVbo);
-    cmd->SetVertexBuffer(5, mesh.influencesVbo);
-    cmd->SetVertexBuffer(6, mesh.weightsVbo);
-    cmd->SetVertexBuffer(7, emptyInstacingVbo);
+    SetVertexBufferCached(cmd, 0, mesh.vertexVbo);
+    SetVertexBufferCached(cmd, 1, mesh.uvVbo);
+    SetVertexBufferCached(cmd, 2, mesh.normalVbo);
+    SetVertexBufferCached(cmd, 3, mesh.colorVbo);
+    SetVertexBufferCached(cmd, 4, mesh.tangentVbo);
+    SetVertexBufferCached(cmd, 5, mesh.influencesVbo);
+    SetVertexBufferCached(cmd, 6, mesh.weightsVbo);
+    SetVertexBufferCached(cmd, 7, emptyInstacingVbo);
 
     if(mesh.indiceCount == 0){ //mesh.ebo == INVALID_ID){
         cmd->Draw(mesh.vertexCount);
     } else {
-        cmd->SetIndexBuffer(mesh.ebo);
+        SetIndexBufferCached(cmd, mesh.ebo);
         cmd->DrawIndexed(mesh.indiceCount);
     }
     #else
@@ -871,24 +923,24 @@ void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* animMatrix
         Assert(mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipelines[curFramebufferRenderPassIndex] != Gfx::InvalidID);
 
         auto* cmd = gfxDevice->GetCommandBuffer();
-        cmd->SetPipeline(mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipelines[curFramebufferRenderPassIndex]);
-        cmd->SetBindGroup(0, curBindGroup);
-        cmd->SetBindGroup(1, emptyModelBindGroup);
-        cmd->SetBindGroup(2, curCameraBindGroup);// camBindGroup);
+        SetPipelineCached(cmd, mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipelines[curFramebufferRenderPassIndex]);
+        SetBindGroupCached(cmd, 0, curBindGroup);
+        SetBindGroupCached(cmd, 1, emptyModelBindGroup);
+        SetBindGroupCached(cmd, 2, curCameraBindGroup);
 
-        cmd->SetVertexBuffer(0, mesh.vertexVbo);
-        cmd->SetVertexBuffer(1, mesh.uvVbo);
-        cmd->SetVertexBuffer(2, mesh.normalVbo);
-        cmd->SetVertexBuffer(3, mesh.colorVbo);
-        cmd->SetVertexBuffer(4, mesh.tangentVbo);
-        cmd->SetVertexBuffer(5, mesh.influencesVbo);
-        cmd->SetVertexBuffer(6, mesh.weightsVbo);
-        cmd->SetVertexBuffer(7, intacingBuffer);
+        SetVertexBufferCached(cmd, 0, mesh.vertexVbo);
+        SetVertexBufferCached(cmd, 1, mesh.uvVbo);
+        SetVertexBufferCached(cmd, 2, mesh.normalVbo);
+        SetVertexBufferCached(cmd, 3, mesh.colorVbo);
+        SetVertexBufferCached(cmd, 4, mesh.tangentVbo);
+        SetVertexBufferCached(cmd, 5, mesh.influencesVbo);
+        SetVertexBufferCached(cmd, 6, mesh.weightsVbo);
+        SetVertexBufferCached(cmd, 7, intacingBuffer);
 
         if(mesh.ebo == INVALID_ID){
             cmd->DrawInstanced(mesh.vertexCount, count);
         } else {
-            cmd->SetIndexBuffer(mesh.ebo);
+            SetIndexBufferCached(cmd, mesh.ebo);
             cmd->DrawIndexedInstanced(mesh.indiceCount, count);
         }
     };
@@ -927,24 +979,24 @@ void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, InstancingBuffer& b
     Assert(mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipelines[curFramebufferRenderPassIndex] != Gfx::InvalidID);
 
     auto* cmd = gfxDevice->GetCommandBuffer();
-    cmd->SetPipeline(mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipelines[curFramebufferRenderPassIndex]);
-    cmd->SetBindGroup(0, curBindGroup);
-    cmd->SetBindGroup(1, emptyModelBindGroup);
-    cmd->SetBindGroup(2, curCameraBindGroup);// camBindGroup);
+    SetPipelineCached(cmd, mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipelines[curFramebufferRenderPassIndex]);
+    SetBindGroupCached(cmd, 0, curBindGroup);
+    SetBindGroupCached(cmd, 1, emptyModelBindGroup);
+    SetBindGroupCached(cmd, 2, curCameraBindGroup);
 
-    cmd->SetVertexBuffer(0, mesh.vertexVbo);
-    cmd->SetVertexBuffer(1, mesh.uvVbo);
-    cmd->SetVertexBuffer(2, mesh.normalVbo);
-    cmd->SetVertexBuffer(3, mesh.colorVbo);
-    cmd->SetVertexBuffer(4, mesh.tangentVbo);
-    cmd->SetVertexBuffer(5, mesh.influencesVbo);
-    cmd->SetVertexBuffer(6, mesh.weightsVbo);
-    cmd->SetVertexBuffer(10, buffer.buffer);
+    SetVertexBufferCached(cmd, 0, mesh.vertexVbo);
+    SetVertexBufferCached(cmd, 1, mesh.uvVbo);
+    SetVertexBufferCached(cmd, 2, mesh.normalVbo);
+    SetVertexBufferCached(cmd, 3, mesh.colorVbo);
+    SetVertexBufferCached(cmd, 4, mesh.tangentVbo);
+    SetVertexBufferCached(cmd, 5, mesh.influencesVbo);
+    SetVertexBufferCached(cmd, 6, mesh.weightsVbo);
+    SetVertexBufferCached(cmd, 10, buffer.buffer);
 
     if(mesh.ebo == INVALID_ID){
         cmd->DrawInstanced(mesh.vertexCount, count);
     } else {
-        cmd->SetIndexBuffer(mesh.ebo);
+        SetIndexBufferCached(cmd, mesh.ebo);
         cmd->DrawIndexedInstanced(mesh.indiceCount, count);
     }
     #else
@@ -1034,6 +1086,8 @@ void Graphics::BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass){
 void Graphics::BeginFramebuffer(Framebuffer& frambuffer, bool clean, Vector4 clearColor, int layer, int mip){ 
     #ifdef TestNewGPU_API
     Assert(frambuffer.framebuffer != Gfx::InvalidID);
+
+    ResetBindingCache();
 
     curFramebufferRenderPassIndex = frambuffer.passIndex;
     curFramebufferRenderPassName = frambuffer.passName;

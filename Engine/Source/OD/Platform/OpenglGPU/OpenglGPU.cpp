@@ -934,6 +934,12 @@ OpenglGPUDevice::OpenglGPUDevice(){
     info.version = 4;
     info.supportUniformBuffer = true;
 
+    #ifdef DONT_DEFERRED_RESOURCE_CREATION
+    info.useSharedContext = true;
+    #else
+    info.useSharedContext = false;
+    #endif
+
     windowFrameBufferLayout.colorAttachments[0].format = FramebufferTextureFormat::RGBA8;
     windowFrameBufferLayout.colorAttachmentsCount = 1;
     windowFrameBufferLayout.depthAttachment.format = FramebufferDepthTextureFormat::DEPTH24_STENCIL8;
@@ -1011,7 +1017,14 @@ void OpenglGPUDevice::_Shut(){
     ImGuiShutdown();
 }
 
+bool OpenglGPUDevice::ImGuiSupported() const {
+    return info.useSharedContext == true; 
+    return true; 
+}
+
 void OpenglGPUDevice::ImGuiInitialize(){
+    if(ImGuiSupported() == false) return;
+
     ImGui_ImplOpenGL3_Init("#version 460");
     // Build the font atlas before the main thread calls ImGui::NewFrame().
     // Subsequent backend NewFrame calls remain on the render thread.
@@ -1028,6 +1041,8 @@ void OpenglGPUDevice::SubmitImGuiDrawData(void* data, ImGuiDrawDataDestroyFuncti
 }
 
 void OpenglGPUDevice::ImGuiShutdown(){
+    if(ImGuiSupported() == false) return;
+
     ImGui_ImplOpenGL3_Shutdown();
 }
 
@@ -1040,7 +1055,10 @@ void OpenglGPUDevice::Init(bool inmultithread){
         multithreadRendererContext.init = [&](){ _Init(); }; //_Init;
         multithreadRendererContext.shut = [&](){ _Shut(); }; //_Shut;
         multithreadRendererContext.runRender = [&](RenderFrame& f){ 
-            SimpleTimer s([&](float t){ profilesGpu.push_back({"RunRender", t}); });
+            SimpleTimer s([&](float t){ 
+                //LogInfo("RunRender: {}", t);
+                profilesGpu.push_back({"RunRender", t}); 
+            });
             RunRender(f); 
             f.Clear(); 
             Platform::SwapBuffers(); 
@@ -1084,7 +1102,10 @@ void OpenglGPUDevice::UpdateRender(){
         SyncSingleThreadData();
         }
     } else {
-        SimpleTimer s([&](float t){ profilesGpu.push_back({"RunRender", t}); });
+        SimpleTimer s([&](float t){ 
+            //LogInfo("RunRender: {}", t);
+            profilesGpu.push_back({"RunRender", t}); 
+        });
         {
         OD_PROFILE_SCOPE("OpenglGPUDevice::UpdateRender::RunRender");
         RunRender(*multithreadRendererContext.simulationFrame);
@@ -1315,8 +1336,11 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
     Pipeline currentPipeline = INVALID_ID;
     PipelineInfo currentPipelineInfo = {};
 
-    int curBindIndex = 0;
     int curTextureIndex = 0;
+    GLuint uniformBindingPoints[4][MaxBindingsLookUp];
+    for(auto& group : uniformBindingPoints){
+        for(auto& binding : group) binding = GL_INVALID_INDEX;
+    }
 
     /*for(auto i: frameBindGroups){
         bindGroupPool.AddDestroyedId(i);
@@ -1504,6 +1528,11 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
         case CommandBuffer::Type::SetPipeline:{
             PipelineData& pipeline = pipelinePool.Get(cmd.setPipeline.id);
 
+            // Restore the complete OpenGL state needed by this logical pipeline.
+            // Vulkan binds the pipeline and descriptor sets independently; OpenGL
+            // needs the program and VAO made current explicitly.
+            glBindVertexArray(globalVAO);
+
             SetColorMask(pipeline.info.colorMask);
             SetCullFace(pipeline.info.cullFace);
             SetDepthTest(pipeline.info.depthTest);
@@ -1533,13 +1562,29 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
             currentPipelineInfo = pipeline.info;
             glCheckError();
 
-            curBindIndex = 0;
+            GLuint nextUniformBindingPoint = 0;
+            for(uint32_t groupIndex = 0; groupIndex < pipeline.info.bindGroupLayoutCount; ++groupIndex){
+                const BindGroupLayoutInfo& layout = bindGroupLayoutPool.Get(pipeline.info.bindGroupLayouts[groupIndex]).info;
+                for(uint32_t entryIndex = 0; entryIndex < layout.entriesCount; ++entryIndex){
+                    const BindLayoutEntry& entry = layout.entries[entryIndex];
+                    if(entry.type != BindingType::UniformBuffer) continue;
+
+                    Assert(entry.binding < MaxBindingsLookUp);
+                    uniformBindingPoints[groupIndex][entry.binding] = nextUniformBindingPoint++;
+                }
+            }
+            GLint maxUniformBindingPoints = 0;
+            glGetIntegerv(GL_MAX_UNIFORM_BUFFER_BINDINGS, &maxUniformBindingPoints);
+            Assert(nextUniformBindingPoint <= static_cast<GLuint>(maxUniformBindingPoints));
+
             curTextureIndex = 0;
             break;
         }
 
         case CommandBuffer::Type::SetVertexBuffer:{
             Assert(bufferPool.Get(cmd.setVertexBuffer.buffer).usage == BufferUsage::Vertex);
+
+            glBindVertexArray(globalVAO);
 
             const uint32_t slot = cmd.setVertexBuffer.slot;
             GLuint vbo = bufferPool.Get(cmd.setVertexBuffer.buffer).buffer;
@@ -1565,6 +1610,8 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
         case CommandBuffer::Type::SetIndexBuffer:{
             Assert(bufferPool.Get(cmd.setIndexBuffer.buffer).usage == BufferUsage::Index);
 
+            glBindVertexArray(globalVAO);
+
             GLuint ebo = bufferPool.Get(cmd.setIndexBuffer.buffer).buffer;
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
             break;
@@ -1575,6 +1622,11 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
 
             const BindGroupData& bindGroup = bindGroupPool.Get(cmd.setBindGroup.group);
             const BindGroupLayoutData& bindGroupLayout = bindGroupLayoutPool.Get(bindGroup.info.layout);
+            const PipelineData& pipeline = pipelinePool.Get(currentPipeline);
+            Assert(cmd.setBindGroup.slot < 4);
+
+            glUseProgram(pipeline.program);
+            glBindVertexArray(globalVAO);
 
             for(int i = 0; i < bindGroup.info.entriesCount; i++){
                 if(bindGroupLayout.info.entries[i].type == BindingType::UniformBuffer){
@@ -1587,25 +1639,25 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                     Assert(buffer.buffer != InvalidID);
                     Assert(binding.dynamicOffset == false);
 
-                    const PipelineData& pipeline = pipelinePool.Get(currentPipeline);
                     Assert(pipeline.info.bindGroupLayouts[cmd.setBindGroup.slot] == bindGroup.info.layout);
 
                     GLuint blockIndex = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].blockIndex;
                     Assert(blockIndex != GL_INVALID_INDEX);
                     Assert(pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].bufferSize <= buffer.size);
 
+                    const GLuint bindingPoint = uniformBindingPoints[cmd.setBindGroup.slot][binding.binding];
+                    Assert(bindingPoint != GL_INVALID_INDEX);
+
                     glBindBufferRange(
                         GL_UNIFORM_BUFFER,
-                        curBindIndex,
+                        bindingPoint,
                         buffer.buffer,
                         static_cast<GLintptr>(binding.offset),
                         static_cast<GLsizeiptr>(binding.size)
                     );
                     glCheckError();
-                    glUniformBlockBinding(pipeline.program, blockIndex, curBindIndex);
+                    glUniformBlockBinding(pipeline.program, blockIndex, bindingPoint);
                     glCheckError();
-
-                    curBindIndex += 1;
                 }
 
                 if(bindGroupLayout.info.entries[i].type == BindingType::Texture2D){
@@ -1614,7 +1666,6 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                     if(binding.texture != InvalidID){
                         const Texture2DData& tex = texture2DPool.Get(binding.texture);
 
-                        const PipelineData& pipeline = pipelinePool.Get(currentPipeline);
                         GLuint uniformLoc = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].uniformLoc;
                         Assert(uniformLoc >= 0);
 
@@ -1627,7 +1678,6 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                     } else if(binding.framebuffer != InvalidID){
                         const FramebufferData& tex = framebufferPool.Get(binding.framebuffer);
 
-                        const PipelineData& pipeline = pipelinePool.Get(currentPipeline);
                         GLuint uniformLoc = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].uniformLoc;
                         Assert(uniformLoc >= 0);
 
@@ -1647,7 +1697,6 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                     if(binding.framebuffer != InvalidID){
                         const FramebufferData& tex = framebufferPool.Get(binding.framebuffer);
 
-                        const PipelineData& pipeline = pipelinePool.Get(currentPipeline);
                         GLuint uniformLoc = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].uniformLoc;
                         Assert(uniformLoc >= 0);
 
@@ -1666,7 +1715,6 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                     const BindingEntry& binding = bindGroup.info.entries[i];
                     if(binding.cubemap != InvalidID){
                         const CubemapData& cube = cubemapPool.Get(binding.cubemap);
-                        const PipelineData& pipeline = pipelinePool.Get(currentPipeline);
                         GLuint uniformLoc = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].uniformLoc;
                         Assert(uniformLoc >= 0);
 
