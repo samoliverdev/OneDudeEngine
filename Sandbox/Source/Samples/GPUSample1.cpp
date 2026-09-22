@@ -146,9 +146,19 @@ void GPUSample1::OnInit(){
 
     Gfx::BindGroupInfo bindGroupInfo = {};
     bindGroupInfo.layout = bindGroupLayout;
-    bindGroupInfo.entries[0] = {0, uniformBuffer, 0, sizeof(Data), false};
-    bindGroupInfo.entries[1] = {1, uniformBuffer2, 0, sizeof(glm::mat4), false};
+    Gfx::BindingEntry bindGroupEntries[2];
+    //bindGroupInfo.entries[0] = {0, uniformBuffer, 0, sizeof(Data), false};
+    //bindGroupInfo.entries[1] = {1, uniformBuffer2, 0, sizeof(glm::mat4), false};
+    bindGroupEntries[0].binding = 0;
+    bindGroupEntries[0].buffer = uniformBuffer;
+    bindGroupEntries[0].size = sizeof(Data);
+    bindGroupEntries[0].dynamicOffset = false;
+    bindGroupEntries[1].binding = 1;
+    bindGroupEntries[1].buffer = uniformBuffer2;
+    bindGroupEntries[1].size = sizeof(glm::mat4);
+    bindGroupEntries[1].dynamicOffset = false;
     bindGroupInfo.entriesCount = 2;
+    bindGroupInfo.entries = bindGroupEntries;
 
     //bindGroup = gpuDevice->CreateBindGroup(bindGroupInfo);
     bindGroup = gpuDevice->CreateBindGroup(bindGroupInfo);

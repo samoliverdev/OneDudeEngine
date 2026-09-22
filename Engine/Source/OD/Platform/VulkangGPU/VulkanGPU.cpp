@@ -1258,10 +1258,10 @@ void VulkanGPUDevice::_DestroyTexture2D(Texture2DData& data){
 #pragma endregion
 
 #pragma region BindGroupLayout
-bool VulkanGPUDevice::_CreateBindGroupLayout(BindGroupLayoutData& data, BindGroupLayoutInfo& info){
+bool VulkanGPUDevice::_CreateBindGroupLayout(BindGroupLayoutData& data, const BindGroupLayoutInfo& info){
     data.info = info;
 
-    auto Convert = [](BindLayoutEntry& e) -> VkDescriptorSetLayoutBinding{
+    auto Convert = [](const BindLayoutEntry& e) -> VkDescriptorSetLayoutBinding{
         VkDescriptorSetLayoutBinding entry = {};
         entry.binding = e.binding;
         entry.descriptorCount = 1;
@@ -1298,13 +1298,18 @@ void VulkanGPUDevice::_DestroyBindGroupLayout(BindGroupLayoutData& data){
 
 #pragma region BindGroup
 
-bool VulkanGPUDevice::_CreateBindGroup(BindGroupData& data, BindGroupInfo& info, VkDescriptorPool pool){
-    data.info = info;
+bool VulkanGPUDevice::_CreateBindGroup(BindGroupData& data, const BindGroupInfo& info, VkDescriptorPool pool){
+    //data.info = info;
+    data.entries.clear();
+    for(int i = 0; i < info.entriesCount; i++){
+        data.entries.push_back(info.entries[i]);
+    }
     BindGroupLayoutData& layoutData = bindGroupLayoutPool.Get(info.layout);
 
     // BindGroupInfo owns a fixed-size entries array, so allocating temporary
     // vectors here only adds heap traffic to every frame bind-group creation.
-    constexpr uint32_t MaxBindGroupEntries = static_cast<uint32_t>(std::size(info.entries));
+    //TODO: Optmaze this with std::vector on VulkanGPUDevice, for avoid lot of stack alloc on here
+    constexpr uint32_t MaxBindGroupEntries = 64;// static_cast<uint32_t>(std::size(info.entries));
     Assert(info.entriesCount <= MaxBindGroupEntries);
     VkDescriptorBufferInfo bInfos[MaxBindGroupEntries]{};
     VkDescriptorImageInfo imageInfos[MaxBindGroupEntries]{};
@@ -2448,14 +2453,14 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
             case ResourceCommands::Type::CreateBindGroup:{
                 Assert(bindGroupPool.IsValid(cmd.createBindGroup.id));
                 auto& data = bindGroupPool.Get(cmd.createBindGroup.id);
-                _CreateBindGroup(data, *cmd.createBindGroup.info, _descriptorPool);
+                _CreateBindGroup(data, cmd.createBindGroup.info, _descriptorPool);
                 break;
             }
 
             case ResourceCommands::Type::CreateFrameBindGroup:{
                 Assert(bindGroupPool.IsValid(cmd.createFrameBindGroup.id));
                 auto& data = bindGroupPool.Get(cmd.createFrameBindGroup.id);
-                _CreateBindGroup(data, *cmd.createFrameBindGroup.info, get_current_frame()._descriptorPool);
+                _CreateBindGroup(data, cmd.createFrameBindGroup.info, get_current_frame()._descriptorPool);
                 frameBindGroups.push_back(cmd.createFrameBindGroup.id);
                 break;
             }

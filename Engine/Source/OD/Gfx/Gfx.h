@@ -273,7 +273,7 @@ inline VertexSemantic SlotToVertexSemanticTo(uint32_t slot){
 
 constexpr uint32_t MAX_BINDGROUP_COUT = 4;
 
-enum class BindingType{
+enum class BindingType: uint8_t{
     UniformBuffer,
     StorageBuffer,
     Texture2D, //Texture + sampler
@@ -304,7 +304,7 @@ struct BindLayoutEntry{
 };
 
 struct BindGroupLayoutInfo{
-    BindLayoutEntry entries[128];
+    BindLayoutEntry entries[64];
     uint32_t entriesCount = 0;
 };
 
@@ -312,6 +312,25 @@ struct BindGroupLayoutInfo{
 
 struct BindingEntry{
     uint32_t binding = 0;
+
+    /*union{
+        struct{
+            Buffer buffer;
+            size_t offset;
+            size_t size;
+        };
+
+        Texture2D texture;
+        Cubemap cubemap;
+
+        struct {
+            Framebuffer framebuffer;
+            uint16_t framebufferAttacement;
+            uint16_t framebufferLayer;
+        };
+    };
+    bool dynamicOffset = false;
+    */
 
     Buffer buffer = InvalidID;
     size_t offset = 0;
@@ -327,8 +346,8 @@ struct BindingEntry{
 };
 
 struct BindGroupInfo{
-    BindGroupLayout layout;
-    BindingEntry entries[64];
+    BindGroupLayout layout = Gfx::InvalidID;
+    BindingEntry* entries = nullptr;
     uint32_t entriesCount = 0;
 };
 
@@ -446,7 +465,9 @@ constexpr bool HasFlag(ClearFlags value, ClearFlags flag){
 
 class OD_API UploadBuffer{
 public:
-    UploadBuffer() = default;
+    static constexpr size_t DefaultBlockSize = 64 * 1024;
+
+    UploadBuffer(size_t blockSize = DefaultBlockSize): blockSize(std::max<size_t>(blockSize, 1)){}
     UploadBuffer(const UploadBuffer&) = delete;
     UploadBuffer& operator=(const UploadBuffer&) = delete;
     UploadBuffer(UploadBuffer&&) noexcept = default;
@@ -458,31 +479,34 @@ public:
     }
 
     void* AllocateData(size_t size, size_t alignment = alignof(std::max_align_t)){
-        if(size == 0) return nullptr;
+        /*if(size == 0) return nullptr;
 
         if(blocks.empty()){
-            blocks.push_back(
-                std::make_unique<MemoryBlock>(
-                    std::max(DefaultBlockSize, size)
-                )
-            );
+            blocks.push_back(std::make_unique<MemoryBlock>(std::max(DefaultBlockSize, size)));
         }
 
         MemoryBlock* block = blocks[currentBlock].get();
 
-        if(void* ptr = block->Allocate(size, alignment))
-            return ptr;
+        if(void* ptr = block->Allocate(size, alignment)) return ptr;
 
         // Current block doesn't have enough space.
         currentBlock++;
 
         if(currentBlock >= blocks.size()){
-            blocks.push_back(
-                std::make_unique<MemoryBlock>(
-                    std::max(DefaultBlockSize, size)
-                )
-            );
+            blocks.push_back(std::make_unique<MemoryBlock>(std::max(DefaultBlockSize, size)));
         }
+
+        return blocks[currentBlock]->Allocate(size, alignment);*/
+
+        if(size == 0) return nullptr;
+
+        while(currentBlock < blocks.size()){
+            if(void* ptr = blocks[currentBlock]->Allocate(size, alignment)) return ptr;
+            ++currentBlock;
+        }
+
+        blocks.push_back(std::make_unique<MemoryBlock>(std::max(DefaultBlockSize, size)));
+        currentBlock = blocks.size() - 1;
 
         return blocks[currentBlock]->Allocate(size, alignment);
     }
@@ -494,6 +518,58 @@ public:
             block->used = 0;
 
         currentBlock = 0;
+    }
+
+    // Free unused blocks from the end.
+    //
+    // Safe to call during use because blocks containing allocations
+    // are not removed.
+    //
+    // Example:
+    //      uploadBuffer.FreeUnusedBlocks(2);
+    //
+    // Keeps at least 2 blocks allocated.
+    void FreeUnusedBlocks(size_t keepBlockCount = 1){
+        while(
+            blocks.size() > keepBlockCount &&
+            !blocks.empty() &&
+            blocks.back()->used == 0
+        ){
+            blocks.pop_back();
+        }
+
+        if(blocks.empty()){
+            currentBlock = 0;
+        }
+        else if(currentBlock >= blocks.size()){
+            currentBlock = blocks.size() - 1;
+        }
+    }
+
+    // Completely release all memory.
+    //
+    // IMPORTANT: pointers previously returned by Allocate()
+    // become invalid.
+    void FreeAll(){
+        blocks.clear();
+        currentBlock = 0;
+    }
+
+    size_t GetBlockSize() const{
+        return blockSize;
+    }
+
+    size_t GetBlockCount() const{
+        return blocks.size();
+    }
+
+    size_t GetAllocatedCapacity() const{
+        size_t result = 0;
+
+        for(const auto& block : blocks)
+            result += block->capacity;
+
+        return result;
     }
 private:
     struct MemoryBlock{
@@ -523,9 +599,10 @@ private:
 
     std::vector<std::unique_ptr<MemoryBlock>> blocks;
     size_t currentBlock = 0;
-    static constexpr size_t DefaultBlockSize = 64 * 1024;
+    size_t blockSize = DefaultBlockSize;
 };
 
+//TODO: Update to use a variable-size command stream, for usage less memory in std::vector<X> commands;
 struct OD_API ResourceCommands{
     enum class Type{
         CreatePipeline,
@@ -582,11 +659,11 @@ struct OD_API ResourceCommands{
             } createBindGroupLayout;
 
             struct {
-                BindGroup id; BindGroupInfo* info;
+                BindGroup id; BindGroupInfo info;
             } createBindGroup;
 
             struct {
-                BindGroup id; BindGroupInfo* info;
+                BindGroup id; BindGroupInfo info;
             } createFrameBindGroup;
 
             struct {
@@ -646,12 +723,13 @@ struct OD_API ResourceCommands{
 
     inline void Clear(){
         commands.clear();
-        uploadBuffer.Clear();
+        smallUploads.Clear();
+        resourceUploads.Clear();
     }
 
     inline void CreatePipeline(Pipeline id, const char* source, PipelineInfo info){
         size_t size = std::strlen(source) + 1;
-        char* copyData = static_cast<char*>(uploadBuffer.AllocateData(size));
+        char* copyData = static_cast<char*>(resourceUploads.AllocateData(size));
         std::memcpy(copyData, source, size);
 
         Command cmd{};
@@ -680,7 +758,7 @@ struct OD_API ResourceCommands{
     }
 
     inline void UpdatedBuffer(Buffer id, const void* data, size_t size){
-        void* copyData = uploadBuffer.AllocateData(size);
+        void* copyData = renderUploads.AllocateData(size);
         std::memcpy(copyData, data, size);
 
         Command cmd{};
@@ -707,7 +785,7 @@ struct OD_API ResourceCommands{
     }
 
     inline void UploadTexture2D(Texture2D id, const void* data, size_t size){
-        void *copyData = uploadBuffer.AllocateData(size);
+        void *copyData = resourceUploads.AllocateData(size);
         std::memcpy(copyData, data, size);
 
         Command cmd{};
@@ -734,7 +812,7 @@ struct OD_API ResourceCommands{
     }
 
     inline void UploadCubemap(Cubemap id, const void* data, size_t size){
-        void* copyData = uploadBuffer.AllocateData(size);
+        void* copyData = resourceUploads.AllocateData(size);
         std::memcpy(copyData, data, size);
         Command cmd{};
         cmd.type = Type::UploadCubemap;
@@ -752,7 +830,7 @@ struct OD_API ResourceCommands{
     }
 
     inline void CreateBindGroupLayout(BindGroupLayout id, BindGroupLayoutInfo& info){
-        BindGroupLayoutInfo* copyData = uploadBuffer.Allocate<BindGroupLayoutInfo>();
+        BindGroupLayoutInfo* copyData = smallUploads.Allocate<BindGroupLayoutInfo>();
         std::memcpy(copyData, &info, sizeof(BindGroupLayoutInfo));
         
         Command cmd{};
@@ -770,24 +848,30 @@ struct OD_API ResourceCommands{
     }
 
     inline void CreateBindGroup(BindGroup id, BindGroupInfo& info){
-        BindGroupInfo* copyData = uploadBuffer.Allocate<BindGroupInfo>();
-        std::memcpy(copyData, &info, sizeof(BindGroupInfo));
+        //BindGroupInfo* copyData = uploadBuffer.Allocate<BindGroupInfo>();
+        //std::memcpy(copyData, &info, sizeof(BindGroupInfo));
+        BindingEntry* entries = smallUploads.Allocate<BindingEntry>(info.entriesCount);
+        std::memcpy(entries, info.entries, sizeof(BindingEntry) * info.entriesCount);
         
         Command cmd{};
         cmd.type = Type::CreateBindGroup;
         cmd.createBindGroup.id = id;
-        cmd.createBindGroup.info = copyData;
+        cmd.createBindGroup.info = info;
+        cmd.createBindGroup.info.entries = entries;
         commands.push_back(cmd);
     }
 
     inline void CreateFrameBindGroup(BindGroup id, BindGroupInfo& info){
-        BindGroupInfo* copyData = uploadBuffer.Allocate<BindGroupInfo>();
-        std::memcpy(copyData, &info, sizeof(BindGroupInfo));
+        //BindGroupInfo* copyData = uploadBuffer.Allocate<BindGroupInfo>();
+        //std::memcpy(copyData, &info, sizeof(BindGroupInfo));
+        BindingEntry* entries = smallUploads.Allocate<BindingEntry>(info.entriesCount);
+        std::memcpy(entries, info.entries, sizeof(BindingEntry) * info.entriesCount);
         
         Command cmd{};
         cmd.type = Type::CreateFrameBindGroup;
         cmd.createFrameBindGroup.id = id;
-        cmd.createFrameBindGroup.info = copyData;
+        cmd.createFrameBindGroup.info = info;
+        cmd.createFrameBindGroup.info.entries = entries;
         commands.push_back(cmd);
     }
 
@@ -807,9 +891,12 @@ struct OD_API ResourceCommands{
     }
 
     std::vector<Command> commands;
-    UploadBuffer uploadBuffer = {};
+    UploadBuffer smallUploads{64 * 1024}; // 64 KB
+    UploadBuffer renderUploads{256 * 1024};  // 256 KB
+    UploadBuffer resourceUploads{1024 * 1024}; // 1 MB
 };
 
+//TODO: Update to use a variable-size command stream, for usage less memory in std::vector<X> commands;
 struct OD_API CommandBuffer{
     enum class Type{
         Clear,

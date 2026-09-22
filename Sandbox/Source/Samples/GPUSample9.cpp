@@ -115,17 +115,25 @@ void GPUSample9::OnInit(){
     brdfPipeline = device->CreatePipeline(brdfSource.c_str(), QuadPipelineInfo(brdfLayout, TextureLayout()));
     displayPipeline = device->CreatePipeline(displayShader, QuadPipelineInfo(displayLayout, device->GetWindowFrameBufferLayout()));
 
+    Gfx::BindingEntry bindGroupEntries[1];
+
     Gfx::BindGroupInfo brdfGroupInfo{};
     brdfGroupInfo.layout = brdfLayout;
-    brdfGroupInfo.entries[0] = {0, brdfUniforms, 0, sizeof(GPUSampleIBL::BrdfUniform), false};
+    //brdfGroupInfo.entries[0] = {0, brdfUniforms, 0, sizeof(GPUSampleIBL::BrdfUniform), false};
+    bindGroupEntries[0].binding = 0;
+    bindGroupEntries[0].buffer = brdfUniforms;
+    bindGroupEntries[0].size = sizeof(GPUSampleIBL::BrdfUniform);
+    bindGroupEntries[0].dynamicOffset = false;
     brdfGroupInfo.entriesCount = 1;
+    brdfGroupInfo.entries = bindGroupEntries;
     brdfGroup = device->CreateBindGroup(brdfGroupInfo);
 
     Gfx::BindGroupInfo displayGroupInfo{};
     displayGroupInfo.layout = displayLayout;
-    displayGroupInfo.entries[0].binding = 0;
-    displayGroupInfo.entries[0].texture = brdfIntegration;
+    bindGroupEntries[0].binding = 0;
+    bindGroupEntries[0].texture = brdfIntegration;
     displayGroupInfo.entriesCount = 1;
+    displayGroupInfo.entries = bindGroupEntries;
     displayGroup = device->CreateBindGroup(displayGroupInfo);
 }
 

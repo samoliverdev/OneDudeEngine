@@ -175,20 +175,23 @@ void GPUSample2::OnInit(){
     gpuDevice->UploadTexture2D(texture2, pixels, imageSize);
     stbi_image_free(pixels);
     
+    Gfx::BindingEntry bindGroupEntries[2];
 
     Gfx::BindGroupInfo bindGroupInfo = {};
     bindGroupInfo.layout = bindGroupLayout_2;
-    bindGroupInfo.entries[0] = {};
-    bindGroupInfo.entries[0].binding = 0;
-    bindGroupInfo.entries[0].texture = texture;
-    bindGroupInfo.entries[1] = {};
-    bindGroupInfo.entries[1].binding = 1;
-    bindGroupInfo.entries[1].texture = texture2;
+    bindGroupEntries[0] = {};
+    bindGroupEntries[0].binding = 0;
+    bindGroupEntries[0].texture = texture;
+    bindGroupEntries[1] = {};
+    bindGroupEntries[1].binding = 1;
+    bindGroupEntries[1].texture = texture2;
     bindGroupInfo.entriesCount = 2;
+    bindGroupInfo.entries = bindGroupEntries;
     bindGroup_2 = gpuDevice->CreateBindGroup(bindGroupInfo);
 
-    bindGroupInfo.entries[0].framebuffer = framebuffer_2;
-    bindGroupInfo.entries[0].framebufferAttacement = 0;
+    bindGroupEntries[0].framebuffer = framebuffer_2;
+    bindGroupEntries[0].framebufferAttacement = 0;
+    bindGroupEntries[0].framebufferLayer = 0;
     bindGroup1_2 = gpuDevice->CreateBindGroup(bindGroupInfo);
 
     Gfx::ShaderReflection reflection;

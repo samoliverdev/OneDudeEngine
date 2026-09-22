@@ -89,30 +89,37 @@ Gfx::BindGroupLayout IblCreateLayout(Gfx::Device* device, Gfx::BindingType textu
     return device->CreateBindGroupLayout(info);
 }
 
-Gfx::BindGroup IblCreateTextureGroup(Gfx::Device* device, Gfx::BindGroupLayout layout,
-                                     Gfx::Buffer uniforms, Gfx::Texture2D texture, uint32_t uniformSize){
+Gfx::BindGroup IblCreateTextureGroup(Gfx::Device* device, Gfx::BindGroupLayout layout, Gfx::Buffer uniforms, Gfx::Texture2D texture, uint32_t uniformSize){
     Gfx::BindGroupInfo info{};
     info.layout = layout;
-    info.entries[0] = {0, uniforms, 0, uniformSize, false};
-    info.entries[1].binding = 1;
-    info.entries[1].texture = texture;
+    Gfx::BindingEntry bindGroupEntries[2];
+    bindGroupEntries[0].binding = 0;
+    bindGroupEntries[0].buffer = uniforms;
+    bindGroupEntries[0].size = uniformSize;
+    bindGroupEntries[0].dynamicOffset = false;
+    bindGroupEntries[1].binding = 1;
+    bindGroupEntries[1].texture = texture;
+    info.entriesCount = 2;
+    info.entries = bindGroupEntries;
+    return device->CreateBindGroup(info);
+}
+
+Gfx::BindGroup IblCreateCubemapGroup(Gfx::Device* device, Gfx::BindGroupLayout layout, Gfx::Buffer uniforms, Gfx::Cubemap texture){
+    Gfx::BindGroupInfo info{};
+    info.layout = layout;
+    Gfx::BindingEntry bindGroupEntries[2];
+    bindGroupEntries[0].binding = 0;
+    bindGroupEntries[0].buffer = uniforms;
+    bindGroupEntries[0].size = sizeof(IblCaptureUniform);
+    bindGroupEntries[0].dynamicOffset = false;
+    bindGroupEntries[1].binding = 1;
+    bindGroupEntries[1].cubemap = texture;
+    info.entries = bindGroupEntries;
     info.entriesCount = 2;
     return device->CreateBindGroup(info);
 }
 
-Gfx::BindGroup IblCreateCubemapGroup(Gfx::Device* device, Gfx::BindGroupLayout layout,
-                                     Gfx::Buffer uniforms, Gfx::Cubemap texture){
-    Gfx::BindGroupInfo info{};
-    info.layout = layout;
-    info.entries[0] = {0, uniforms, 0, sizeof(IblCaptureUniform), false};
-    info.entries[1].binding = 1;
-    info.entries[1].cubemap = texture;
-    info.entriesCount = 2;
-    return device->CreateBindGroup(info);
-}
-
-Gfx::Pipeline IblCreatePipeline(Gfx::Device* device, const std::string& source,
-                                Gfx::BindGroupLayout layout, const Gfx::FrameBufferLayout& framebufferLayout){
+Gfx::Pipeline IblCreatePipeline(Gfx::Device* device, const std::string& source, Gfx::BindGroupLayout layout, const Gfx::FrameBufferLayout& framebufferLayout){
     Gfx::PipelineInfo info{};
     info.vertexLayout.attributes[0] = {Gfx::VertexSemantic::Position, Gfx::VertexFormat::Float3, 0, 0};
     info.vertexLayout.attributeCount = 1;

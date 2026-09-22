@@ -113,7 +113,11 @@ private:
 
     struct BindGroupData{
         VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
-        BindGroupInfo info;
+        
+        //BindGroupInfo info;
+        
+        BindGroupLayout layout = Gfx::InvalidID;
+        std::vector<BindingEntry> entries;
     };
     ResourcePool<BindGroupData> bindGroupPool;
 
@@ -205,10 +209,10 @@ private:
     void _UploadCubemap(CubemapData& data, const void* rawData, size_t size);
     void _DestroyCubemap(CubemapData& data);
 
-    bool _CreateBindGroupLayout(BindGroupLayoutData& data, BindGroupLayoutInfo& info);
+    bool _CreateBindGroupLayout(BindGroupLayoutData& data, const BindGroupLayoutInfo& info);
     void _DestroyBindGroupLayout(BindGroupLayoutData& data);
 
-    bool _CreateBindGroup(BindGroupData& data, BindGroupInfo& info, VkDescriptorPool pool);
+    bool _CreateBindGroup(BindGroupData& data, const BindGroupInfo& info, VkDescriptorPool pool);
 };
 
 }

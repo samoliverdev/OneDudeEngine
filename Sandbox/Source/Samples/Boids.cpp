@@ -452,7 +452,7 @@ void BoidsSample::OnInit(){
     Ref<Material> boidMaterial = ResourceManager::Get().Create<Material>();
     boidMaterial->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/LitGfx.glsl"));
     boidMaterial->SetVector4("color", Vector4(1, 0, 0, 1));
-    boidMaterial->SetEnableInstancing(true);
+    boidMaterial->SetEnableInstancing(false);
 
     Ref<Model> floorModel = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/plane.glb");
     floorModel->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/LitGfx.glsl"));

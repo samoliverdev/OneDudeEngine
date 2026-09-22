@@ -638,7 +638,7 @@ void OpenglGPUDevice::_DestroyCubemap(CubemapData& data){
 #pragma endregion
 
 #pragma region BindGroupLayout
-bool OpenglGPUDevice::_CreateBindGroupLayout(BindGroupLayoutData& data, BindGroupLayoutInfo& info){
+bool OpenglGPUDevice::_CreateBindGroupLayout(BindGroupLayoutData& data, const BindGroupLayoutInfo& info){
     data.info = info;
     return true;
 }
@@ -649,8 +649,16 @@ void OpenglGPUDevice::_DestroyBindGroupLayout(BindGroupLayoutData& data){
 #pragma endregion
 
 #pragma region BindGroup
-bool OpenglGPUDevice::_CreateBindGroup(BindGroupData& data, BindGroupInfo& info){
-    data.info = info;
+bool OpenglGPUDevice::_CreateBindGroup(BindGroupData& data, const BindGroupInfo& info){
+    //data.info = info;
+
+    data.layout = info.layout;
+
+    data.entries.clear();
+    for(int i = 0; i < info.entriesCount; i++){
+        data.entries.push_back(info.entries[i]);
+    }
+
     return true;
 }
 #pragma endregion
@@ -1461,14 +1469,14 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
         case ResourceCommands::Type::CreateBindGroup:{
             Assert(bindGroupPool.IsValid(cmd.createBindGroup.id));
             auto& data = bindGroupPool.Get(cmd.createBindGroup.id);
-            _CreateBindGroup(data, *cmd.createBindGroup.info);
+            _CreateBindGroup(data, cmd.createBindGroup.info);
             break;
         }
 
         case ResourceCommands::Type::CreateFrameBindGroup:{
             Assert(bindGroupPool.IsValid(cmd.createFrameBindGroup.id));
             auto& data = bindGroupPool.Get(cmd.createFrameBindGroup.id);
-            _CreateBindGroup(data, *cmd.createFrameBindGroup.info);
+            _CreateBindGroup(data, cmd.createFrameBindGroup.info);
             frameBindGroups.push_back(cmd.createFrameBindGroup.id);
             break;
         }
@@ -1623,16 +1631,16 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
             //Assert(group < bindGroups.size());
 
             const BindGroupData& bindGroup = bindGroupPool.Get(cmd.setBindGroup.group);
-            const BindGroupLayoutData& bindGroupLayout = bindGroupLayoutPool.Get(bindGroup.info.layout);
+            const BindGroupLayoutData& bindGroupLayout = bindGroupLayoutPool.Get(bindGroup.layout);
             const PipelineData& pipeline = pipelinePool.Get(currentPipeline);
             Assert(cmd.setBindGroup.slot < 4);
 
             glUseProgram(pipeline.program);
             glBindVertexArray(globalVAO);
 
-            for(int i = 0; i < bindGroup.info.entriesCount; i++){
+            for(int i = 0; i < bindGroup.entries.size(); i++){
                 if(bindGroupLayout.info.entries[i].type == BindingType::UniformBuffer){
-                    const BindingEntry& binding = bindGroup.info.entries[i];
+                    const BindingEntry& binding = bindGroup.entries[i];
                     Assert(binding.buffer != InvalidID);
 
                     const BufferData& buffer = bufferPool.Get(binding.buffer);
@@ -1641,7 +1649,7 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                     Assert(buffer.buffer != InvalidID);
                     Assert(binding.dynamicOffset == false);
 
-                    Assert(pipeline.info.bindGroupLayouts[cmd.setBindGroup.slot] == bindGroup.info.layout);
+                    Assert(pipeline.info.bindGroupLayouts[cmd.setBindGroup.slot] == bindGroup.layout);
 
                     GLuint blockIndex = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].blockIndex;
                     Assert(blockIndex != GL_INVALID_INDEX);
@@ -1663,7 +1671,7 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                 }
 
                 if(bindGroupLayout.info.entries[i].type == BindingType::Texture2D){
-                    const BindingEntry& binding = bindGroup.info.entries[i];
+                    const BindingEntry& binding = bindGroup.entries[i];
 
                     if(binding.texture != InvalidID){
                         const Texture2DData& tex = texture2DPool.Get(binding.texture);
@@ -1695,7 +1703,7 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                 }
 
                 if(bindGroupLayout.info.entries[i].type == BindingType::Texture2DArray){
-                    const BindingEntry& binding = bindGroup.info.entries[i];
+                    const BindingEntry& binding = bindGroup.entries[i];
                     if(binding.framebuffer != InvalidID){
                         const FramebufferData& tex = framebufferPool.Get(binding.framebuffer);
 
@@ -1714,7 +1722,7 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                 }
 
                 if(bindGroupLayout.info.entries[i].type == BindingType::TextureCube){
-                    const BindingEntry& binding = bindGroup.info.entries[i];
+                    const BindingEntry& binding = bindGroup.entries[i];
                     if(binding.cubemap != InvalidID){
                         const CubemapData& cube = cubemapPool.Get(binding.cubemap);
                         GLuint uniformLoc = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].uniformLoc;

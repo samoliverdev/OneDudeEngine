@@ -84,9 +84,11 @@ void GPUSample5::OnInit(){
     auto layout = device->CreateBindGroupLayout(layoutInfo);
     Gfx::BindGroupInfo groupInfo{};
     groupInfo.layout = layout;
-    groupInfo.entries[0].binding = 0;
-    groupInfo.entries[0].cubemap = cubemap;
+    Gfx::BindingEntry bindGroupEntries[1];
+    bindGroupEntries[0].binding = 0;
+    bindGroupEntries[0].cubemap = cubemap;
     groupInfo.entriesCount = 1;
+    groupInfo.entries = bindGroupEntries;
     bindGroup = device->CreateBindGroup(groupInfo);
 
     Gfx::PipelineInfo pipelineInfo{};

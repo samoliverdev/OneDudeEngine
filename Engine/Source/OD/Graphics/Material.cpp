@@ -88,8 +88,8 @@ void Material::SetShader(Ref<Shader> s){
     std::free(materialBufferData);
 
     if(shader->materialBindGroupLayout != emptyLayout){
-        Gfx::BindGroupInfo bindGroupInfo = {};
-        bindGroupInfo.layout = shader->materialBindGroupLayout;
+        //Gfx::BindGroupInfo bindGroupInfo = {};
+        //bindGroupInfo.layout = shader->materialBindGroupLayout;
         for(auto& i: shader->reflection.bindings){
             if(i.type == Gfx::BindingType::UniformBuffer && i.blockName == "Main"){
                 materialBindGroupInfo = i;
@@ -97,19 +97,19 @@ void Material::SetShader(Ref<Shader> s){
                 materialBufferData = std::malloc(i.size);
                 materialBufferSize = i.size;
 
-                bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
+                /*bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
                 bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
                 bindGroupInfo.entries[bindGroupInfo.entriesCount].buffer = materialBuffer;
                 bindGroupInfo.entries[bindGroupInfo.entriesCount].size = i.size;
-                bindGroupInfo.entriesCount += 1;
+                bindGroupInfo.entriesCount += 1;*/
             }
 
-            if(i.type == Gfx::BindingType::Texture2D && maps.count(i.name)){
+            /*if(i.type == Gfx::BindingType::Texture2D && maps.count(i.name)){
                 bindGroupInfo.entries[bindGroupInfo.entriesCount] = {};
                 bindGroupInfo.entries[bindGroupInfo.entriesCount].binding = i.binding;
                 bindGroupInfo.entries[bindGroupInfo.entriesCount].texture = maps[i.name].texture->tex;// ResourceManager::Get().LoadByPath<Texture2D>("Engine/Textures/White.jpg")->tex; //maps[i.name].texture;
                 bindGroupInfo.entriesCount += 1;
-            }
+            }*/
         }
 
         //materialBindGroup = gfxDevice->CreateBindGroup(bindGroupInfo);

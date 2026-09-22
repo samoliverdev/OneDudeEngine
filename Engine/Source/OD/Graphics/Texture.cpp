@@ -497,8 +497,14 @@ Ref<Texture2D> Texture2D::CreateBrdfLUTTexture2D(){
 
     Gfx::BindGroupInfo bindGroupInfo{};
     bindGroupInfo.layout = bindGroupLayout;
-    bindGroupInfo.entries[0] = {0, uniforms, 0, sizeof(BrdfUniform), false};
+    Gfx::BindingEntry bindGroupEntries[1];
+    bindGroupEntries[0].binding = 0;
+    bindGroupEntries[0].buffer = uniforms;
+    bindGroupEntries[0].size = sizeof(BrdfUniform);
+    bindGroupEntries[0].dynamicOffset = false;
+    //bindGroupInfo.entries[0] = {0, uniforms, 0, sizeof(BrdfUniform), false};
     bindGroupInfo.entriesCount = 1;
+    bindGroupInfo.entries = bindGroupEntries;
     auto bindGroup = gfxDevice->CreateBindGroup(bindGroupInfo);
 
     ShaderSourceData shaderSource;

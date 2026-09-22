@@ -119,16 +119,27 @@ void GPUSample10::OnInit() {
         {-0.5f, -0.5f, 0.0f},
         { 0.5f, -0.5f, 0.0f},
     };
-    for (int i = 0; i < 4; ++i) {
+    for(int i = 0; i < 4; ++i){
         const glm::mat4 model = glm::translate(glm::identity<glm::mat4>(), positions[i]);
         modelBuffers[i] = gpuDevice->CreateBuffer(sizeof(model), Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
         gpuDevice->UpdatedBuffer(modelBuffers[i], &model, sizeof(model));
 
+        Gfx::BindingEntry bindGroupEntries[2];
+
         Gfx::BindGroupInfo bindGroupInfo = {};
         bindGroupInfo.layout = bindGroupLayout;
-        bindGroupInfo.entries[0] = {0, cameraBuffer, 0, sizeof(cameraData), false};
-        bindGroupInfo.entries[1] = {1, modelBuffers[i], 0, sizeof(model), false};
+        //bindGroupInfo.entries[0] = {0, cameraBuffer, 0, sizeof(cameraData), false};
+        //bindGroupInfo.entries[1] = {1, modelBuffers[i], 0, sizeof(model), false};
+        bindGroupEntries[0].binding = 0;
+        bindGroupEntries[0].buffer = cameraBuffer;
+        bindGroupEntries[0].size = sizeof(cameraData);
+        bindGroupEntries[0].dynamicOffset = false;
+        bindGroupEntries[1].binding = 1;
+        bindGroupEntries[1].buffer = modelBuffers[i];
+        bindGroupEntries[1].size = sizeof(model);
+        bindGroupEntries[1].dynamicOffset = false;
         bindGroupInfo.entriesCount = 2;
+        bindGroupInfo.entries = bindGroupEntries;
         bindGroups[i] = gpuDevice->CreateBindGroup(bindGroupInfo);
     }
 

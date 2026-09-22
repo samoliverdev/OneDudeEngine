@@ -118,7 +118,10 @@ struct CommandBucket3{
     //int count;
 
     inline void Clear(){
-        commands.clear();
+        //commands.clear();
+        for(auto& i: commands){
+            i.second.clear();
+        }
     }
 
     //TODO: Avoid Copy, Review other buckets to do this

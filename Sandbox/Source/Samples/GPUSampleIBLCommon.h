@@ -79,8 +79,7 @@ inline OD::Gfx::Pipeline CreateCapturePipeline(OD::Gfx::Device* device, const st
     return device->CreatePipeline(source.c_str(), info);
 }
 
-inline OD::Gfx::BindGroupLayout CreateCaptureLayout(OD::Gfx::Device* device, OD::Gfx::BindingType textureType,
-                                                    uint32_t uniformSize = sizeof(CaptureUniform)){
+inline OD::Gfx::BindGroupLayout CreateCaptureLayout(OD::Gfx::Device* device, OD::Gfx::BindingType textureType, uint32_t uniformSize = sizeof(CaptureUniform)){
     OD::Gfx::BindGroupLayoutInfo info{};
     info.entries[0] = {0, OD::Gfx::BindingType::UniformBuffer, uniformSize, false};
     info.entries[1] = {1, textureType, 0, false};
@@ -88,26 +87,35 @@ inline OD::Gfx::BindGroupLayout CreateCaptureLayout(OD::Gfx::Device* device, OD:
     return device->CreateBindGroupLayout(info);
 }
 
-inline OD::Gfx::BindGroup CreateCaptureGroup(OD::Gfx::Device* device, OD::Gfx::BindGroupLayout layout,
-                                              OD::Gfx::Buffer uniforms, OD::Gfx::Texture2D texture,
-                                              uint32_t uniformSize = sizeof(CaptureUniform)){
+inline OD::Gfx::BindGroup CreateCaptureGroup(OD::Gfx::Device* device, OD::Gfx::BindGroupLayout layout, OD::Gfx::Buffer uniforms, OD::Gfx::Texture2D texture, uint32_t uniformSize = sizeof(CaptureUniform)){
     OD::Gfx::BindGroupInfo info{};
     info.layout = layout;
-    info.entries[0] = {0, uniforms, 0, uniformSize, false};
-    info.entries[1].binding = 1;
-    info.entries[1].texture = texture;
+    OD::Gfx::BindingEntry bindGroupEntries[2];
+    //info.entries[0] = {0, uniforms, 0, uniformSize, false};
+    bindGroupEntries[0].binding = 0;
+    bindGroupEntries[0].buffer = uniforms;
+    bindGroupEntries[0].size = uniformSize;
+    bindGroupEntries[0].dynamicOffset = false;
+    bindGroupEntries[1].binding = 1;
+    bindGroupEntries[1].texture = texture;
     info.entriesCount = 2;
+    info.entries = bindGroupEntries;
     return device->CreateBindGroup(info);
 }
 
-inline OD::Gfx::BindGroup CreateCaptureCubeGroup(OD::Gfx::Device* device, OD::Gfx::BindGroupLayout layout,
-                                                  OD::Gfx::Buffer uniforms, OD::Gfx::Cubemap cubemap){
+inline OD::Gfx::BindGroup CreateCaptureCubeGroup(OD::Gfx::Device* device, OD::Gfx::BindGroupLayout layout, OD::Gfx::Buffer uniforms, OD::Gfx::Cubemap cubemap){
     OD::Gfx::BindGroupInfo info{};
     info.layout = layout;
-    info.entries[0] = {0, uniforms, 0, sizeof(CaptureUniform), false};
-    info.entries[1].binding = 1;
-    info.entries[1].cubemap = cubemap;
+    OD::Gfx::BindingEntry bindGroupEntries[2];
+    //info.entries[0] = {0, uniforms, 0, sizeof(CaptureUniform), false};
+    bindGroupEntries[0].binding = 0;
+    bindGroupEntries[0].buffer = uniforms;
+    bindGroupEntries[0].size = sizeof(CaptureUniform);
+    bindGroupEntries[0].dynamicOffset = false;
+    bindGroupEntries[1].binding = 1;
+    bindGroupEntries[1].cubemap = cubemap;
     info.entriesCount = 2;
+    info.entries = bindGroupEntries;
     return device->CreateBindGroup(info);
 }
 
