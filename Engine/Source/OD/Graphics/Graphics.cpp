@@ -727,6 +727,7 @@ Gfx::BindGroup Graphics::BindMaterial(Material& mat){
                     bindGroupEntries[bindGroupInfo.entriesCount].texture = m.texture == nullptr ? defaultTex : m.texture->tex;// mat.maps[i.name].texture->tex;
                     bindGroupInfo.entriesCount += 1;
                 } else if(m.type == MaterialMap::Type::Framebuffer){
+                    if(m.framebuffer != nullptr){
                     Assert(m.framebuffer != nullptr);
                     Assert(m.framebuffer->framebuffer != Gfx::InvalidID);
                     bindGroupEntries[bindGroupInfo.entriesCount] = {};
@@ -735,6 +736,12 @@ Gfx::BindGroup Graphics::BindMaterial(Material& mat){
                     bindGroupEntries[bindGroupInfo.entriesCount].framebufferAttacement = m.framebufferAttachment;
                     bindGroupEntries[bindGroupInfo.entriesCount].framebufferLayer = 0;
                     bindGroupInfo.entriesCount += 1;
+                    } else {
+                    bindGroupEntries[bindGroupInfo.entriesCount] = {};
+                    bindGroupEntries[bindGroupInfo.entriesCount].binding = i.binding;
+                    bindGroupEntries[bindGroupInfo.entriesCount].texture = defaultTex;
+                    bindGroupInfo.entriesCount += 1;
+                    }
                 } else {
                     Assert(false);
                 }
@@ -899,17 +906,17 @@ void Graphics::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawD
     //Assert(false);
     auto perDrawBindGroup = drawMeshPool.GetBindGroup(*gfxDevice, &modelMatrix, sizeof(Matrix4));
 
-    if(curMat != &mat || curMat->isDirty || curMat->currentShader.drawTypes[(int)Shader::DrawType::DefaultDraw].get() != curShader){
+    if(curMat != &mat || curMat->isDirty || curMat->currentShader[curMat->currentPass].drawTypes[(int)Shader::DrawType::DefaultDraw].get() != curShader){
         curMat = &mat;
         curMat->isDirty = false;
-        curShader = curMat->currentShader.drawTypes[(int)Shader::DrawType::DefaultDraw].get();
+        curShader = curMat->currentShader[curMat->currentPass].drawTypes[(int)Shader::DrawType::DefaultDraw].get();
         curBindGroup = BindMaterial(*curMat);
     }
 
-    Assert(mat.currentShader.drawTypes[(int)Shader::DrawType::DefaultDraw]->_pipelines[curFramebufferRenderPassIndex] != Gfx::InvalidID);
+    Assert(mat.currentShader[mat.currentPass].drawTypes[(int)Shader::DrawType::DefaultDraw]->_pipelines[curFramebufferRenderPassIndex] != Gfx::InvalidID);
 
     auto* cmd = gfxDevice->GetCommandBuffer();
-    SetPipelineCached(cmd, mat.currentShader.drawTypes[(int)Shader::DrawType::DefaultDraw]->_pipelines[curFramebufferRenderPassIndex]);
+    SetPipelineCached(cmd, mat.currentShader[mat.currentPass].drawTypes[(int)Shader::DrawType::DefaultDraw]->_pipelines[curFramebufferRenderPassIndex]);
     SetBindGroupCached(cmd, 0, curBindGroup);
     SetBindGroupCached(cmd, 1, perDrawBindGroup);
     SetBindGroupCached(cmd, 2, curCameraBindGroup);
@@ -959,17 +966,17 @@ void Graphics::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, Matrix4
     bindGroupInfo.entries = bindGroupEntries;
     auto perDrawBindGroup = gfxDevice->CreateFrameBindGroup(bindGroupInfo);
 
-    if(curMat != &mat || curMat->isDirty || curMat->currentShader.drawTypes[(int)Shader::DrawType::SkinnedDraw].get() != curShader){
+    if(curMat != &mat || curMat->isDirty || curMat->currentShader[curMat->currentPass].drawTypes[(int)Shader::DrawType::SkinnedDraw].get() != curShader){
         curMat = &mat;
         curMat->isDirty = false;
-        curShader = curMat->currentShader.drawTypes[(int)Shader::DrawType::SkinnedDraw].get();
+        curShader = curMat->currentShader[curMat->currentPass].drawTypes[(int)Shader::DrawType::SkinnedDraw].get();
         curBindGroup = BindMaterial(*curMat);
     }
 
-    Assert(mat.currentShader.drawTypes[(int)Shader::DrawType::SkinnedDraw]->_pipelines[curFramebufferRenderPassIndex] != Gfx::InvalidID);
+    Assert(mat.currentShader[mat.currentPass].drawTypes[(int)Shader::DrawType::SkinnedDraw]->_pipelines[curFramebufferRenderPassIndex] != Gfx::InvalidID);
 
     auto* cmd = gfxDevice->GetCommandBuffer();
-    SetPipelineCached(cmd, mat.currentShader.drawTypes[(int)Shader::DrawType::SkinnedDraw]->_pipelines[curFramebufferRenderPassIndex]);
+    SetPipelineCached(cmd, mat.currentShader[mat.currentPass].drawTypes[(int)Shader::DrawType::SkinnedDraw]->_pipelines[curFramebufferRenderPassIndex]);
     SetBindGroupCached(cmd, 0, curBindGroup);
     SetBindGroupCached(cmd, 1, perDrawBindGroup);
     SetBindGroupCached(cmd, 2, curCameraBindGroup);
@@ -1014,14 +1021,14 @@ void Graphics::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, Uniform
     bindGroupInfo.entries = bindGroupEntries;
     auto perDrawBindGroup = gfxDevice->CreateFrameBindGroup(bindGroupInfo);
 
-    if(curMat != &mat || curMat->isDirty || curMat->currentShader.drawTypes[(int)Shader::DrawType::SkinnedDraw2].get() != curShader){
+    if(curMat != &mat || curMat->isDirty || curMat->currentShader[curMat->currentPass].drawTypes[(int)Shader::DrawType::SkinnedDraw2].get() != curShader){
         curMat = &mat;
         curMat->isDirty = false;
-        curShader = curMat->currentShader.drawTypes[(int)Shader::DrawType::SkinnedDraw2].get();
+        curShader = curMat->currentShader[curMat->currentPass].drawTypes[(int)Shader::DrawType::SkinnedDraw2].get();
         curBindGroup = BindMaterial(*curMat);
     }
 
-    auto* shader = mat.currentShader.drawTypes[(int)Shader::DrawType::SkinnedDraw2].get();
+    auto* shader = mat.currentShader[mat.currentPass].drawTypes[(int)Shader::DrawType::SkinnedDraw2].get();
     Assert(shader != nullptr);
     Assert(shader->_pipelines[curFramebufferRenderPassIndex] != Gfx::InvalidID);
 
@@ -1059,17 +1066,17 @@ void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* animMatrix
         Assert(count <= MaxInstancesPerDraw);
         auto intacingBuffer = drawMeshInstancingPool.GetBuffer(*gfxDevice, animMatrixs, sizeof(Matrix4) * count);
 
-        if(curMat != &mat || curMat->isDirty || curMat->currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw].get() != curShader){
+        if(curMat != &mat || curMat->isDirty || curMat->currentShader[curMat->currentPass].drawTypes[(int)Shader::DrawType::InstancingDraw].get() != curShader){
             curMat = &mat;
             curMat->isDirty = false;
-            curShader = curMat->currentShader.drawTypes[(int)Shader::DrawType::DefaultDraw].get();
+            curShader = curMat->currentShader[curMat->currentPass].drawTypes[(int)Shader::DrawType::DefaultDraw].get();
             curBindGroup = BindMaterial(*curMat);
         }
 
-        Assert(mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipelines[curFramebufferRenderPassIndex] != Gfx::InvalidID);
+        Assert(mat.currentShader[mat.currentPass].drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipelines[curFramebufferRenderPassIndex] != Gfx::InvalidID);
 
         auto* cmd = gfxDevice->GetCommandBuffer();
-        SetPipelineCached(cmd, mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipelines[curFramebufferRenderPassIndex]);
+        SetPipelineCached(cmd, mat.currentShader[mat.currentPass].drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipelines[curFramebufferRenderPassIndex]);
         SetBindGroupCached(cmd, 0, curBindGroup);
         SetBindGroupCached(cmd, 1, emptyModelBindGroup);
         SetBindGroupCached(cmd, 2, curCameraBindGroup);
@@ -1122,10 +1129,10 @@ void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, InstancingBuffer& b
         curBindGroup = BindMaterial(*curMat);
     }
 
-    Assert(mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipelines[curFramebufferRenderPassIndex] != Gfx::InvalidID);
+    Assert(mat.currentShader[mat.currentPass].drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipelines[curFramebufferRenderPassIndex] != Gfx::InvalidID);
 
     auto* cmd = gfxDevice->GetCommandBuffer();
-    SetPipelineCached(cmd, mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipelines[curFramebufferRenderPassIndex]);
+    SetPipelineCached(cmd, mat.currentShader[mat.currentPass].drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipelines[curFramebufferRenderPassIndex]);
     SetBindGroupCached(cmd, 0, curBindGroup);
     SetBindGroupCached(cmd, 1, emptyModelBindGroup);
     SetBindGroupCached(cmd, 2, curCameraBindGroup);

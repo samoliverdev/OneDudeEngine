@@ -4,9 +4,11 @@
     DepthMask False
     DepthTest ALWAYS
     MultiCompile _ INDIRECTPLUSDIRECTIONAL INDIRECT DIRECTIONAL
+    RenderPass Forward
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl
+#include Engine/ShaderLibrary/PipelineDataDef.glsl
 
 BeginUniform(2, 0, CamDraw)
     Uniform mat4 projection;
@@ -15,13 +17,11 @@ BeginUniform(2, 0, CamDraw)
     Uniform mat4 invView;
 EndUniform()
 
-#include Engine/ShaderLibrary/PipelineDataDef.glsl
-
 BeginUniform(0, 0, Main)
     Uniform int lightIndex;
 EndUniform()
 
-Texture2D(0, 10, gPosition, gPositionSampler)
+//Texture2D(0, 10, gPosition, gPositionSampler)
 Texture2D(0, 11, gNormal, gNormalSampler)
 Texture2D(0, 12, gAlbedoSpec, gAlbedoSpecSampler)
 Texture2D(0, 13, gEmission, gEmissionSampler)

@@ -2829,7 +2829,7 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
         target.AddSkinnedDrawCommand({
             data.targetMatrix,
             data.perDrawData,
-            data.targetMaterial->CurrentShader().drawTypes[1].get(),
+            data.targetMaterial->CurrentShader(data.targetMaterial->MainPass()).drawTypes[1].get(),
             data.targetMaterial,
             data.targetMesh,
             data.posePalette,
@@ -2841,12 +2841,12 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
     if(isInstancing){
         if(data.instancingBuffer != nullptr){
             target.AddDrawInstancingCommand({
-                data.instancingBuffer, data.targetMaterial->CurrentShader().drawTypes[2].get(), data.targetMaterial, data.targetMesh, data.distance
+                data.instancingBuffer, data.targetMaterial->CurrentShader(data.targetMaterial->MainPass()).drawTypes[2].get(), data.targetMaterial, data.targetMesh, data.distance
             });
         } else{
             target.AddDrawInstancingCommand({
                 data.targetMatrix,
-                data.targetMaterial->CurrentShader().drawTypes[2].get(),
+                data.targetMaterial->CurrentShader(data.targetMaterial->MainPass()).drawTypes[2].get(),
                 data.targetMaterial,
                 data.targetMesh,
             });
@@ -2855,7 +2855,7 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
         target.AddDrawCommand({
             data.targetMatrix,
             data.perDrawData,
-            data.targetMaterial->CurrentShader().drawTypes[0].get(),
+            data.targetMaterial->CurrentShader(data.targetMaterial->MainPass()).drawTypes[0].get(),
             data.targetMaterial,
             data.targetMesh,
             data.distance
@@ -3143,7 +3143,7 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
         commandBuffer.AddSkinnedDrawCommand({
             data.targetMatrix,
             data.perDrawData,
-            data.customShadowPass->CurrentShader().drawTypes[1].get(),
+            data.customShadowPass->CurrentShader(data.customShadowPass->DepthPass()).drawTypes[1].get(),
             data.customShadowPass, 
             //data.targetMaterial,
             data.targetMesh,
@@ -3157,7 +3157,7 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
         if(data.instancingBuffer != nullptr){
             commandBuffer.AddDrawInstancingCommand({
                 data.instancingBuffer, 
-                data.customShadowPass->CurrentShader().drawTypes[2].get(),
+                data.customShadowPass->CurrentShader(data.customShadowPass->DepthPass()).drawTypes[2].get(),
                 data.customShadowPass, //data.targetMaterial, 
                 data.targetMesh,
                 data.distance
@@ -3165,7 +3165,7 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
         } else{
             commandBuffer.AddDrawInstancingCommand({
                 data.targetMatrix,
-                data.customShadowPass->CurrentShader().drawTypes[2].get(),
+                data.customShadowPass->CurrentShader(data.customShadowPass->DepthPass()).drawTypes[2].get(),
                 data.customShadowPass, 
                 //data.targetMaterial,
                 data.targetMesh
@@ -3184,7 +3184,7 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
         commandBuffer.AddDrawCommand({
             data.targetMatrix,
             data.perDrawData,
-            data.customShadowPass->CurrentShader().drawTypes[0].get(),
+            data.customShadowPass->CurrentShader(data.customShadowPass->DepthPass()).drawTypes[0].get(),
             data.customShadowPass,
             data.targetMesh,
             data.distance

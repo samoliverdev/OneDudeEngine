@@ -4,6 +4,7 @@
     DepthMask False
     DepthTest ALWAYS
     CullFace FRONT
+    RenderPass Forward
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl
@@ -16,7 +17,7 @@ BeginUniform(0, 0, Main)
     Uniform float screenHeight;
 EndUniform()
 
-Texture2D(0, 10, gPosition, gPositionSampler)
+//Texture2D(0, 10, gPosition, gPositionSampler)
 Texture2D(0, 11, gNormal, gNormalSampler)
 Texture2D(0, 12, gAlbedoSpec, gAlbedoSpecSampler)
 Texture2D(0, 13, gEmission, gEmissionSampler)

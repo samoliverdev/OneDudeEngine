@@ -66,7 +66,8 @@ Ref<Shader> Material::GetShader(){
 void Material::SetShader(Ref<Shader> s){ 
     isDirty = true;
     isDirtyUniformData = true;
-    shader = s; 
+    shader = s;
+    currentShader.resize(shader->passes.size());
     currentPass = math::clamp<int>(currentPass, 0, s->passes.size() - 1);
     //graphicsDevice->MaterialOnSetShader(*this);
     UpdateCurrentShader();
@@ -118,8 +119,9 @@ void Material::SetShader(Ref<Shader> s){
 }
 
 bool Material::IsBlend(){
-    if(currentShader.drawTypes[0] == nullptr) return false;
-    return currentShader.drawTypes[0]->IsBlend();
+    const auto& shaderTarget = CurrentShader();
+    if(shaderTarget.drawTypes[0] == nullptr) return false;
+    return shaderTarget.drawTypes[0]->IsBlend();
 }
 
 bool Material::EnableInstancingValid(){ 
@@ -132,7 +134,8 @@ bool Material::EnableInstancing(){
 
 bool Material::SupportInstancing(){ 
     //return false;
-    return currentShader.drawTypes[0] != nullptr && currentShader.drawTypes[0]->pipeline.supportInstancing; 
+    const auto& shaderTarget = CurrentShader();
+    return shaderTarget.drawTypes[0] != nullptr && shaderTarget.drawTypes[0]->pipeline.supportInstancing;
 }
 
 void Material::SetInt(const char* name, int value){
@@ -360,6 +363,7 @@ void Material::DisableKeyword(const std::string& keyword){
         }
     }
 
+    UpdateCurrentShader();
     isDirty = true;
     //isDirtyUniformData = true; //INFO: for now, i think dont need
 }
@@ -378,6 +382,7 @@ void Material::EnableKeyword(const std::string& keyword){
         }
     }
 
+    UpdateCurrentShader();
     isDirty = true;
     //isDirtyUniformData = true; //INFO: for now, i think dont need
 }
@@ -428,12 +433,15 @@ void Material::UpdateCurrentShader(){
     //LogInfo("Key: %s", key.c_str());
 
     Assert(shader->passes.size() > 0 && "Fixme");
+    Assert(currentShader.size() == shader->passes.size());
 
-    if(shader->passes[currentPass].shaders.count(key)){
-        currentShader = shader->passes[currentPass].shaders[key];
-    } else {
-        LogError("No Key: {}", key);
-        Assert(false);
+    for(size_t pass = 0; pass < shader->passes.size(); pass++){
+        if(shader->passes[pass].shaders.count(key)){
+            currentShader[pass] = shader->passes[pass].shaders[key];
+        } else {
+            LogError("No Key: {}", key);
+            Assert(false);
+        }
     }
 }
 
@@ -638,7 +646,7 @@ void Material::OnGui(){
         }
     }
 
-    if(currentShader.drawTypes[0] != nullptr && currentShader.drawTypes[0]->pipeline.supportInstancing && ImGui::Checkbox("enableInstancing", &enableInstancing)){
+    if(CurrentShader().drawTypes[0] != nullptr && CurrentShader().drawTypes[0]->pipeline.supportInstancing && ImGui::Checkbox("enableInstancing", &enableInstancing)){
         toSave = true;
         isDirty = isDirtyUniformData = true;
     }

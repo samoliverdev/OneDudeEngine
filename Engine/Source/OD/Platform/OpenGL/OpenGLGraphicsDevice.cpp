@@ -1133,7 +1133,7 @@ bool OpenGLGraphicsDevice::SubShaderSetUniformBuffer(SubShader& shader, const ch
 #if 0
 void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
     Assert(drawType >= 0 && drawType <= 3);
-    Assert(mat.currentShader.drawTypes[drawType] != nullptr);
+    Assert(mat.currentShader[mat.currentPass].drawTypes[drawType] != nullptr);
 
     auto ContainUniformName = [&](SubShader& shader, const std::string& name){ 
         return std::find(shader.glData._uniforms.begin(), shader.glData._uniforms.end(), name) != shader.glData._uniforms.end(); 
@@ -1284,16 +1284,16 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
         Assert(material.GetShader() != nullptr);
         if(material.GetShader() == nullptr) return;
 
-        SubShaderBind(*material.currentShader.drawTypes[drawType]); //TODO: Optmize thi by bind and ApplyUniformTo global of lastShader, and add material.currentTextureSlot by subshader instead of material 
-        ApplyUniformTo(material, *material.currentShader.drawTypes[drawType], material.maps);
-        ApplyUniformTo(material, *material.currentShader.drawTypes[drawType], Material::globalMaps);
+        SubShaderBind(*material.currentShader[material.currentPass].drawTypes[drawType]); //TODO: Optmize thi by bind and ApplyUniformTo global of lastShader, and add material.currentTextureSlot by subshader instead of material
+        ApplyUniformTo(material, *material.currentShader[material.currentPass].drawTypes[drawType], material.maps);
+        ApplyUniformTo(material, *material.currentShader[material.currentPass].drawTypes[drawType], Material::globalMaps);
         Assert(material.currentTextureSlot < 32);
     };
 
-    Assert(mat.currentShader.drawTypes[drawType] != nullptr && "Shader is not vali!");
+    Assert(mat.currentShader[mat.currentPass].drawTypes[drawType] != nullptr && "Shader is not vali!");
     Assert(mat.GetShader()->IsComplete() == true && "Shader is not vali!");
 
-    if(&mat != lastMat || mat.isDirty == true || mat.currentShader.drawTypes[drawType].get() != lastShader){
+    if(&mat != lastMat || mat.isDirty == true || mat.currentShader[mat.currentPass].drawTypes[drawType].get() != lastShader){
         SubmitGraphicDatas(mat);
         mat.isDirty = false;
         #if UseUniformBuffer
@@ -1303,12 +1303,12 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
             glBufferData(GL_UNIFORM_BUFFER, mat.glData.mainBufferDef.size, mat.glData.mainUniformData, GL_STATIC_DRAW); //GL_DYNAMIC_DRAW
             glCheckError();
         }
-        unsigned int index2 = glGetUniformBlockIndex(mat.currentShader.drawTypes[drawType]->glData.id, "Main");  
+        unsigned int index2 = glGetUniformBlockIndex(mat.currentShader[mat.currentPass].drawTypes[drawType]->glData.id, "Main");
         if(index2 != GL_INVALID_INDEX){
             glBindBuffer(GL_UNIFORM_BUFFER, mat.glData.mainBuffer);
             glBindBufferBase(GL_UNIFORM_BUFFER, mat.currentBufferSlot, mat.glData.mainBuffer);
             glCheckError(); 
-            glUniformBlockBinding(mat.currentShader.drawTypes[drawType]->glData.id, index2, mat.currentBufferSlot); // 1);
+            glUniformBlockBinding(mat.currentShader[mat.currentPass].drawTypes[drawType]->glData.id, index2, mat.currentBufferSlot); // 1);
             mat.currentBufferSlot += 1;
             glCheckError(); 
         }  
@@ -1316,19 +1316,19 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
     }
     lastMat = &mat;
     
-    if(mat.currentShader.drawTypes[drawType].get() != lastShader){
+    if(mat.currentShader[mat.currentPass].drawTypes[drawType].get() != lastShader){
         #if UseUniformBuffer
-        unsigned int index = glGetUniformBlockIndex(mat.currentShader.drawTypes[drawType]->glData.id, "CamDraw");   
+        unsigned int index = glGetUniformBlockIndex(mat.currentShader[mat.currentPass].drawTypes[drawType]->glData.id, "CamDraw");
         if(index != GL_INVALID_INDEX){
             glBindBuffer(GL_UNIFORM_BUFFER, cameraDataBuffer);
             glBindBufferBase(GL_UNIFORM_BUFFER, mat.currentBufferSlot, cameraDataBuffer);
             glCheckError(); 
-            glUniformBlockBinding(mat.currentShader.drawTypes[drawType]->glData.id, index, mat.currentBufferSlot); // 0);
+            glUniformBlockBinding(mat.currentShader[mat.currentPass].drawTypes[drawType]->glData.id, index, mat.currentBufferSlot); // 0);
             mat.currentBufferSlot += 1;
             glCheckError(); 
         } else {
-            SubShaderSetMatrix4(*mat.currentShader.drawTypes[drawType], "projection", camera.projection); //mat.currentShader->SetMatrix4("projection", camera.projection);
-            SubShaderSetMatrix4(*mat.currentShader.drawTypes[drawType], "view", camera.view); //mat.currentShader->SetMatrix4("view", camera.view);
+            SubShaderSetMatrix4(*mat.currentShader[mat.currentPass].drawTypes[drawType], "projection", camera.projection); //mat.currentShader->SetMatrix4("projection", camera.projection);
+            SubShaderSetMatrix4(*mat.currentShader[mat.currentPass].drawTypes[drawType], "view", camera.view); //mat.currentShader->SetMatrix4("view", camera.view);
 
             //SubShaderSetMatrix4(*mat.currentShader.drawTypes[drawType], "invProjection", math::inverse(camera.projection)); //mat.currentShader->SetMatrix4("projection", camera.projection);
             //SubShaderSetMatrix4(*mat.currentShader.drawTypes[drawType], "invView", math::inverse(camera.view)); //mat.currentShader->SetMatrix4("view", camera.view);
@@ -1348,12 +1348,12 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
         SubShaderSetMatrix4(*mat.currentShader, "view", camera.view); //mat.currentShader->SetMatrix4("view", camera.view);
         #endif
     }
-    lastShader = mat.currentShader.drawTypes[drawType].get();
+    lastShader = mat.currentShader[mat.currentPass].drawTypes[drawType].get();
 }  
 #else
 void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
     Assert(drawType >= 0 && drawType < (int)Shader::DrawType::Count);
-    Assert(mat.currentShader.drawTypes[drawType] != nullptr);
+    Assert(mat.currentShader[mat.currentPass].drawTypes[drawType] != nullptr);
 
     auto ContainUniformName = [&](SubShader& shader, const std::string& name){ 
         return std::find(shader.glData._uniforms.begin(), shader.glData._uniforms.end(), name) != shader.glData._uniforms.end(); 
@@ -1535,8 +1535,8 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
         //material.currentTextureSlot = 0;
         //material.currentBufferSlot = 0; //1; //INFO: is 1 becose 0 is used for CamDraw
 
-        ApplyUniformTo(material, *material.currentShader.drawTypes[drawType], material.maps);
-        ApplyUniformTo(material, *material.currentShader.drawTypes[drawType], Material::globalMaps);
+        ApplyUniformTo(material, *material.currentShader[material.currentPass].drawTypes[drawType], material.maps);
+        ApplyUniformTo(material, *material.currentShader[material.currentPass].drawTypes[drawType], Material::globalMaps);
         Assert(material.currentTextureSlot < 32);
 
         #if UseUniformBuffer
@@ -1547,12 +1547,12 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
             glCheckError();
             stats.uniformBufferUpdates += 1;
         }
-        unsigned int index2 = glGetUniformBlockIndex(material.currentShader.drawTypes[drawType]->glData.id, "Main");  
+        unsigned int index2 = glGetUniformBlockIndex(material.currentShader[material.currentPass].drawTypes[drawType]->glData.id, "Main");
         if(index2 != GL_INVALID_INDEX){
             glBindBuffer(GL_UNIFORM_BUFFER, mat.glData.mainBuffer);
             glBindBufferBase(GL_UNIFORM_BUFFER, mat.currentBufferSlot, mat.glData.mainBuffer);
             glCheckError(); 
-            glUniformBlockBinding(mat.currentShader.drawTypes[drawType]->glData.id, index2, mat.currentBufferSlot); // 1);
+            glUniformBlockBinding(mat.currentShader[mat.currentPass].drawTypes[drawType]->glData.id, index2, mat.currentBufferSlot); // 1);
             mat.currentBufferSlot += 1;
             glCheckError(); 
         }  
@@ -1563,19 +1563,19 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
     Assert(mat.GetShader() != nullptr);
     if(mat.GetShader() == nullptr) return;
 
-    Assert(mat.currentShader.drawTypes[drawType] != nullptr && "Shader is not vali!");
+    Assert(mat.currentShader[mat.currentPass].drawTypes[drawType] != nullptr && "Shader is not vali!");
     Assert(mat.GetShader()->IsComplete() == true && "Shader is not vali!");
 
     //INFO: this binds can be bug the mat.currentBufferSlot, becose is possible _BindShader without _BindMaterial, or the inverse too
     /*if(&mat != lastMat || mat.isDirty == true) _PreBind(mat);
-    if(mat.currentShader.drawTypes[drawType].get() != lastShader) _BindShader(*mat.currentShader.drawTypes[drawType]);
+    if(mat.currentShader[mat.currentPass].drawTypes[drawType].get() != lastShader) _BindShader(*mat.currentShader[mat.currentPass].drawTypes[drawType]);
     if(&mat != lastMat || mat.isDirty == true || mat.isDirtyUniformData == true) _BindMaterial(mat);*/
 
-    if(&mat != lastMat || mat.isDirty == true || mat.isDirtyUniformData == true || mat.currentShader.drawTypes[drawType].get() != lastShader){
+    if(&mat != lastMat || mat.isDirty == true || mat.isDirtyUniformData == true || mat.currentShader[mat.currentPass].drawTypes[drawType].get() != lastShader){
         mat.currentTextureSlot = 0;
         mat.currentBufferSlot = 0;
         _PreBind(mat);
-        _BindShader(*mat.currentShader.drawTypes[drawType]);
+        _BindShader(*mat.currentShader[mat.currentPass].drawTypes[drawType]);
         _BindMaterial(mat);
     }
 
@@ -1583,7 +1583,7 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
     mat.isDirty = false;
 
     lastMat = &mat;
-    lastShader = mat.currentShader.drawTypes[drawType].get();
+    lastShader = mat.currentShader[mat.currentPass].drawTypes[drawType].get();
 }  
 #endif
 
@@ -1639,7 +1639,7 @@ void OpenGLGraphicsDevice::InstancingBufferSetData(InstancingBuffer& buffer, con
 }
 
 void OpenGLGraphicsDevice::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawData* perDrawData = nullptr){
-    if(mat.currentShader.drawTypes[0] == nullptr) return;
+    if(mat.currentShader[mat.currentPass].drawTypes[0] == nullptr) return;
     BindMaterial(mat);
     
     if(perDrawData != nullptr) SendPerDrawData(*perDrawData);
@@ -1682,7 +1682,7 @@ void OpenGLGraphicsDevice::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatr
 
 void OpenGLGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 modelMatrix, Matrix4* animMatrixs, int count, PerDrawData* perDrawData = nullptr){
     //LogInfo("DrawMeshSkinned1");
-    if(mat.currentShader.drawTypes[1] == nullptr) return;
+    if(mat.currentShader[mat.currentPass].drawTypes[1] == nullptr) return;
     BindMaterial(mat, 1);
 
     Assert(count <= MAX_BONES);
@@ -1732,7 +1732,7 @@ void OpenGLGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 mo
 
 void OpenGLGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, UniformBuffer* data, int count, PerDrawData* perDrawData){
     //LogInfo("DrawMeshSkinned2");
-    if(mat.currentShader.drawTypes[(int)Shader::DrawType::SkinnedDraw2] == nullptr) return;
+    if(mat.currentShader[mat.currentPass].drawTypes[(int)Shader::DrawType::SkinnedDraw2] == nullptr) return;
     BindMaterial(mat, (int)Shader::DrawType::SkinnedDraw2);
     
     Assert(count <= MAX_BONES);
@@ -1782,7 +1782,7 @@ void OpenGLGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 mo
 
 void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* modelMatrixs, int count){
     Assert(count > 0);
-    if(mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw] == nullptr) return;
+    if(mat.currentShader[mat.currentPass].drawTypes[(int)Shader::DrawType::InstancingDraw] == nullptr) return;
     BindMaterial(mat, (int)Shader::DrawType::InstancingDraw);
     
     Assert(MeshIsValid(mesh) && "Mesh is not vali!");
@@ -1817,7 +1817,7 @@ void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4
 }
 
 void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4x3* modelMatrixs, int count){
-    if(mat.currentShader.drawTypes[(int)Shader::DrawType::InstancingDraw43] == nullptr) return;
+    if(mat.currentShader[mat.currentPass].drawTypes[(int)Shader::DrawType::InstancingDraw43] == nullptr) return;
     BindMaterial(mat, (int)Shader::DrawType::InstancingDraw43);
     
     Assert(MeshIsValid(mesh) && "Mesh is not vali!");
@@ -1853,7 +1853,7 @@ void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4
 
 void OpenGLGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Material& mat, InstancingBuffer& buffer, int count){
     if(count <= 0) return;
-    if(mat.currentShader.drawTypes[buffer.IsMatrix4x3() ? 3 : 2] == nullptr) return;
+    if(mat.currentShader[mat.currentPass].drawTypes[buffer.IsMatrix4x3() ? 3 : 2] == nullptr) return;
     BindMaterial(mat, buffer.IsMatrix4x3() ? 3 : 2);
 
     Assert(MeshIsValid(mesh) && "Mesh is not valid!");
@@ -5607,9 +5607,9 @@ void OpenGLGraphicsDevice::MaterialDestroy(Material& mat){
 
 void OpenGLGraphicsDevice::MaterialOnSetShader(Material& mat){
     #if UseUniformBuffer
-    Assert(mat.currentShader.drawTypes[0] != nullptr);
+    Assert(mat.currentShader[mat.currentPass].drawTypes[0] != nullptr);
 
-    if(getUniformInfo(mat.currentShader.drawTypes[0]->glData.id, "Main", mat.glData.mainBufferDef)){
+    if(getUniformInfo(mat.currentShader[mat.currentPass].drawTypes[0]->glData.id, "Main", mat.glData.mainBufferDef)){
         if(mat.glData.mainUniformData != nullptr) free(mat.glData.mainUniformData);
         if(mat.glData.mainBuffer != 0) glDeleteBuffers(1, &mat.glData.mainBuffer);
 
