@@ -724,6 +724,7 @@ struct OD_API ResourceCommands{
     inline void Clear(){
         commands.clear();
         smallUploads.Clear();
+        renderUploads.Clear();
         resourceUploads.Clear();
     }
 

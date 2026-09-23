@@ -12,6 +12,7 @@
 #include "PhysFSPackage.h"
 #include "OD/Core/ResourceManager.h"
 #include "OD/Core/GlobalSettings.h"
+#include "OD/Core/MemoryTracker.h"
 #include "OD/Platform/Platform.h"
 #include "OD/Graphics/Graphics.h"
 #include "OD/Graphics/GraphicsDevice.h"
@@ -143,6 +144,9 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
 
     if(callbacks.onInit != nullptr) callbacks.onInit();
 
+    //MemoryTracker::SetAllocationBreakpointSize(1024*1024);
+    MemoryTracker::SetAllocationBreakpointSize(1);
+
     return true;
 }
 
@@ -176,6 +180,7 @@ void Application::DrawImGui(std::function<void()> func){
 }
 
 void Application::Loop(){
+    MemoryTracker::BeginFrame();
     if(hasLoadGlobalSetting == false){
         hasLoadGlobalSetting = true;
         GlobalSettings::Get().Load("../GlobalSettings");
@@ -245,6 +250,18 @@ void Application::Loop(){
     Platform::PollEvents();
     Platform::SwapBuffers();
     #endif
+    }
+
+    const MemoryTracker::FrameStats allocationStats = MemoryTracker::EndFrame();
+    if(allocationStats.allocationCount != 0){
+        const double allocatedBytes = static_cast<double>(allocationStats.allocatedBytes);
+        if(allocationStats.allocatedBytes >= 1024ull * 1024ull){
+            LogInfo("Memory allocations this frame: {} calls, {:.2f} MiB", allocationStats.allocationCount, allocatedBytes / (1024.0 * 1024.0));
+        } else if(allocationStats.allocatedBytes >= 1024ull){
+            LogInfo("Memory allocations this frame: {} calls, {:.2f} KiB", allocationStats.allocationCount, allocatedBytes / 1024.0);
+        } else {
+            LogInfo("Memory allocations this frame: {} calls, {} bytes", allocationStats.allocationCount, allocationStats.allocatedBytes);
+        }
     }
 
     /*#if OD_PROFILE

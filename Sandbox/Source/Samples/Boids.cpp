@@ -452,7 +452,7 @@ void BoidsSample::OnInit(){
     Ref<Material> boidMaterial = ResourceManager::Get().Create<Material>();
     boidMaterial->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/LitGfx.glsl"));
     boidMaterial->SetVector4("color", Vector4(1, 0, 0, 1));
-    boidMaterial->SetEnableInstancing(true);
+    boidMaterial->SetEnableInstancing(false);
 
     Ref<Model> floorModel = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/plane.glb");
     floorModel->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/LitGfx.glsl"));
@@ -483,7 +483,7 @@ void BoidsSample::OnInit(){
 
     Entity camera = scene->AddEntity("Camera");
     CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
-    cam.renderingPath = RenderingPath::Deferred;
+    cam.renderingPath = RenderingPath::Forward;
     //cam.viewportRect = Vector4(0, 0, 0.5f, 0.5f);
     scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(0, 150, 150));
     scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-25, 0, 0));
