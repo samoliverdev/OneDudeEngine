@@ -123,9 +123,9 @@ void StaticRendererClusterComponent::CreateIntancingCommands(){
     for(auto& chunk: chunks){
         for(auto& subchunk: chunk.subchunks){
             for(auto& rendererTarget: subchunk.targets){
-                auto& cm = subchunk.drawIntancingCommands.Get(rendererTarget.targetMaterial.get(), rendererTarget.targetMesh.get());
-                cm.material = rendererTarget.targetMaterial.get();
-                cm.meshs = rendererTarget.targetMesh.get();
+                auto& cm = subchunk.drawIntancingCommands.Get(rendererTarget.targetMaterial->GetId(), rendererTarget.targetMesh->GetId());
+                cm.material = rendererTarget.targetMaterial->GetId();
+                cm.meshs = rendererTarget.targetMesh->GetId();
 
                 #ifdef USE_INSTANCING_MATRIX43
                 cm.trans.push_back({
@@ -139,8 +139,9 @@ void StaticRendererClusterComponent::CreateIntancingCommands(){
             }
 
             subchunk.drawIntancingCommands.Each([](DrawInstancingCommand2& cmd){
-                cmd.buffer = InstancingBuffer::Create();
-                cmd.buffer->SetData(&cmd.trans[0], cmd.trans.size());
+                Ref<InstancingBuffer> buffer = InstancingBuffer::Create();
+                buffer->SetData(&cmd.trans[0], cmd.trans.size());
+                cmd.buffer = buffer->GetId();
             });
             if(subchunk.drawIntancingCommands.Size() > 0){
                 subchunk.targets.clear();

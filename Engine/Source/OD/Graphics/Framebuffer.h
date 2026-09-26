@@ -103,6 +103,8 @@ public:
 
     std::string name = "NoName";
 
+    inline std::string PassName(){ return passName; }
+
 private:
     size_t vramUsage = 0;
     FramebufferType type;

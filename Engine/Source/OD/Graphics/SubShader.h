@@ -1,5 +1,5 @@
 #pragma once
-//#include "OD/Core/Asset.h"
+#include "OD/Core/Resource.h"
 #include "OD/Core/Math.h"
 #include "RendererTypes.h"
 #include "Framebuffer.h"
@@ -116,7 +116,7 @@ struct OD_API ShaderSourceData{
 
 bool OD_API ShaderLoadFile(const std::string& path, ShaderSourceData& out);
 
-struct OD_API SubShader{
+struct OD_API SubShader: public Resource{
     ShaderPipeline pipeline;
     std::vector<std::string> enabledKeyworlds;
     std::vector<std::vector<std::string>> pragmas;

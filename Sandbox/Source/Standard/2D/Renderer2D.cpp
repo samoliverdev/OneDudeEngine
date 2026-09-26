@@ -1,4 +1,5 @@
 #include "Renderer2D.h"
+#include "OD/Core/ResourceManager.h"
 #include <OD/Graphics/Font.h>
 #include <OD/Graphics/Material.h>
 #include <OD/Graphics/Mesh.h>
@@ -48,7 +49,7 @@ void Init(){
     spriteMat = OD::CreateRef<OD::Material>(OD::Shader::CreateFromFile("Engine/Shaders/Sprite.glsl"));
     whiteTex = OD::Texture2D::CreateFromFile("Engine/Textures/White.jpg", {});
 
-    spriteMesh = CreateRef<Mesh>();
+    spriteMesh = ResourceManager::Get().Create<Mesh>();
     spriteMesh->vertices = {
         {-0.5f, -0.5f, 0},
         {-0.5f,  0.5f, 0},

@@ -379,7 +379,7 @@ public:
     });
 
 private:    
-    Ref<InstancingBuffer> dataBuffer = CreateRef<InstancingBuffer>();
+    Ref<InstancingBuffer> dataBuffer = InstancingBuffer::Create();
 
     bool isLooping = true;
     float duration = 5;

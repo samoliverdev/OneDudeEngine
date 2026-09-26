@@ -24,7 +24,7 @@ struct OD_API StaticRendererClusterComponent{
 
     struct SubChunk{
         std::vector<RenderTarget> targets;
-        CommandBucket4<Material*, Mesh*, DrawInstancingCommand2> drawIntancingCommands;
+        CommandBucket4<uint32_t, uint32_t, DrawInstancingCommand2> drawIntancingCommands;
 
         AABB bounds;       // full subchunk region (static, from grid definition)
         AABB renderBounds; // tight bounds from contained models

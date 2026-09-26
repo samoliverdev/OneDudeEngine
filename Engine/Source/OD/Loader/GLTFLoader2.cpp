@@ -1,4 +1,5 @@
 #include "OD/pch.h"
+#include "OD/Core/ResourceManager.h"
 #include "GLTFLoader2.h"
 #include "OD/Graphics/Mesh.h"
 #include "OD/Graphics/Texture.h"
@@ -267,7 +268,7 @@ std::vector<Ref<Mesh>> LoadMeshes(tinygltf::Model& model) {
         auto& gltfMesh = model.meshes[node.mesh];
         const tinygltf::Skin* skin = (node.skin >= 0) ? &model.skins[node.skin] : nullptr;
         for(size_t j = 0; j < gltfMesh.primitives.size(); ++j){
-            auto mesh = CreateRef<Mesh>();
+            auto mesh = ResourceManager::Get().Create<Mesh>();
             auto& primitive = gltfMesh.primitives[j];
 
             GLTFHelpers::MeshFromAttribute(model, *mesh, primitive, "POSITION");

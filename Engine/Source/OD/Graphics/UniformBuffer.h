@@ -6,7 +6,7 @@
 
 namespace OD{
 
-class OD_API UniformBuffer{
+class OD_API UniformBuffer: public Resource{
     friend class Graphics;
     friend class OpenGLGraphicsDevice;
 public:

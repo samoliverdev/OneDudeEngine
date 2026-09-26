@@ -1,4 +1,5 @@
 #include "Greyboxing.h"
+#include "OD/Core/ResourceManager.h"
 #include <OD/RenderPipeline/MeshRendererComponent.h>
 #include <OD/Core/ImGui.h>
 #include <OD/Physics/PhysicsSystem.h>
@@ -9,7 +10,7 @@ namespace Standard{
 //Ref<Material> defaultMaterial = nullptr; 
 
 Ref<Mesh> CreatePlaneMesh(Vector2 size, IVector2 resolution, MeshPivot pivot){
-    Ref<Mesh> mesh = CreateRef<Mesh>();
+    Ref<Mesh> mesh = ResourceManager::Get().Create<Mesh>();
 
     int xSegments = std::max(1, resolution.x);
     int ySegments = std::max(1, resolution.y);
@@ -55,7 +56,7 @@ Ref<Mesh> CreatePlaneMesh(Vector2 size, IVector2 resolution, MeshPivot pivot){
 }
 
 Ref<Mesh> CreateCubeMesh(Vector3 size, IVector3 resolution, MeshPivot pivot){
-    Ref<Mesh> mesh = CreateRef<Mesh>();
+    Ref<Mesh> mesh = ResourceManager::Get().Create<Mesh>();
 
     Vector3 offset = (pivot == MeshPivot::Center) ? -size * 0.5f : Vector3(0);
 
@@ -172,7 +173,7 @@ Ref<Mesh> CreateCubeMesh(Vector3 size, IVector3 resolution, MeshPivot pivot){
 }
 
 Ref<Mesh> CreateCylinderMesh(float radius, float height, IVector2 resolution, MeshPivot pivot) {
-    Ref<Mesh> mesh = CreateRef<Mesh>();
+    Ref<Mesh> mesh = ResourceManager::Get().Create<Mesh>();
 
     int radialSegments = std::max(3, resolution.x);
     int heightSegments = std::max(1, resolution.y);
@@ -271,7 +272,7 @@ Ref<Mesh> CreateCylinderMesh(float radius, float height, IVector2 resolution, Me
 }
 
 Ref<Mesh> CreateConeMesh(float radius, float height, int radialSegments, int heightSegments, bool addBaseCap, MeshPivot pivot) {
-    Ref<Mesh> mesh = CreateRef<Mesh>();
+    Ref<Mesh> mesh = ResourceManager::Get().Create<Mesh>();
 
     radialSegments = std::max(3, radialSegments);
     heightSegments = std::max(1, heightSegments);
@@ -347,7 +348,7 @@ Ref<Mesh> CreateConeMesh(float radius, float height, int radialSegments, int hei
 }
 
 Ref<Mesh> CreateSphereMesh(float radius, IVector2 resolution, MeshPivot pivot){
-    Ref<Mesh> mesh = CreateRef<Mesh>();
+    Ref<Mesh> mesh = ResourceManager::Get().Create<Mesh>();
 
     int latSegments = std::max(2, resolution.y);
     int lonSegments = std::max(3, resolution.x);
@@ -401,7 +402,7 @@ Ref<Mesh> CreateSphereMesh(float radius, IVector2 resolution, MeshPivot pivot){
 }
 
 Ref<Mesh> CreateRampMesh(Vector3 size, MeshPivot pivot, bool includeBottomFace){
-    Ref<Mesh> mesh = CreateRef<Mesh>();
+    Ref<Mesh> mesh = ResourceManager::Get().Create<Mesh>();
     Vector3 offset = (pivot == MeshPivot::Center) ? -size * 0.5f : Vector3(0);
     float x = size.x;
     float y = size.y;

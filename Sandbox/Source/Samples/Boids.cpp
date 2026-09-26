@@ -452,13 +452,13 @@ void BoidsSample::OnInit(){
     Ref<Material> boidMaterial = ResourceManager::Get().Create<Material>();
     boidMaterial->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/LitGfx.glsl"));
     boidMaterial->SetVector4("color", Vector4(1, 0, 0, 1));
-    boidMaterial->SetEnableInstancing(false);
+    boidMaterial->SetEnableInstancing(true);
 
     Ref<Model> floorModel = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/plane.glb");
     floorModel->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/LitGfx.glsl"));
 
     Ref<Model> boidModel = ResourceManager::Get().LoadByPath<Model>("Sandbox/Models/Boid.glb");
-    boidModel->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/LitGfx.glsl"));
+    boidModel->SetShader(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Lit.glsl"));
 
     Entity env = scene->AddEntity("Env");
     EnvironmentComponent& _env = scene->AddComponent<EnvironmentComponent>(env);
@@ -483,7 +483,7 @@ void BoidsSample::OnInit(){
 
     Entity camera = scene->AddEntity("Camera");
     CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
-    cam.renderingPath = RenderingPath::Forward;
+    cam.renderingPath = RenderingPath::Deferred;
     //cam.viewportRect = Vector4(0, 0, 0.5f, 0.5f);
     scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(0, 150, 150));
     scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-25, 0, 0));
@@ -505,7 +505,7 @@ void BoidsSample::OnInit(){
     float posRange = 200;
     Entity boids = scene->AddEntity("Boids");
     
-    for(int i = 0; i < 1000*2; i++){
+    for(int i = 0; i < 1000*1; i++){
         Entity boid = scene->AddEntity("Boid" + std::to_string(random(0, 200)));
         ModelRendererComponent& mr = scene->AddComponent<ModelRendererComponent>(boid);
         mr.SetModel(boidModel);
@@ -517,7 +517,7 @@ void BoidsSample::OnInit(){
 
         //if(i % 2 == 0) continue;
         //if(i % 2 == 0) 
-            scene->AddComponent<SkinnedModelRendererComponent>(boid);
+            //scene->AddComponent<SkinnedModelRendererComponent>(boid);
 
         BoidComponent& boidComponet = scene->AddComponent<BoidComponent>(boid);
         boidComponet.velocity = trans.Forward();

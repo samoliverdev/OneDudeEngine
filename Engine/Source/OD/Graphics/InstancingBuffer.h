@@ -1,12 +1,13 @@
 #pragma once
 #include "OD/Base.h"
+#include "OD/Core/Resource.h"
 #include "OD/Platform/OpenGL/GL.h"
 #include "OD/Core/Math.h"
 #include "OD/Gfx/Gfx.h"
 
 namespace OD{
 
-class OD_API InstancingBuffer{
+class OD_API InstancingBuffer: public Resource{
     friend class Graphics;
     friend class OpenGLGraphicsDevice;
 public:

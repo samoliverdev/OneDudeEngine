@@ -16,7 +16,7 @@ void SSGIFeature::OnGui(){
 }
 
 SSGIFeature::SSGIFeature(){
-    #ifndef TestNewGPU_API
+    //#ifndef TestNewGPU_API
     enable = false;
     event = RenderPassEvent::PostProcess;
     
@@ -29,7 +29,7 @@ SSGIFeature::SSGIFeature(){
 
     giBlitPass = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/SSGIBlitPostFX.glsl"));
     giTemporalFilterPass = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/SSGITemporalFilter.glsl"));
-    #endif
+    //#endif
 }
 
 SSGIFeature::~SSGIFeature(){
@@ -44,7 +44,7 @@ void SSGIFeature::AddRenderPasses(IRenderer& renderer, RenderContext& context){
 }
 
 void SSGIFeature::Execute(Scene& scene, RenderContext& context, RenderFrameData& data){
-    #ifndef TestNewGPU_API
+    //#ifndef TestNewGPU_API
     if(context.isDeferred == false){
         Graphics::BlitFramebuffer(data.src.get(), data.dst.get());
         return;
@@ -59,6 +59,41 @@ void SSGIFeature::Execute(Scene& scene, RenderContext& context, RenderFrameData&
         Graphics::EndFramebuffer();
     };
 
+    int width = data.src->Width();
+    int height = data.src->Height();
+    int halfWidth = width;
+    int halfHeight = height;
+    bool useDownSample = resolutionMode != ResolutionMode::Full;
+
+    #ifdef TestNewGPU_API
+    Ref<Framebuffer> deferred = context.GetDeferredFramebuffer();
+    auto passName = data.src->PassName();
+    
+    if(giFinal == nullptr) giFinal = ResourceManager::Get().Create<Framebuffer>(passName, width, height);
+    giFinal->Resize(width, height);
+
+    //auto gi = new Framebuffer(halfSpec);
+    if(giA == nullptr) giA = ResourceManager::Get().Create<Framebuffer>(passName, width, height);
+    if(giB == nullptr) giB = ResourceManager::Get().Create<Framebuffer>(passName, width, height);
+    if(lowNormalDepth == nullptr) lowNormalDepth = ResourceManager::Get().Create<Framebuffer>(passName, width, height);
+
+    giA->Resize(width, height);
+    giB->Resize(width, height);
+    lowNormalDepth->Resize(width, height);
+
+    auto GetCurGIA = [&]() -> Ref<Framebuffer> { return giStep == false ? giA : giB; }; 
+    auto GetCurGIB = [&]() -> Ref<Framebuffer> { return giStep == false ? giB : giA; }; 
+
+    //useTemporalDenoise = false;
+
+    if(useTemporalDenoise){
+        if(giHistory == nullptr) giHistory = ResourceManager::Get().Create<Framebuffer>(passName, width, height);
+        if(depthHistory == nullptr) depthHistory = ResourceManager::Get().Create<Framebuffer>(passName, width, height);
+
+        giHistory->Resize(width, height);
+        depthHistory->Resize(width, height);
+    }
+    #else
     ///*
     Ref<Framebuffer> deferred = context.GetDeferredFramebuffer();
     auto spec = data.src->Specification();
@@ -67,7 +102,7 @@ void SSGIFeature::Execute(Scene& scene, RenderContext& context, RenderFrameData&
 
     //bool useTemporalDenoise = true;
     //bool useSpatialDenoise = true;
-    bool useDownSample = resolutionMode != ResolutionMode::Full;
+    
 
     auto halfSpec = spec;
     if(useDownSample){
@@ -97,14 +132,15 @@ void SSGIFeature::Execute(Scene& scene, RenderContext& context, RenderFrameData&
         giHistory->Resize(halfSpec.width, halfSpec.height);
         depthHistory->Resize(spec.width, spec.height);
     }
+    #endif
 
     Camera cam = context.GetCamera();
     float Deg2Rad = (math::pi<float>() * 2.0f) / 360.0f;
     //float halfProjScale = spec.height / ( math::tan(cam.fov * Deg2Rad * 0.5 ) * 2 ) * 0.5;
-    float halfProjScale = spec.height / (2.0f *  math::tan(math::degrees(cam.fov) * 0.5f * Deg2Rad));
+    float halfProjScale = height / (2.0f *  math::tan(math::degrees(cam.fov) * 0.5f * Deg2Rad));
 
     Graphics::BeginFramebuffer(*GetCurGIA());
-    Graphics::SetViewport(0, 0, halfSpec.width, halfSpec.height);
+    Graphics::SetViewport(0, 0, halfWidth, halfHeight);
     giPass->SetTexture("mainTex", data.src, 0); //giPass->SetTexture("mainTex", lighting, 0); //giPass->SetTexture("mainTex", src, 0);
     giPass->SetTexture("gNormal", deferred, 0); //giPass->SetTexture("gNormal", deferred, 1);
     giPass->SetTexture("gDepth", deferred, -1);
@@ -117,7 +153,7 @@ void SSGIFeature::Execute(Scene& scene, RenderContext& context, RenderFrameData&
     giPass->SetFloat("hitThickness", hitThickness);
     giPass->SetFloat("giIntensity", giIntensity);
     giPass->SetFloat("aoIntensity", aoIntensity);
-    giPass->SetVector2("screenSize", {spec.width, spec.height});
+    giPass->SetVector2("screenSize", {width, height});
     giPass->SetFloat("useScreenSpaceSampling", useScreenSpaceSampling ? 1.0f : 0.0f);
     giPass->SetFloat("temporalRotation", 1.0f);
     giPass->SetFloat("backfaceLighting", backfaceLighting);
@@ -125,7 +161,7 @@ void SSGIFeature::Execute(Scene& scene, RenderContext& context, RenderFrameData&
     giPass->SetFloat("cameraFar", cam.farClip);
     giPass->SetFloat("halfProjScale", halfProjScale);
     giPass->SetFloat("_HalfProjScale", halfProjScale);
-    giPass->SetVector4("_Resolution", {spec.width, spec.height, 1.0f / spec.width, 1.0f / spec.height});
+    giPass->SetVector4("_Resolution", {width, height, 1.0f / width, 1.0f / height});
 
     float rotations[8] = {60.0f, 300, 180, 240, 120, 0};
     float offsets[8] = {0, 0.5f, 0.25f, 0.75f};
@@ -160,11 +196,11 @@ void SSGIFeature::Execute(Scene& scene, RenderContext& context, RenderFrameData&
         giUpsamplePass->SetFloat("nearPlane", cam.nearClip);
         giUpsamplePass->SetFloat("farPlane", cam.farClip);
         giUpsamplePass->SetVector2("screenSize", {deferred->Specification().width, deferred->Specification().height});
-        giUpsamplePass->SetVector2("giSize", {halfSpec.width, halfSpec.height});
-        giUpsamplePass->SetVector2("giTexelSize", {1.0f / halfSpec.width, 1.0f / halfSpec.height});
+        giUpsamplePass->SetVector2("giSize", {halfWidth, halfHeight});
+        giUpsamplePass->SetVector2("giTexelSize", {1.0f / halfWidth, 1.0f / halfHeight});
 
         Graphics::BeginFramebuffer(*lowNormalDepth);
-        Graphics::SetViewport(0, 0, halfSpec.width, halfSpec.height);
+        Graphics::SetViewport(0, 0, halfWidth, halfHeight);
         giUpsamplePass->SetPass(0);
         giUpsamplePass->SetFloat("normalSigma", 1);
         Graphics::DrawFullScreenQuad(*giUpsamplePass, Matrix4Identity);
@@ -247,8 +283,8 @@ void SSGIFeature::Execute(Scene& scene, RenderContext& context, RenderFrameData&
 
     auto RenderAtrous = [&](Ref<Framebuffer> _src, Ref<Framebuffer> _dst, float atrousStep){
         giBlurPass->SetFloat("atrousStep", atrousStep);
-        giBlurPass->SetVector2("giSize", {halfSpec.width, halfSpec.height});
-        giBlurPass->SetVector2("screenSize", {spec.width, spec.height});
+        giBlurPass->SetVector2("giSize", {halfWidth, halfHeight});
+        giBlurPass->SetVector2("screenSize", {width, height});
         Blit(_src, _dst, giBlurPass, 0);
     };
 
@@ -389,9 +425,9 @@ void SSGIFeature::Execute(Scene& scene, RenderContext& context, RenderFrameData&
     delete pong;
     delete giFull;
     */
-   #else
+   /*#else
    Assert(false);
-   #endif
+   #endif*/
 }
 
 }

@@ -201,6 +201,7 @@ struct OD_API alignas(16) AABB: public BoundingVolume{
 	bool isOnOrForwardPlane(const Plane& plane) const override;
 	bool isOnFrustum(const Frustum& camFrustum, Transform& transform) const override;
 	bool isOnFrustum(const Frustum& camFrustum);
+	bool isOnFrustumSIMD(const Frustum& camFrustum) const;
 	bool isOnAABB(const AABB& other);
 
 	//bool isOnFrustum(Frustum& camFrustum);

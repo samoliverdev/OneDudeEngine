@@ -1,4 +1,5 @@
 #include "OD/pch.h"
+#include "OD/Core/ResourceManager.h"
 #include "Mesh.h"
 #include "Graphics.h"
 #include "GraphicsDevice.h"
@@ -305,7 +306,7 @@ void Mesh::SubmitInstancingCustomModelMatrixs(Matrix4* modelMatrixs, int count){
 }
 
 Ref<Mesh> Mesh::FullScreenQuad(){
-    Ref<Mesh> mesh = CreateRef<Mesh>();
+    Ref<Mesh> mesh = ResourceManager::Get().Create<Mesh>();
     //mesh->isReadable = false;
     mesh->vertices = {
         // positions   // texCoords
@@ -343,7 +344,7 @@ Ref<Mesh> Mesh::FullScreenQuad(){
          1.0f,  1.0f,  1.0f, 1.0f
     };
 
-    Ref<Mesh> mesh = CreateRef<Mesh>();
+    Ref<Mesh> mesh = ResourceManager::Get().Create<Mesh>();
     mesh->isReadable = false;
     //model.ebo = 0;
 
@@ -415,7 +416,7 @@ Ref<Mesh> Mesh::SkyboxCube(){
         Vector3(-1.0f, -1.0f,  1.0f),
         Vector3(1.0f, -1.0f,  1.0f)
     };  
-    Ref<Mesh> mesh = CreateRef<Mesh>();
+    Ref<Mesh> mesh = ResourceManager::Get().Create<Mesh>();
     mesh->isReadable = false;
     mesh->Submit(nullptr, &pos);
     return mesh;
@@ -465,7 +466,7 @@ Ref<Mesh> Mesh::SkyboxCube(){
         1.0f, -1.0f,  1.0f
     };
 
-    Ref<Mesh> mesh = CreateRef<Mesh>();
+    Ref<Mesh> mesh = ResourceManager::Get().Create<Mesh>();
     mesh->isReadable = false;*/
 
     //Assert(false);
@@ -488,7 +489,7 @@ Ref<Mesh> Mesh::SkyboxCube(){
 }
 
 Ref<Mesh> Mesh::CenterQuad(bool useIndices){
-    Ref<Mesh> mesh = CreateRef<Mesh>();
+    Ref<Mesh> mesh = ResourceManager::Get().Create<Mesh>();
     mesh->isReadable = false;
     std::vector<Vector3> pos = {
         Vector3(-0.5f,  0.5f, 0.0f),
@@ -533,7 +534,7 @@ Ref<Mesh> Mesh::CenterQuad(bool useIndices){
         1, 2, 3    // second triangle
     };
 
-    Ref<Mesh> mesh = CreateRef<Mesh>();
+    Ref<Mesh> mesh = ResourceManager::Get().Create<Mesh>();
     mesh->isReadable = false;
 
     #ifdef USE_VAO

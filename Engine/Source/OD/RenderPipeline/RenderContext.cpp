@@ -11,6 +11,7 @@
 #include "OD/Animation/Animator.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/Resource.h"
+#include "OD/Core/ResourceManager.h"
 #include "OD/Core/Instrumentor.h"
 #include "OD/Defines.h"
 #include "OD/Physics/PhysicsSystem.h"
@@ -27,6 +28,11 @@
 #include <glm/simd/matrix.h>
 
 namespace OD{
+
+static uint32_t GetCustomShadowPassId(const Ref<Material>& customPass, Material* targetMaterial){
+    if(customPass != nullptr) return customPass->GetId();
+    return targetMaterial != nullptr && targetMaterial->DepthPass() != -1 ? targetMaterial->GetId() : INVALID_RESOURCE_ID;
+}
 
 RenderContextSettings settings;
 
@@ -226,7 +232,7 @@ RenderContext::RenderContext(){
 
     //screenSpaceShadow = AssetManager::Get().LoadAsset<ComputeShader>("Engine/ComputeShader/BendSssGpu.compute");
     screenSpaceShadow = ResourceManager::Get().LoadByPath<ComputeShader>("Engine/ComputeShader/BendSssGpu2.compute");
-    screenSpaceShadowData = CreateRef<UniformBuffer>(sizeof(SSSParameters2));
+    screenSpaceShadowData = UniformBuffer::Create(sizeof(SSSParameters2));
 
     FrameBufferSpecification framebufferSpecification2 = {Application::ScreenWidth(), Application::ScreenHeight()};
     framebufferSpecification2.colorAttachments = { {FramebufferTextureFormat::RGBA32F} }; //TODO: Optimaze this size
@@ -302,7 +308,10 @@ void RenderContext::CopyDeffered(){
 }
 
 void RenderContext::Begin(){
-
+    materialView = ResourceManager::Get().GetAllocatorView<Material>();
+    meshView = ResourceManager::Get().GetAllocatorView<Mesh>();
+    uniformBufferView = ResourceManager::Get().GetAllocatorView<UniformBuffer>();
+    instancingBufferView = ResourceManager::Get().GetAllocatorView<InstancingBuffer>();
 }
 
 void RenderContext::End(){
@@ -375,7 +384,7 @@ void RenderContext::DrawEntityIds(RendererList& commandBuffer){
             material.EnableKeyword("Forward");
         }*/
     };
-    commandBuffer.overrideMaterial = entityIdShader;
+    commandBuffer.overrideMaterial = entityIdShader->GetId();
     commandBuffer.Submit(false);
     //commandBuffer.onUpdateMaterial = nullptr;
 }
@@ -936,8 +945,8 @@ void RenderContext::ScreenClean(){
 void RenderContext::RunComputeRenderListShadow(ComputeRenderListSettings settings, ShadowDrawingSettings drawSettings, RendererList& renderList, Material* shadowPass){
     //RenderDataLoop2([&](auto& data){
     RenderDataLoopNew([&](auto& data){
-        if(settings.checkOnFrustum && data.aabb.isOnFrustum(settings.frustum) == false) return;
-        if(data.customShadowPass == nullptr) data.customShadowPass = shadowPass;
+        if(settings.checkOnFrustum && data.aabb.isOnFrustumSIMD(settings.frustum) == false) return;
+        if(data.customShadowPass == INVALID_RESOURCE_ID && shadowPass != nullptr) data.customShadowPass = shadowPass->GetId();
         AddDrawShadow(data, drawSettings, renderList);
     });
 }
@@ -969,9 +978,9 @@ void RenderContext::RunComputeRenderList(ComputeRenderListSettings settings, Dra
 
         RenderData data;
         data.distance = math::distance2(cam.viewPos, t.Position());
-        data.targetMaterial = c.material.get();
-        data.customShadowPass = c.customShadowPass == nullptr ? nullptr : c.customShadowPass.get();
-        data.targetMesh = c.mesh.get();
+        data.targetMaterial = c.material->GetId();
+        data.customShadowPass = c.customShadowPass == nullptr ? INVALID_RESOURCE_ID : c.customShadowPass->GetId();
+        data.targetMesh = c.mesh->GetId();
         data.targetMatrix =  s.staticDatas[0].m;
         data.posePalette = nullptr;
         //data.aabb = c.GetGlobalAABB(t);
@@ -985,7 +994,7 @@ void RenderContext::RunComputeRenderList(ComputeRenderListSettings settings, Dra
         data.customData = c.customData;
         #endif
 
-        if(settings.checkOnFrustum && data.aabb.isOnFrustum(settings.frustum) == false) continue;
+        if(settings.checkOnFrustum && data.aabb.isOnFrustumSIMD(settings.frustum) == false) continue;
         AddDrawRenderers(data, drawSettings, renderList);
     }
 
@@ -1018,13 +1027,13 @@ void RenderContext::RunComputeRenderList(ComputeRenderListSettings settings, Dra
 
             RenderData data;
             data.distance = math::distance2(cam.viewPos, t.Position());
-            data.targetMaterial = model->materials[i.materialIndex].get();
-            data.targetMesh = model->meshs[i.meshIndex].get();
+            data.targetMaterial = model->materials[i.materialIndex]->GetId();
+            data.targetMesh = model->meshs[i.meshIndex]->GetId();
             data.targetMatrix =  s.staticDatas[_i].m;
             data.aabb = s.staticDatas[_i].aabb;
             data.posePalette = nullptr;
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
-                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
+                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex]->GetId();
             }
 
             data.perDrawData.int_0.resize(1);
@@ -1032,7 +1041,7 @@ void RenderContext::RunComputeRenderList(ComputeRenderListSettings settings, Dra
 
             _i += 1;
 
-            if(settings.checkOnFrustum && data.aabb.isOnFrustum(settings.frustum) == false) continue;
+            if(settings.checkOnFrustum && data.aabb.isOnFrustumSIMD(settings.frustum) == false) continue;
             AddDrawRenderers(data, drawSettings, renderList);
         }
     }
@@ -1051,9 +1060,9 @@ void RenderContext::RunComputeRenderList(ComputeRenderListSettings settings, Dra
 
         RenderData data;
         data.distance = math::distance2(cam.viewPos, t.Position());
-        data.targetMaterial = c.material.get();
-        data.customShadowPass = c.customShadowPass == nullptr ? nullptr : c.customShadowPass.get();
-        data.targetMesh = c.mesh.get();
+        data.targetMaterial = c.material->GetId();
+        data.customShadowPass = c.customShadowPass == nullptr ? INVALID_RESOURCE_ID : c.customShadowPass->GetId();
+        data.targetMesh = c.mesh->GetId();
         data.targetMatrix = t.GlobalModelMatrix();
         data.posePalette = nullptr;
         //data.aabb = c.GetGlobalAABB(t);
@@ -1067,7 +1076,7 @@ void RenderContext::RunComputeRenderList(ComputeRenderListSettings settings, Dra
         data.customData = c.customData;
         #endif
 
-        if(settings.checkOnFrustum && data.aabb.isOnFrustum(settings.frustum) == false) continue;
+        if(settings.checkOnFrustum && data.aabb.isOnFrustumSIMD(settings.frustum) == false) continue;
         AddDrawRenderers(data, drawSettings, renderList);
     }
 
@@ -1092,8 +1101,8 @@ void RenderContext::RunComputeRenderList(ComputeRenderListSettings settings, Dra
 
             RenderData data;
             data.distance = math::distance2(cam.viewPos, t.Position());
-            data.targetMaterial = model->materials[i.materialIndex].get();
-            data.targetMesh = model->meshs[i.meshIndex].get();
+            data.targetMaterial = model->materials[i.materialIndex]->GetId();
+            data.targetMesh = model->meshs[i.meshIndex]->GetId();
             data.targetMatrix = t.GlobalModelMatrix()  * c.localTransform.GetLocalModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
             data.posePalette = nullptr;
             //data.aabb = c.GetGlobalAABB(t);
@@ -1101,7 +1110,7 @@ void RenderContext::RunComputeRenderList(ComputeRenderListSettings settings, Dra
             data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix());
             //data.aabb.Expand2(Vector3(5.5f));
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
-                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
+                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex]->GetId();
             }
 
             data.perDrawData.int_0.resize(1);
@@ -1109,7 +1118,7 @@ void RenderContext::RunComputeRenderList(ComputeRenderListSettings settings, Dra
 
             _i += 1;
 
-            if(settings.checkOnFrustum && data.aabb.isOnFrustum(settings.frustum) == false) continue;
+            if(settings.checkOnFrustum && data.aabb.isOnFrustumSIMD(settings.frustum) == false) continue;
             AddDrawRenderers(data, drawSettings, renderList);
         }
     }
@@ -1127,8 +1136,8 @@ void RenderContext::RunComputeRenderList(ComputeRenderListSettings settings, Dra
 
         RenderData data;
         data.distance = math::distance2(cam.viewPos, t.Position());
-        data.targetMaterial = c.material.get();
-        data.targetMesh = c.mesh.get();
+        data.targetMaterial = c.material->GetId();
+        data.targetMesh = c.mesh->GetId();
         data.targetMatrix =  t.GlobalModelMatrix();;
         //data.transform = Transform(data.targetMatrix); //t.ToTransform();
         
@@ -1144,7 +1153,7 @@ void RenderContext::RunComputeRenderList(ComputeRenderListSettings settings, Dra
         data.perDrawData.int_0.resize(1);
         data.perDrawData.int_0[0] = (int)e;
 
-        if(settings.checkOnFrustum && data.aabb.isOnFrustum(settings.frustum) == false) continue;
+        if(settings.checkOnFrustum && data.aabb.isOnFrustumSIMD(settings.frustum) == false) continue;
         AddDrawRenderers(data, drawSettings, renderList);
     }
 
@@ -1166,8 +1175,8 @@ void RenderContext::RunComputeRenderList(ComputeRenderListSettings settings, Dra
             if(_i < c.GetRenderTargetVisibility().size() && c.GetRenderTargetVisibility()[_i] == false) continue;
             RenderData data;
             data.distance = math::distance2(cam.viewPos, t.Position());
-            data.targetMaterial = model->materials[i.materialIndex].get();
-            data.targetMesh = model->meshs[i.meshIndex].get();
+            data.targetMaterial = model->materials[i.materialIndex]->GetId();
+            data.targetMesh = model->meshs[i.meshIndex]->GetId();
             data.targetMatrix =  t.GlobalModelMatrix() * c.localTransform.GetLocalModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
             //data.transform = Transform(data.targetMatrix); //t.ToTransform();
             
@@ -1182,7 +1191,7 @@ void RenderContext::RunComputeRenderList(ComputeRenderListSettings settings, Dra
             data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix());
 
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
-                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
+                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex]->GetId();
             }
 
             data.perDrawData.int_0.resize(1);
@@ -1190,7 +1199,7 @@ void RenderContext::RunComputeRenderList(ComputeRenderListSettings settings, Dra
             
             _i += 1;
 
-            if(settings.checkOnFrustum && data.aabb.isOnFrustum(settings.frustum) == false) continue;
+            if(settings.checkOnFrustum && data.aabb.isOnFrustumSIMD(settings.frustum) == false) continue;
             AddDrawRenderers(data, drawSettings, renderList);
         }
     }*/
@@ -1221,9 +1230,9 @@ void RenderContext::RenderDataLoop2(Scene& scene, std::function<void(RenderData&
 
         RenderData data;
         data.distance = math::distance2(cam.viewPos, t.Position());
-        data.targetMaterial = c.material.get();
-        data.customShadowPass = c.customShadowPass == nullptr ? nullptr : c.customShadowPass.get();
-        data.targetMesh = c.mesh.get();
+        data.targetMaterial = c.material->GetId();
+        data.customShadowPass = c.customShadowPass == nullptr ? INVALID_RESOURCE_ID : c.customShadowPass->GetId();
+        data.targetMesh = c.mesh->GetId();
         data.targetMatrix =  s.staticDatas[0].m;
         data.posePalette = nullptr;
         //data.aabb = c.GetGlobalAABB(t);
@@ -1272,13 +1281,13 @@ void RenderContext::RenderDataLoop2(Scene& scene, std::function<void(RenderData&
 
             RenderData data;
             data.distance = math::distance2(cam.viewPos, t.Position());
-            data.targetMaterial = model->materials[i.materialIndex].get();
-            data.targetMesh = model->meshs[i.meshIndex].get();
+            data.targetMaterial = model->materials[i.materialIndex]->GetId();
+            data.targetMesh = model->meshs[i.meshIndex]->GetId();
             data.targetMatrix =  s.staticDatas[_i].m;
             data.aabb = s.staticDatas[_i].aabb;
             data.posePalette = nullptr;
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
-                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
+                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex]->GetId();
             }
 
             data.perDrawData.int_0.resize(1);
@@ -1297,23 +1306,23 @@ void RenderContext::RenderDataLoop2(Scene& scene, std::function<void(RenderData&
     );
     for(auto [entity, c, t, i]: staticRendererClusterView.each()){
         for(auto& chunk: c.chunks){
-            if(chunk.renderBounds.isOnFrustum(cam.frustum) == false) continue;
+            if(chunk.renderBounds.isOnFrustumSIMD(cam.frustum) == false) continue;
 
             for(auto& subchunk: chunk.subchunks){
-                if(subchunk.renderBounds.isOnFrustum(cam.frustum) == false) continue;
+                if(subchunk.renderBounds.isOnFrustumSIMD(cam.frustum) == false) continue;
 
                 for(auto& renderTarget: subchunk.targets){
                     RenderData data;
                     data.distance = math::distance2(cam.viewPos, t.PositionReadSafe());
-                    data.targetMaterial = renderTarget.targetMaterial.get();
-                    data.customShadowPass = nullptr;
-                    data.targetMesh = renderTarget.targetMesh.get();
+                    data.targetMaterial = renderTarget.targetMaterial == nullptr ? INVALID_RESOURCE_ID : renderTarget.targetMaterial->GetId();
+                    data.customShadowPass = INVALID_RESOURCE_ID;
+                    data.targetMesh = renderTarget.targetMesh == nullptr ? INVALID_RESOURCE_ID : renderTarget.targetMesh->GetId();
                     data.targetMatrix = renderTarget.targetMatrix;
                     data.posePalette = nullptr;
                     data.aabb = renderTarget.aabb;
 
-                    data.perDrawData.Int_0_SetMask(0, true);
-                    data.perDrawData.int_0[0] = 0;
+                    //data.perDrawData.Int_0_SetMask(0, true);
+                    //data.perDrawData.int_0[0] = 0;
                     //data.perDrawData.int_0[1] = 0;
 
                     #if EnableExperimentalPerDrawCustomData
@@ -1328,13 +1337,13 @@ void RenderContext::RenderDataLoop2(Scene& scene, std::function<void(RenderData&
                     RenderData data;
                     data.distance = math::distance2(cam.viewPos, t.PositionReadSafe());
                     data.targetMaterial = cmd.material;
-                    data.customShadowPass = nullptr;
+                    data.customShadowPass = INVALID_RESOURCE_ID;
                     data.targetMesh = cmd.meshs;
                     data.targetMatrix = Matrix4Identity;
                     data.posePalette = nullptr;
                     data.aabb = subchunk.renderBounds;
                     //data.perDrawData.int_0_Count = 0;// .clear();
-                    data.instancingBuffer = cmd.buffer.get();
+                    data.instancingBuffer = cmd.buffer;
                     
                     onReciveRenderData(data);
                 });
@@ -1358,18 +1367,18 @@ void RenderContext::RenderDataLoop2(Scene& scene, std::function<void(RenderData&
 
         RenderData data;
         data.distance = math::distance2(cam.viewPos, t.PositionReadSafe());
-        data.targetMaterial = c.material.get();
-        data.customShadowPass = c.customShadowPass == nullptr ? nullptr : c.customShadowPass.get();
-        data.targetMesh = c.mesh.get();
+        data.targetMaterial = c.material->GetId();
+        data.customShadowPass = c.customShadowPass == nullptr ? INVALID_RESOURCE_ID : c.customShadowPass->GetId();
+        data.targetMesh = c.mesh->GetId();
         data.targetMatrix = t.GlobalModelMatrixReadSafe();
         data.posePalette = nullptr;
         //data.aabb = c.GetGlobalAABB(t);
         data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
 
-        data.perDrawData.Int_0_SetMask(0, true);
+        /*data.perDrawData.Int_0_SetMask(0, true);
         data.perDrawData.Int_0_SetMask(1, true);
         data.perDrawData.int_0[0] = ((int)e) + 1;
-        data.perDrawData.int_0[1] = info.layer;
+        data.perDrawData.int_0[1] = info.layer;*/
 
         #if EnableExperimentalPerDrawCustomData
         data.useCustomData = c.useCustomData;
@@ -1405,8 +1414,8 @@ void RenderContext::RenderDataLoop2(Scene& scene, std::function<void(RenderData&
 
             RenderData data;
             data.distance = math::distance2(cam.viewPos, t.PositionReadSafe());
-            data.targetMaterial = model->materials[i.materialIndex].get();
-            data.targetMesh = model->meshs[i.meshIndex].get();
+            data.targetMaterial = model->materials[i.materialIndex]->GetId();
+            data.targetMesh = model->meshs[i.meshIndex]->GetId();
             data.targetMatrix = t.GlobalModelMatrixReadSafe() /** c.localTransform.GetLocalModelMatrix()*/ * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
             data.posePalette = nullptr;
             //data.aabb = c.GetGlobalAABB(t);
@@ -1414,13 +1423,13 @@ void RenderContext::RenderDataLoop2(Scene& scene, std::function<void(RenderData&
             data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrixReadSafe());
             //data.aabb.Expand2(Vector3(5.5f));
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
-                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
+                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex]->GetId();
             }
 
-            data.perDrawData.Int_0_SetMask(0, true);
+            /*data.perDrawData.Int_0_SetMask(0, true);
             data.perDrawData.Int_0_SetMask(1, true);
             data.perDrawData.int_0[0] = ((int)e) + 1;
-            data.perDrawData.int_0[1] = info.layer;
+            data.perDrawData.int_0[1] = info.layer;*/
 
             onReciveRenderData(data);
             _i += 1;
@@ -1443,8 +1452,8 @@ void RenderContext::RenderDataLoop2(Scene& scene, std::function<void(RenderData&
 
         RenderData data;
         data.distance = math::distance2(cam.viewPos, t.PositionReadSafe());
-        data.targetMaterial = c.material.get();
-        data.targetMesh = c.mesh.get();
+        data.targetMaterial = c.material->GetId();
+        data.targetMesh = c.mesh->GetId();
         data.targetMatrix =  t.GlobalModelMatrixReadSafe();
         //data.transform = Transform(data.targetMatrix); //t.ToTransform();
         
@@ -1457,10 +1466,10 @@ void RenderContext::RenderDataLoop2(Scene& scene, std::function<void(RenderData&
         //data.aabb = c.GetGlobalAABB(t);// c.GetAABB();
         data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
 
-        data.perDrawData.Int_0_SetMask(0, true);
+        /*data.perDrawData.Int_0_SetMask(0, true);
         data.perDrawData.Int_0_SetMask(1, true);
         data.perDrawData.int_0[0] = ((int)e) + 1;
-        data.perDrawData.int_0[1] = info.layer;
+        data.perDrawData.int_0[1] = info.layer;*/
 
         onReciveRenderData(data);
     }
@@ -1486,8 +1495,8 @@ void RenderContext::RenderDataLoop2(Scene& scene, std::function<void(RenderData&
             if(_i < c.GetRenderTargetVisibility().size() && c.GetRenderTargetVisibility()[_i] == false) continue;
             RenderData data;
             data.distance = math::distance2(cam.viewPos, t.PositionReadSafe());
-            data.targetMaterial = model->materials[i.materialIndex].get();
-            data.targetMesh = model->meshs[i.meshIndex].get();
+            data.targetMaterial = model->materials[i.materialIndex]->GetId();
+            data.targetMesh = model->meshs[i.meshIndex]->GetId();
             data.targetMatrix =  t.GlobalModelMatrixReadSafe() /** c.localTransform.GetLocalModelMatrix()*/ * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
             //data.transform = Transform(data.targetMatrix); //t.ToTransform();
             
@@ -1502,13 +1511,14 @@ void RenderContext::RenderDataLoop2(Scene& scene, std::function<void(RenderData&
             data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix);
 
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
-                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
+                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex]->GetId();
             }
 
-            data.perDrawData.Int_0_SetMask(0, true);
+            /*data.perDrawData.Int_0_SetMask(0, true);
             data.perDrawData.Int_0_SetMask(1, true);
             data.perDrawData.int_0[0] = ((int)e) + 1;
-            data.perDrawData.int_0[1] = info.layer;
+            data.perDrawData.int_0[1] = info.layer;*/
+
             if(c.updateWhenOffscreen) data.SetFlag(RenderData::Flag::AlwaysDraw, true); //data.awalsDraw = true;
             
             onReciveRenderData(data);
@@ -1538,8 +1548,8 @@ void RenderContext::RenderDataLoop2(Scene& scene, std::function<void(RenderData&
 
         RenderData data;
         data.distance = math::distance2(cam.viewPos, t.Position());
-        data.targetMaterial = c.material.get();
-        data.targetMesh = spriteMesh.get();
+        data.targetMaterial = c.material->GetId();
+        data.targetMesh = spriteMesh->GetId();
         data.targetMatrix =  t.GlobalModelMatrix() * scale.GetLocalModelMatrix();
         data.posePalette = nullptr;
         //data.aabb = c.GetGlobalAABB(t);
@@ -1573,7 +1583,7 @@ void RenderContext::RenderDataLoop(Scene& scene, std::function<void(RenderData&)
     );
     for(auto [entity, c, t, i]: staticRendererClusterView.each()){
         for(auto& chunk: c.chunks){
-            //if(chunk.renderBounds.isOnFrustum(cam.frustum) == false) continue;
+            //if(chunk.renderBounds.isOnFrustumSIMD(cam.frustum) == false) continue;
 
             /*
             for(auto* r : receivers){
@@ -1585,7 +1595,7 @@ void RenderContext::RenderDataLoop(Scene& scene, std::function<void(RenderData&)
             */
 
             for(auto& subchunk: chunk.subchunks){
-                //if(subchunk.renderBounds.isOnFrustum(cam.frustum) == false) continue;
+                //if(subchunk.renderBounds.isOnFrustumSIMD(cam.frustum) == false) continue;
 
                 /*
                 for(auto* r : interested){
@@ -1599,9 +1609,9 @@ void RenderContext::RenderDataLoop(Scene& scene, std::function<void(RenderData&)
                 for(auto& renderTarget: subchunk.targets){
                     RenderData data;
                     data.distance = math::distance2(cam.viewPos, t.PositionReadSafe());
-                    data.targetMaterial = renderTarget.targetMaterial.get();
-                    data.customShadowPass = nullptr;
-                    data.targetMesh = renderTarget.targetMesh.get();
+                    data.targetMaterial = renderTarget.targetMaterial == nullptr ? INVALID_RESOURCE_ID : renderTarget.targetMaterial->GetId();
+                    data.customShadowPass = INVALID_RESOURCE_ID;
+                    data.targetMesh = renderTarget.targetMesh == nullptr ? INVALID_RESOURCE_ID : renderTarget.targetMesh->GetId();
                     data.targetMatrix = renderTarget.targetMatrix;
                     data.posePalette = nullptr;
                     data.aabb = renderTarget.aabb;
@@ -1631,13 +1641,13 @@ void RenderContext::RenderDataLoop(Scene& scene, std::function<void(RenderData&)
                     RenderData data;
                     data.distance = math::distance2(cam.viewPos, t.PositionReadSafe());
                     data.targetMaterial = cmd.material;
-                    data.customShadowPass = nullptr;
+                    data.customShadowPass = INVALID_RESOURCE_ID;
                     data.targetMesh = cmd.meshs;
                     data.targetMatrix = Matrix4Identity;
                     data.posePalette = nullptr;
                     data.aabb = subchunk.renderBounds;
                     //data.perDrawData.int_0_Count = 0; //.clear();
-                    data.instancingBuffer = cmd.buffer.get();
+                    data.instancingBuffer = cmd.buffer;
                     
                     onReciveRenderData(data);
                 });
@@ -1668,15 +1678,15 @@ void RenderContext::RenderDataLoop(Scene& scene, std::function<void(RenderData&)
 
         RenderData data;
         data.distance = math::distance2(cam.viewPos, t.Position());
-        data.targetMaterial = c.material.get();
-        data.customShadowPass = c.customShadowPass == nullptr ? nullptr : c.customShadowPass.get();
-        data.targetMesh = c.mesh.get();
+        data.targetMaterial = c.material->GetId();
+        data.customShadowPass = c.customShadowPass == nullptr ? INVALID_RESOURCE_ID : c.customShadowPass->GetId();
+        data.targetMesh = c.mesh->GetId();
         data.targetMatrix =  s.staticDatas[0].m;
         data.posePalette = nullptr;
         //data.aabb = c.GetGlobalAABB(t);
         data.aabb = s.staticDatas[0].aabb;
         
-        data.perDrawData.Int_0_SetMask(0, true);
+        /*data.perDrawData.Int_0_SetMask(0, true);
         data.perDrawData.Int_0_SetMask(1, true);
         data.perDrawData.int_0[0] = ((int)e) + 1;
         data.perDrawData.int_0[1] = info.layer;
@@ -1684,8 +1694,7 @@ void RenderContext::RenderDataLoop(Scene& scene, std::function<void(RenderData&)
         if(c.useCustomData){
             data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
             data.perDrawData.vector4_0[0] = c.customData;
-            
-        }
+        }*/
 
         #if EnableExperimentalPerDrawCustomData
         data.useCustomData = c.useCustomData;
@@ -1729,16 +1738,16 @@ void RenderContext::RenderDataLoop(Scene& scene, std::function<void(RenderData&)
 
             RenderData data;
             data.distance = math::distance2(cam.viewPos, t.Position());
-            data.targetMaterial = model->materials[i.materialIndex].get();
-            data.targetMesh = model->meshs[i.meshIndex].get();
+            data.targetMaterial = model->materials[i.materialIndex]->GetId();
+            data.targetMesh = model->meshs[i.meshIndex]->GetId();
             data.targetMatrix =  s.staticDatas[_i].m;
             data.aabb = s.staticDatas[_i].aabb;
             data.posePalette = nullptr;
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
-                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
+                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex]->GetId();
             }
 
-            data.perDrawData.Int_0_SetMask(0, true);
+            /*data.perDrawData.Int_0_SetMask(0, true);
             data.perDrawData.Int_0_SetMask(1, true);
             data.perDrawData.int_0[0] = ((int)e) + 1;
             data.perDrawData.int_0[1] = info.layer;
@@ -1746,7 +1755,7 @@ void RenderContext::RenderDataLoop(Scene& scene, std::function<void(RenderData&)
             if(c.useCustomData){
                 data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
                 data.perDrawData.vector4_0[0] = c.customData;
-            }
+            }*/
 
             #if EnableExperimentalPerDrawCustomData
             data.useCustomData = c.useCustomData;
@@ -1777,15 +1786,15 @@ void RenderContext::RenderDataLoop(Scene& scene, std::function<void(RenderData&)
 
         RenderData data;
         data.distance = math::distance2(cam.viewPos, t.Position());
-        data.targetMaterial = c.material.get();
-        data.customShadowPass = c.customShadowPass == nullptr ? nullptr : c.customShadowPass.get();
-        data.targetMesh = c.mesh.get();
+        data.targetMaterial = c.material->GetId();
+        data.customShadowPass = c.customShadowPass == nullptr ? INVALID_RESOURCE_ID : c.customShadowPass->GetId();
+        data.targetMesh = c.mesh->GetId();
         data.targetMatrix = t.GlobalModelMatrix();
         data.posePalette = nullptr;
         //data.aabb = c.GetGlobalAABB(t);
         data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
 
-        data.perDrawData.Int_0_SetMask(0, true);
+        /*data.perDrawData.Int_0_SetMask(0, true);
         data.perDrawData.Int_0_SetMask(1, true);
         data.perDrawData.int_0[0] = ((int)e) + 1;
         data.perDrawData.int_0[1] = info.layer;
@@ -1793,7 +1802,7 @@ void RenderContext::RenderDataLoop(Scene& scene, std::function<void(RenderData&)
         if(c.useCustomData){
             data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
             data.perDrawData.vector4_0[0] = c.customData;
-        }
+        }*/
 
         #if EnableExperimentalPerDrawCustomData
         data.useCustomData = c.useCustomData;
@@ -1829,8 +1838,8 @@ void RenderContext::RenderDataLoop(Scene& scene, std::function<void(RenderData&)
 
             RenderData data;
             data.distance = math::distance2(cam.viewPos, t.Position());
-            data.targetMaterial = model->materials[i.materialIndex].get();
-            data.targetMesh = model->meshs[i.meshIndex].get();
+            data.targetMaterial = model->materials[i.materialIndex]->GetId();
+            data.targetMesh = model->meshs[i.meshIndex]->GetId();
             //data.targetMatrix = t.GlobalModelMatrix() * c.localTransform.GetModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
             data.targetMatrix = math::simdMul(t.GlobalModelMatrix(), model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex));
             data.posePalette = nullptr;
@@ -1839,10 +1848,10 @@ void RenderContext::RenderDataLoop(Scene& scene, std::function<void(RenderData&)
             //data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix());
             //data.aabb.Expand2(Vector3(5.5f));
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
-                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
+                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex]->GetId();
             }
 
-            data.perDrawData.Int_0_SetMask(0, true);
+            /*data.perDrawData.Int_0_SetMask(0, true);
             data.perDrawData.Int_0_SetMask(1, true);
             data.perDrawData.int_0[0] = ((int)e) + 1;
             data.perDrawData.int_0[1] = info.layer;
@@ -1850,7 +1859,7 @@ void RenderContext::RenderDataLoop(Scene& scene, std::function<void(RenderData&)
             if(c.useCustomData){
                 data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
                 data.perDrawData.vector4_0[0] = c.customData;
-            }
+            }*/
 
             #if EnableExperimentalPerDrawCustomData
             data.useCustomData = c.useCustomData;
@@ -1878,8 +1887,8 @@ void RenderContext::RenderDataLoop(Scene& scene, std::function<void(RenderData&)
 
         RenderData data;
         data.distance = math::distance2(cam.viewPos, t.Position());
-        data.targetMaterial = c.material.get();
-        data.targetMesh = c.mesh.get();
+        data.targetMaterial = c.material->GetId();
+        data.targetMesh = c.mesh->GetId();
         data.targetMatrix =  t.GlobalModelMatrix();
         //data.transform = Transform(data.targetMatrix); //t.ToTransform();
         
@@ -1892,7 +1901,7 @@ void RenderContext::RenderDataLoop(Scene& scene, std::function<void(RenderData&)
         //data.aabb = c.GetGlobalAABB(t);// c.GetAABB();
         data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
 
-        data.perDrawData.Int_0_SetMask(0, true);
+        /*data.perDrawData.Int_0_SetMask(0, true);
         data.perDrawData.Int_0_SetMask(1, true);
         data.perDrawData.int_0[0] = ((int)e) + 1;
         data.perDrawData.int_0[1] = info.layer;
@@ -1900,7 +1909,7 @@ void RenderContext::RenderDataLoop(Scene& scene, std::function<void(RenderData&)
         if(c.useCustomData){
             data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
             data.perDrawData.vector4_0[0] = c.customData;
-        }
+        }*/
 
         #if EnableExperimentalPerDrawCustomData
         data.useCustomData = c.useCustomData;
@@ -1932,8 +1941,8 @@ void RenderContext::RenderDataLoop(Scene& scene, std::function<void(RenderData&)
             if(_i < c.GetRenderTargetVisibility().size() && c.GetRenderTargetVisibility()[_i] == false) continue;
             RenderData data;
             data.distance = math::distance2(cam.viewPos, t.Position());
-            data.targetMaterial = model->materials[i.materialIndex].get();
-            data.targetMesh = model->meshs[i.meshIndex].get();
+            data.targetMaterial = model->materials[i.materialIndex]->GetId();
+            data.targetMesh = model->meshs[i.meshIndex]->GetId();
 
             auto m1 = t.GlobalModelMatrix();
             auto m2 = model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
@@ -1962,21 +1971,21 @@ void RenderContext::RenderDataLoop(Scene& scene, std::function<void(RenderData&)
             //data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix());
 
             if(i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr){
-                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex].get();
+                data.targetMaterial = c.GetMaterialsOverride()[i.materialIndex]->GetId();
             }
 
-            data.perDrawData.Int_0_SetMask(0, true);
+            /*data.perDrawData.Int_0_SetMask(0, true);
             data.perDrawData.Int_0_SetMask(1, true);
             data.perDrawData.int_0[0] = ((int)e) + 1;
-            data.perDrawData.int_0[1] = info.layer;
+            data.perDrawData.int_0[1] = info.layer;*/
 
-            data.customShadowPass = data.targetMaterial->DepthPass() != -1 ? data.targetMaterial : nullptr; 
+            data.customShadowPass = GetCustomShadowPassId(Ref<Material>{}, (i.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[i.materialIndex] != nullptr) ? c.GetMaterialsOverride()[i.materialIndex].get() : model->materials[i.materialIndex].get());
 
             //TODO: Refactory perDrawData to avoid memory alocation
-            if(c.useCustomData){
+            /*if(c.useCustomData){
                 data.perDrawData.Vector4_0_SetMask(0, true);
                 data.perDrawData.vector4_0[0] = c.customData;
-            }
+            }*/
 
             #if EnableExperimentalPerDrawCustomData
             data.useCustomData = c.useCustomData;
@@ -2012,8 +2021,8 @@ void RenderContext::RenderDataLoop(Scene& scene, std::function<void(RenderData&)
 
         RenderData data;
         data.distance = math::distance2(cam.viewPos, t.Position());
-        data.targetMaterial = c.material.get();
-        data.targetMesh = spriteMesh.get();
+        data.targetMaterial = c.material->GetId();
+        data.targetMesh = spriteMesh->GetId();
         data.targetMatrix =  t.GlobalModelMatrix() * scale.GetModelMatrix();
         data.posePalette = nullptr;
         //data.aabb = c.GetGlobalAABB(t);
@@ -2031,14 +2040,14 @@ void RenderContext::RenderDataLoop(Scene& scene, std::function<void(RenderData&)
     for(auto [entity, decal, trans, info]: decalView.each()){
         RenderData data;
         data.distance = math::distance2(cam.viewPos, trans.Position());
-        data.targetMaterial = decal.material.get();
-        data.customShadowPass = nullptr;
-        data.targetMesh = decalMesh->meshs[0].get();
+        data.targetMaterial = decal.material->GetId();
+        data.customShadowPass = INVALID_RESOURCE_ID;
+        data.targetMesh = decalMesh->meshs[0]->GetId();
 
-        data.perDrawData.Int_0_SetMask(0, true);
+        /*data.perDrawData.Int_0_SetMask(0, true);
         data.perDrawData.Int_0_SetMask(1, true);
         data.perDrawData.int_0[0] = ((int)entity) + 1;
-        data.perDrawData.int_0[1] = decal.customLayerIndex;
+        data.perDrawData.int_0[1] = decal.customLayerIndex;*/
         
         if(decal.useCustomOffsetAndSize == false){
             data.targetMatrix = trans.GlobalModelMatrix();
@@ -2162,15 +2171,15 @@ inline void FillMeshRenderData(RenderContext& ctx, RenderData& data, MeshRendere
     data.layer = info.layer;
 
     data.distance = math::distance2(ctx.GetCamera().viewPos, t.Position());
-    data.targetMaterial = c.material.get();
-    data.customShadowPass = c.customShadowPass == nullptr ? nullptr : c.customShadowPass.get();
-    data.targetMesh = c.mesh.get();
+    data.targetMaterial = c.material->GetId();
+    data.customShadowPass = c.customShadowPass == nullptr ? INVALID_RESOURCE_ID : c.customShadowPass->GetId();
+    data.targetMesh = c.mesh->GetId();
     data.targetMatrix = t.GlobalModelMatrix();
     data.posePalette = nullptr;
     //data.aabb = c.GetGlobalAABB(t);
     data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
 
-    data.perDrawData.Int_0_SetMask(0, true);
+    /*data.perDrawData.Int_0_SetMask(0, true);
     data.perDrawData.Int_0_SetMask(1, true);
     data.perDrawData.int_0[0] = ((int)e) + 1;
     data.perDrawData.int_0[1] = info.layer;
@@ -2178,7 +2187,7 @@ inline void FillMeshRenderData(RenderContext& ctx, RenderData& data, MeshRendere
     if(c.useCustomData){
         data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
         data.perDrawData.vector4_0[0] = c.customData;
-    }
+    }*/
 
     data.SetFlag(RenderData::Flag::IsStatic, false);
     data.SetFlag(RenderData::Flag::FromMesh, true);
@@ -2196,26 +2205,26 @@ inline void FillStaticMeshRenderData(RenderContext& ctx, RenderData& data, Stati
     data.layer = info.layer;
 
     data.distance = math::distance2(ctx.GetCamera().viewPos, t.Position());
-    data.targetMaterial = c.material.get();
-    data.customShadowPass = c.customShadowPass == nullptr ? nullptr : c.customShadowPass.get();
-    data.targetMesh = c.mesh.get();
+    data.targetMaterial = c.material->GetId();
+    data.customShadowPass = c.customShadowPass == nullptr ? INVALID_RESOURCE_ID : c.customShadowPass->GetId();
+    data.targetMesh = c.mesh->GetId();
     data.targetMatrix =  s.staticDatas[0].m;
     data.posePalette = nullptr;
     //data.aabb = c.GetGlobalAABB(t);
     data.aabb = s.staticDatas[0].aabb;
     
-    data.perDrawData.Int_0_SetMask(0, true);
+    /*data.perDrawData.Int_0_SetMask(0, true);
     data.perDrawData.Int_0_SetMask(1, true);
     data.perDrawData.int_0[0] = ((int)e) + 1;
-    data.perDrawData.int_0[1] = info.layer;
+    data.perDrawData.int_0[1] = info.layer;*/
 
     data.SetFlag(RenderData::Flag::IsStatic, true);
     data.SetFlag(RenderData::Flag::FromMesh, true);
 
-    if(c.useCustomData){
+    /*if(c.useCustomData){
         data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
         data.perDrawData.vector4_0[0] = c.customData;
-    }
+    }*/
 
     #if EnableExperimentalPerDrawCustomData
     data.useCustomData = c.useCustomData;
@@ -2227,8 +2236,8 @@ inline void FillSkinnedMeshRenderData(RenderContext& ctx, RenderData& data, Skin
     data.layer = info.layer;
 
     data.distance = math::distance2(ctx.GetCamera().viewPos, t.Position());
-    data.targetMaterial = c.material.get();
-    data.targetMesh = c.mesh.get();
+    data.targetMaterial = c.material->GetId();
+    data.targetMesh = c.mesh->GetId();
     data.targetMatrix =  t.GlobalModelMatrix();
     //data.transform = Transform(data.targetMatrix); //t.ToTransform();
     
@@ -2241,17 +2250,17 @@ inline void FillSkinnedMeshRenderData(RenderContext& ctx, RenderData& data, Skin
     //data.aabb = c.GetGlobalAABB(t);// c.GetAABB();
     data.aabb = transform_aabb_optimized_abs_center_extents(c.boundingVolume, data.targetMatrix);
 
-    data.perDrawData.Int_0_SetMask(0, true);
+    /*data.perDrawData.Int_0_SetMask(0, true);
     data.perDrawData.Int_0_SetMask(1, true);
     data.perDrawData.int_0[0] = ((int)e) + 1;
-    data.perDrawData.int_0[1] = info.layer;
+    data.perDrawData.int_0[1] = info.layer;*/
 
     data.SetFlag(RenderData::Flag::FromSkinnedModel, true);
 
-    if(c.useCustomData){
+    /*if(c.useCustomData){
         data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
         data.perDrawData.vector4_0[0] = c.customData;
-    }
+    }*/
 
     Vector4 perInstanceData = {0, 0, 0, float(info.layer)};
     SetPerInstanceData(data.targetMatrix, perInstanceData);
@@ -2266,8 +2275,8 @@ inline void FillModelRenderData(RenderContext& ctx, RenderData& data, ModelRende
     data.layer = info.layer;
 
     data.distance = math::distance2(ctx.GetCamera().viewPos, t.PositionReadSafe());// t.Position());
-    data.targetMaterial = model->materials[target.materialIndex].get();
-    data.targetMesh = model->meshs[target.meshIndex].get();
+    data.targetMaterial = model->materials[target.materialIndex]->GetId();
+    data.targetMesh = model->meshs[target.meshIndex]->GetId();
     //data.targetMatrix = t.GlobalModelMatrix() * c.localTransform.GetModelMatrix() * model->skeleton.GetBindPose().GetGlobalMatrix(i.bindPoseIndex);
     data.targetMatrix = math::simdMul(t.GlobalModelMatrix(), c.finalPose.GetGlobalMatrix(target.bindPoseIndex));// model->skeleton.GetBindPose().GetGlobalMatrix(target.bindPoseIndex));
     data.posePalette = nullptr;
@@ -2276,10 +2285,10 @@ inline void FillModelRenderData(RenderContext& ctx, RenderData& data, ModelRende
     //data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix());
     //data.aabb.Expand2(Vector3(5.5f));
     if(target.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[target.materialIndex] != nullptr){
-        data.targetMaterial = c.GetMaterialsOverride()[target.materialIndex].get();
+        data.targetMaterial = c.GetMaterialsOverride()[target.materialIndex]->GetId();
     }
 
-    data.perDrawData.Int_0_SetMask(0, true);
+    /*data.perDrawData.Int_0_SetMask(0, true);
     data.perDrawData.Int_0_SetMask(1, true);
     data.perDrawData.int_0[0] = ((int)e) + 1;
     data.perDrawData.int_0[1] = info.layer;
@@ -2287,7 +2296,7 @@ inline void FillModelRenderData(RenderContext& ctx, RenderData& data, ModelRende
     if(c.useCustomData){
         data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
         data.perDrawData.vector4_0[0] = c.customData;
-    }
+    }*/
     
     data.SetFlag(RenderData::Flag::IsStatic, false);
     data.SetFlag(RenderData::Flag::FromModel, true);
@@ -2299,7 +2308,7 @@ inline void FillModelRenderData(RenderContext& ctx, RenderData& data, ModelRende
     }
     SetPerInstanceData(data.targetMatrix, perInstanceData);
 
-    data.customShadowPass = c.customShadowPass != nullptr ? c.customShadowPass.get() : (data.targetMaterial->DepthPass() != -1 ? data.targetMaterial : nullptr); 
+    data.customShadowPass = GetCustomShadowPassId(c.customShadowPass, (target.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[target.materialIndex] != nullptr) ? c.GetMaterialsOverride()[target.materialIndex].get() : model->materials[target.materialIndex].get());
     
     if(c.castShadow == false) data.SetFlag(RenderData::Flag::RenderShadow, false);
 
@@ -2313,19 +2322,19 @@ inline void FillStaticModelRenderData(RenderContext& ctx, RenderData& data, Stat
     data.layer = info.layer;
 
     data.distance = math::distance2(ctx.GetCamera().viewPos, t.Position());
-    data.targetMaterial = model->materials[target.materialIndex].get();
-    data.targetMesh = model->meshs[target.meshIndex].get();
+    data.targetMaterial = model->materials[target.materialIndex]->GetId();
+    data.targetMesh = model->meshs[target.meshIndex]->GetId();
     data.targetMatrix =  s.staticDatas[index].m;
     data.aabb = s.staticDatas[index].aabb;
     data.posePalette = nullptr;
     if(target.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[target.materialIndex] != nullptr){
-        data.targetMaterial = c.GetMaterialsOverride()[target.materialIndex].get();
+        data.targetMaterial = c.GetMaterialsOverride()[target.materialIndex]->GetId();
     }
 
-    data.perDrawData.Int_0_SetMask(0, true);
+    /*data.perDrawData.Int_0_SetMask(0, true);
     data.perDrawData.Int_0_SetMask(1, true);
     data.perDrawData.int_0[0] = ((int)e) + 1;
-    data.perDrawData.int_0[1] = info.layer;
+    data.perDrawData.int_0[1] = info.layer;*/
 
     data.SetFlag(RenderData::Flag::IsStatic, true);
     data.SetFlag(RenderData::Flag::FromModel, true);
@@ -2333,10 +2342,10 @@ inline void FillStaticModelRenderData(RenderContext& ctx, RenderData& data, Stat
     Vector4 perInstanceData = {0, 0, 0, float(info.layer)};
     SetPerInstanceData(data.targetMatrix, perInstanceData);
 
-    if(c.useCustomData){
+    /*if(c.useCustomData){
         data.perDrawData.Vector4_0_SetMask(0, true);//.resize(1);
         data.perDrawData.vector4_0[0] = c.customData;
-    }
+    }*/
 
     #if EnableExperimentalPerDrawCustomData
     data.useCustomData = c.useCustomData;
@@ -2348,8 +2357,8 @@ inline void FillSkinnedModelRenderData(RenderContext& ctx, RenderData& data, Ski
     data.layer = info.layer;
     
     data.distance = math::distance2(ctx.GetCamera().viewPos, t.Position());
-    data.targetMaterial = model->materials[target.materialIndex].get();
-    data.targetMesh = model->meshs[target.meshIndex].get();
+    data.targetMaterial = model->materials[target.materialIndex]->GetId();
+    data.targetMesh = model->meshs[target.meshIndex]->GetId();
 
     auto m1 = t.GlobalModelMatrix();
     auto m2 = model->skeleton.GetBindPose().GetGlobalMatrix(target.bindPoseIndex);
@@ -2365,32 +2374,36 @@ inline void FillSkinnedModelRenderData(RenderContext& ctx, RenderData& data, Ski
         c.finalPose.GetMatrixPalette(c.posePalette, model->skeleton.GetInvBindPose()); 
     }
     data.posePalette = &c.posePalette;
-    data.skinnedBuffer = c.useSkinnedData == false ? nullptr : c.skinnedData.get(); //c.skinnedData == nullptr ? nullptr : (c.useSkinnedData ? c.skinnedData.get() : nullptr);
+    data.skinnedBuffer = c.useSkinnedData == false || c.skinnedData == nullptr ? INVALID_RESOURCE_ID : c.skinnedData->GetId(); //c.skinnedData == nullptr ? nullptr : (c.useSkinnedData ? c.skinnedData.get() : nullptr);
     
     //data.aabb = c.GetGlobalAABB(t);// c.GetAABB();
     data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), data.targetMatrix);//Isto pode esta errado pq o aabb é do model interior, nao por mesh
     //data.aabb = transform_aabb_optimized_abs_center_extents(c.GetAABB(), t.GlobalModelMatrix());
 
     if(target.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[target.materialIndex] != nullptr){
-        data.targetMaterial = c.GetMaterialsOverride()[target.materialIndex].get();
+        data.targetMaterial = c.GetMaterialsOverride()[target.materialIndex]->GetId();
     }
 
-    data.perDrawData.Int_0_SetMask(0, true);
+    /*data.perDrawData.Int_0_SetMask(0, true);
     data.perDrawData.Int_0_SetMask(1, true);
     data.perDrawData.int_0[0] = ((int)e) + 1;
-    data.perDrawData.int_0[1] = info.layer;
+    data.perDrawData.int_0[1] = info.layer;*/
 
     data.SetFlag(RenderData::Flag::FromSkinnedModel, true);
 
-    data.customShadowPass = c.customShadowPass != nullptr ? c.customShadowPass.get() : (data.targetMaterial->DepthPass() != -1 ? data.targetMaterial : nullptr); 
+    data.customShadowPass = GetCustomShadowPassId(c.customShadowPass, (target.materialIndex < c.GetMaterialsOverride().size() && c.GetMaterialsOverride()[target.materialIndex] != nullptr) ? c.GetMaterialsOverride()[target.materialIndex].get() : model->materials[target.materialIndex].get());
 
     //TODO: Refactory perDrawData to avoid memory alocation
-    if(c.useCustomData){
+    /*if(c.useCustomData){
         data.perDrawData.Vector4_0_SetMask(0, true);
         data.perDrawData.vector4_0[0] = c.customData;
-    }
+    }*/
 
     Vector4 perInstanceData = {0, 0, 0, float(info.layer)};
+    if(c.useCustomData){
+        perInstanceData = c.customData;
+        perInstanceData.w = float(info.layer);
+    }
     SetPerInstanceData(data.targetMatrix, perInstanceData);
 
     #if EnableExperimentalPerDrawCustomData
@@ -2404,7 +2417,7 @@ inline void FillSkinnedModelRenderData(RenderContext& ctx, RenderData& data, Ski
 
 inline void UpdateSkinnedData(SkinnedModelRendererComponent& skinned){
     if(skinned.skinnedData == nullptr){
-        skinned.skinnedData = CreateRef<UniformBuffer>(sizeof(Matrix4) * MAX_BONES); //120);
+        skinned.skinnedData = UniformBuffer::Create(sizeof(Matrix4) * MAX_BONES); //120);
     }
     //if(skinned.posePalette.size() == 0) continue;
     skinned.skinnedData->SetData(skinned.posePalette.data(), sizeof(Matrix4) * skinned.posePalette.size());
@@ -2412,14 +2425,14 @@ inline void UpdateSkinnedData(SkinnedModelRendererComponent& skinned){
 
 inline void FillDecalRenderData(RenderContext& ctx, RenderData& data, DecalRendererComponent& decal, InfoComponent& info, TransformComponent& trans, Model* decalMesh, entt::entity entity){
     data.distance = math::distance2(ctx.GetCamera().viewPos, trans.Position());
-    data.targetMaterial = decal.material.get();
-    data.customShadowPass = nullptr;
-    data.targetMesh = decalMesh->meshs[0].get();
+    data.targetMaterial = decal.material->GetId();
+    data.customShadowPass = INVALID_RESOURCE_ID;
+    data.targetMesh = decalMesh->meshs[0]->GetId();
 
-    data.perDrawData.Int_0_SetMask(0, true);
+    /*data.perDrawData.Int_0_SetMask(0, true);
     data.perDrawData.Int_0_SetMask(1, true);
     data.perDrawData.int_0[0] = ((int)entity) + 1;
-    data.perDrawData.int_0[1] = decal.customLayerIndex;
+    data.perDrawData.int_0[1] = decal.customLayerIndex;*/
     
     if(decal.useCustomOffsetAndSize == false){
         data.targetMatrix = trans.GlobalModelMatrix();
@@ -2447,8 +2460,10 @@ inline void FillDecalRenderData(RenderContext& ctx, RenderData& data, DecalRende
 }
 /////////////////////////////////////////
 
+
 void RenderContext::UpdateRenderData(Scene& scene, RendererFeatureContext& passCtx){
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData");
+
 
     for(int i = 0; i < renderData.chunk_count(); i++){
         renderData[i].reserve(2000);
@@ -2555,7 +2570,7 @@ void RenderContext::UpdateRenderData(Scene& scene, RendererFeatureContext& passC
         UpdateSkinnedData(skinned);
         
         /*if(skinned.skinnedData == nullptr){
-            skinned.skinnedData = CreateRef<UniformBuffer>(sizeof(Matrix4) * MAX_BONES); //120);
+            skinned.skinnedData = UniformBuffer::Create(sizeof(Matrix4) * MAX_BONES); //120);
         }
         //if(skinned.posePalette.size() == 0) continue;
         skinned.skinnedData->SetData(skinned.posePalette.data(), sizeof(Matrix4) * skinned.posePalette.size());*/
@@ -2641,7 +2656,7 @@ void RenderContext::UpdateRenderData(Scene& scene, RendererFeatureContext& passC
     );
     for(auto [entity, c, t, i]: staticRendererClusterView.each()){
         for(auto& chunk: c.chunks){
-            //if(chunk.renderBounds.isOnFrustum(cam.frustum) == false) continue;
+            //if(chunk.renderBounds.isOnFrustumSIMD(cam.frustum) == false) continue;
 
             /*
             for(auto* r : receivers){
@@ -2653,7 +2668,7 @@ void RenderContext::UpdateRenderData(Scene& scene, RendererFeatureContext& passC
             */
 
             for(auto& subchunk: chunk.subchunks){
-                //if(subchunk.renderBounds.isOnFrustum(cam.frustum) == false) continue;
+                //if(subchunk.renderBounds.isOnFrustumSIMD(cam.frustum) == false) continue;
 
                 /*
                 for(auto* r : interested){
@@ -2667,9 +2682,9 @@ void RenderContext::UpdateRenderData(Scene& scene, RendererFeatureContext& passC
                 for(auto& renderTarget: subchunk.targets){
                     RenderData& data = renderData.GetNew(0); //RenderData data;
                     data.distance = math::distance2(cam.viewPos, t.PositionReadSafe());
-                    data.targetMaterial = renderTarget.targetMaterial.get();
-                    data.customShadowPass = nullptr;
-                    data.targetMesh = renderTarget.targetMesh.get();
+                    data.targetMaterial = renderTarget.targetMaterial == nullptr ? INVALID_RESOURCE_ID : renderTarget.targetMaterial->GetId();
+                    data.customShadowPass = INVALID_RESOURCE_ID;
+                    data.targetMesh = renderTarget.targetMesh == nullptr ? INVALID_RESOURCE_ID : renderTarget.targetMesh->GetId();
                     data.targetMatrix = renderTarget.targetMatrix;
                     data.posePalette = nullptr;
                     data.aabb = renderTarget.aabb;
@@ -2697,13 +2712,13 @@ void RenderContext::UpdateRenderData(Scene& scene, RendererFeatureContext& passC
                     RenderData& data = renderData.GetNew(0); //RenderData data;
                     data.distance = math::distance2(cam.viewPos, t.PositionReadSafe());
                     data.targetMaterial = cmd.material;
-                    data.customShadowPass = nullptr;
+                    data.customShadowPass = INVALID_RESOURCE_ID;
                     data.targetMesh = cmd.meshs;
                     data.targetMatrix = Matrix4Identity;
                     data.posePalette = nullptr;
                     data.aabb = subchunk.renderBounds;
                     //data.perDrawData.int_0_Count = 0; //.clear();
-                    data.instancingBuffer = cmd.buffer.get();
+                    data.instancingBuffer = cmd.buffer;
 
                     data.SetFlag(RenderData::Flag::IsStatic, true);
                     data.SetFlag(RenderData::Flag::FromCluster, true);
@@ -2788,23 +2803,32 @@ inline bool HasAnyTags(const std::vector<uint32_t>& a, const std::vector<uint32_
 }
 
 void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings, RendererList& target){
-    Assert(data.targetMaterial != nullptr);
+    /*auto* materialView = ResourceManager::Get().GetAllocatorView<Material>();
+    auto* meshView = ResourceManager::Get().GetAllocatorView<Mesh>();
+    auto* uniformBufferView = ResourceManager::Get().GetAllocatorView<UniformBuffer>();
+    auto* instancingBufferView = ResourceManager::Get().GetAllocatorView<InstancingBuffer>();*/
+
+    Material* targetMaterial = materialView->Get(data.targetMaterial);
+    Mesh* targetMesh = meshView->Get(data.targetMesh);
+    UniformBuffer* skinnedBuffer = uniformBufferView->Get(data.skinnedBuffer);
+    InstancingBuffer* instancingBuffer = instancingBufferView->Get(data.instancingBuffer);
+    if(targetMaterial == nullptr || targetMesh == nullptr) return;
 
     if(data.HasFlag(RenderData::Flag::IsDecal) && settings.decalTarget == false) return;
     if(settings.decalTarget && data.HasFlag(RenderData::Flag::IsDecal) == false) return;
 
     //TODO: Experimental, Messure the performace Later
     if(settings.requiredTags.size() > 0){
-        if(HasAllTags2(settings.requiredTags, data.targetMaterial->TagsHash()) == false) return;
+        if(HasAllTags2(settings.requiredTags, targetMaterial->TagsHash()) == false) return;
     }
 
     //TODO: Experimental, Messure the performace Later
     if(settings.excludedTags.size() > 0){
-        if(HasAnyTags(settings.excludedTags, data.targetMaterial->TagsHash()) == true) return;
+        if(HasAnyTags(settings.excludedTags, targetMaterial->TagsHash()) == true) return;
     }
 
-    bool isBlend = data.targetMaterial->IsBlend();
-    bool isInstancing = data.targetMaterial->EnableInstancingValid();
+    bool isBlend = targetMaterial->IsBlend();
+    bool isInstancing = targetMaterial->EnableInstancingValid();
     if(settings.enableIntancing == false){
         isInstancing = false;
     }
@@ -2818,7 +2842,7 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
 
     /*if(data.HasFlag(RenderData::Flag::IsDecal) != settings.decalTarget) return;// --- Early very cheap branch ---
     
-    Material* mat = data.targetMaterial;   
+    Material* mat = targetMaterial;
     const bool isBlend = mat->IsBlend();
     const bool wantBlend = settings.renderQueueRange == RenderQueueRange::Transparent;
     if(isBlend != wantBlend) return;// FAST render-queue check
@@ -2828,36 +2852,36 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
     if(data.posePalette != nullptr){
         target.AddSkinnedDrawCommand({
             data.targetMatrix,
-            data.perDrawData,
-            data.targetMaterial->CurrentShader(data.targetMaterial->MainPass()).drawTypes[1].get(),
-            data.targetMaterial,
-            data.targetMesh,
+            //data.perDrawData,
+            targetMaterial->CurrentShader(targetMaterial->MainPass()).drawTypes[1]->GetId(),
+            targetMaterial->GetId(),
+            targetMesh->GetId(),
             data.posePalette,
-            data.skinnedBuffer
+            skinnedBuffer == nullptr ? INVALID_RESOURCE_ID : skinnedBuffer->GetId()
         }, data.distance);
         return;
     }
 
     if(isInstancing){
-        if(data.instancingBuffer != nullptr){
-            target.AddDrawInstancingCommand({
-                data.instancingBuffer, data.targetMaterial->CurrentShader(data.targetMaterial->MainPass()).drawTypes[2].get(), data.targetMaterial, data.targetMesh, data.distance
+        if(instancingBuffer != nullptr){
+            target.AddDrawInstancingCommand(DrawInstancingCommand3{
+                instancingBuffer->GetId(), targetMaterial->CurrentShader(targetMaterial->MainPass()).drawTypes[2]->GetId(), targetMaterial->GetId(), targetMesh->GetId(), data.distance
             });
         } else{
-            target.AddDrawInstancingCommand({
+            target.AddDrawInstancingCommand(DrawInstancingCommand4{
                 data.targetMatrix,
-                data.targetMaterial->CurrentShader(data.targetMaterial->MainPass()).drawTypes[2].get(),
-                data.targetMaterial,
-                data.targetMesh,
+                targetMaterial->CurrentShader(targetMaterial->MainPass()).drawTypes[2]->GetId(),
+                targetMaterial->GetId(),
+                targetMesh->GetId(),
             });
         }
     } else {
         target.AddDrawCommand({
             data.targetMatrix,
-            data.perDrawData,
-            data.targetMaterial->CurrentShader(data.targetMaterial->MainPass()).drawTypes[0].get(),
-            data.targetMaterial,
-            data.targetMesh,
+            //data.perDrawData,
+            targetMaterial->CurrentShader(targetMaterial->MainPass()).drawTypes[0]->GetId(),
+            targetMaterial->GetId(),
+            targetMesh->GetId(),
             data.distance
             /*#if EnableExperimentalPerDrawCustomData
             data.useCustomData,
@@ -3125,8 +3149,22 @@ void RenderContext::EndDrawShadow(){
 }
 
 void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& settings, RendererList& commandBuffer){
-    bool isBlend = data.targetMaterial->IsBlend();
-    bool isInstancing = data.targetMaterial->EnableInstancingValid();
+    /*auto* materialView = ResourceManager::Get().GetAllocatorView<Material>();
+    auto* meshView = ResourceManager::Get().GetAllocatorView<Mesh>();
+    auto* uniformBufferView = ResourceManager::Get().GetAllocatorView<UniformBuffer>();
+    auto* instancingBufferView = ResourceManager::Get().GetAllocatorView<InstancingBuffer>();*/
+
+    Material* targetMaterial = materialView->Get(data.targetMaterial);
+    Material* shadowMaterial = materialView->Get(data.customShadowPass);
+    Mesh* targetMesh = meshView->Get(data.targetMesh);
+    UniformBuffer* skinnedBuffer = uniformBufferView->Get(data.skinnedBuffer);
+    InstancingBuffer* instancingBuffer = instancingBufferView->Get(data.instancingBuffer);
+    if(targetMaterial == nullptr || targetMesh == nullptr) return;
+    if(shadowMaterial == nullptr) shadowMaterial = targetMaterial;
+    if(shadowMaterial->DepthPass() == -1) return;
+
+    bool isBlend = targetMaterial->IsBlend();
+    bool isInstancing = targetMaterial->EnableInstancingValid();
     if(settings.enableIntancing == false){
         isInstancing = false;
     }
@@ -3142,51 +3180,53 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
     if(data.posePalette != nullptr){
         commandBuffer.AddSkinnedDrawCommand({
             data.targetMatrix,
-            data.perDrawData,
-            data.customShadowPass->CurrentShader(data.customShadowPass->DepthPass()).drawTypes[1].get(),
-            data.customShadowPass, 
-            //data.targetMaterial,
-            data.targetMesh,
+            //data.perDrawData,
+            shadowMaterial->CurrentShader(shadowMaterial->DepthPass()).drawTypes[1]->GetId(),
+            shadowMaterial->GetId(),
+            //targetMaterial,
+            targetMesh->GetId(),
             data.posePalette,
-            data.skinnedBuffer
+            skinnedBuffer == nullptr ? INVALID_RESOURCE_ID : skinnedBuffer->GetId()
         }, data.distance);
         return;
     }
 
     if(isInstancing){
-        if(data.instancingBuffer != nullptr){
-            commandBuffer.AddDrawInstancingCommand({
-                data.instancingBuffer, 
-                data.customShadowPass->CurrentShader(data.customShadowPass->DepthPass()).drawTypes[2].get(),
-                data.customShadowPass, //data.targetMaterial, 
-                data.targetMesh,
+        if(instancingBuffer != nullptr){
+            commandBuffer.AddDrawInstancingCommand(DrawInstancingCommand3{
+                instancingBuffer->GetId(),
+                shadowMaterial->CurrentShader(shadowMaterial->DepthPass()).drawTypes[2]->GetId(),
+                shadowMaterial->GetId(), //targetMaterial,
+                targetMesh->GetId(),
                 data.distance
             });
+            return;
         } else{
-            commandBuffer.AddDrawInstancingCommand({
+            commandBuffer.AddDrawInstancingCommand(DrawInstancingCommand4{
                 data.targetMatrix,
-                data.customShadowPass->CurrentShader(data.customShadowPass->DepthPass()).drawTypes[2].get(),
-                data.customShadowPass, 
-                //data.targetMaterial,
-                data.targetMesh
+                shadowMaterial->CurrentShader(shadowMaterial->DepthPass()).drawTypes[2]->GetId(),
+                shadowMaterial->GetId(),
+                //targetMaterial,
+                targetMesh->GetId()
             });
+            return;
         }
 
     } else {
         /*commandBuffer.AddDrawCommand({
             data.targetMatrix,
-            data.customShadowPass, 
-            //data.targetMaterial,
-            data.targetMesh,
+            shadowMaterial,
+            //targetMaterial,
+            targetMesh,
             data.distance
         }, data.distance);*/
 
         commandBuffer.AddDrawCommand({
             data.targetMatrix,
-            data.perDrawData,
-            data.customShadowPass->CurrentShader(data.customShadowPass->DepthPass()).drawTypes[0].get(),
-            data.customShadowPass,
-            data.targetMesh,
+            //data.perDrawData,
+            shadowMaterial->CurrentShader(shadowMaterial->DepthPass()).drawTypes[0]->GetId(),
+            shadowMaterial->GetId(),
+            targetMesh->GetId(),
             data.distance
             /*#if EnableExperimentalPerDrawCustomData
             data.useCustomData,
@@ -3199,7 +3239,7 @@ void RenderContext::AddDrawShadow(RenderData& data, ShadowDrawingSettings& setti
 void RenderContext::DrawShadows(RendererList& commandBuffer, ShadowSplitData& splitData, Ref<Material>& shadowPass){
     OD_PROFILE_SCOPE("RenderContext::DrawShadows");
     commandBuffer.Sort();
-    //commandBuffer.SetOverrideMaterial(shadowPass);
+    //commandBuffer.SetOverrideMaterial(shadowPass->GetId());
 
     //Material::SetGlobalMatrix4("lightSpaceMatrix", splitData.projViewMatrix);
 
@@ -3221,7 +3261,7 @@ void RenderContext::DrawShadows(RendererList& commandBuffer, ShadowSplitData& sp
     };
     commandBuffer.Submit();
     commandBuffer.onUpdateMaterial = nullptr;
-    commandBuffer.SetOverrideMaterial(nullptr);
+    commandBuffer.SetOverrideMaterial(INVALID_RESOURCE_ID);
     //#endif
 }
 

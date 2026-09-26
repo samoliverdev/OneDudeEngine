@@ -1,4 +1,5 @@
 #include "OD/pch.h"
+#include "OD/Core/ResourceManager.h"
 #include "StandRenderPipeline.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/Lua.h"
@@ -31,6 +32,22 @@
 #include <stb/stb_image_write.h>
 
 namespace OD{
+
+namespace {
+constexpr uint32_t RenderDataCameraCullingBit = 1u << 0;
+constexpr uint32_t RenderDataDirectionalCullingBit(int splitIndex){
+    return 1u << (1 + splitIndex);
+}
+constexpr int RenderDataOtherCullingBitOffset =
+    1 + MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT * MAX_CASCADE_COUNT;
+constexpr uint32_t RenderDataOtherCullingBit(int splitIndex){
+    return 1u << (RenderDataOtherCullingBitOffset + splitIndex);
+}
+static_assert(
+    1 + MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT * MAX_CASCADE_COUNT + MAX_SHADOWED_OTHER_LIGHT_COUNT <= 32,
+    "RenderData culling views exceed the uint32_t visibility mask"
+);
+}
 
 //#define UseExperimentalRunComputeRenderList
 
@@ -217,7 +234,7 @@ void Shadows::Setup(RenderContext* inContext, ShadowSettings inSettings, Camera 
 void Shadows::AddRunComputeRenderList(){
     ShadowDrawingSettings s;
 
-    //if(data.customShadowPass == nullptr) data.customShadowPass = shadowPass.get();
+    //if(data.customShadowPass == INVALID_RESOURCE_ID && shadowPass != nullptr) data.customShadowPass = shadowPass->GetId();
 
     int index = -1;
     for(int i = 0; i < shadowedDirectionalLightCount; i++){
@@ -275,7 +292,7 @@ void Shadows::AddRenderData(RenderData& data){
     s.renderQueueRange = RenderQueueRange::All;
     s.sortType = SortType::None;
 
-    if(data.customShadowPass == nullptr) data.customShadowPass = shadowPass.get();
+    if(data.customShadowPass == INVALID_RESOURCE_ID && shadowPass != nullptr) data.customShadowPass = shadowPass->GetId();
 
     int index = -1;
     for(int i = 0; i < shadowedDirectionalLightCount; i++){
@@ -598,7 +615,7 @@ CameraRenderer::CameraRenderer(){
     brdfLUT = Texture2D::CreateBrdfLUTTexture2D(); //_brdfLUT; 
     
     //spriteMesh = Mesh::CenterQuad(false);
-    spriteMesh = CreateRef<Mesh>();
+    spriteMesh = ResourceManager::Get().Create<Mesh>();
     spriteMesh->vertices = {
         {-0.5f, -0.5f, 0},
         {-0.5f,  0.5f, 0},
@@ -633,7 +650,7 @@ CameraRenderer::CameraRenderer(){
 
     gamaCorrectionPP = new GamaCorrectionPP();
 
-    cubeMesh = CreateRef<Mesh>();
+    cubeMesh = ResourceManager::Get().Create<Mesh>();
     cubeMesh->vertices = {
         // +X
         {1.0f, -1.0f, -1.0f}, {1.0f, -1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, -1.0f},
@@ -740,6 +757,8 @@ void CameraRenderer::RenderPassNew(CameraRenderPass& inpass, RenderContext* rend
         decalDrawSettings.decalTarget = true;
         decalDrawTarget.sortType = RendererList::SortType::None;
 
+        CameraRenderer::Type type = renderingPath == RenderingPath::Deferred ?  CameraRenderer::Type::Deferred : CameraRenderer::Type::Forward;
+
         context->RenderDataLoopNew2([&](RenderData& data){
             /*if(pass.collectSettings.collectStatic == false && data.HasFlag(RenderData::Flag::IsStatic) == true) return; 
             if(pass.collectSettings.collectDynamic == false && data.HasFlag(RenderData::Flag::IsStatic) == false) return; 
@@ -763,7 +782,7 @@ void CameraRenderer::RenderPassNew(CameraRenderPass& inpass, RenderContext* rend
             // all other filters in one test
             if((f & pass.collectSettings.rejectIfAny) != 0) return;
 
-            AddRenderData(data); 
+            AddRenderData(data, type); 
             if(pass.settings.drawShadow){
                 shadows.AddRenderData(data);
             } 
@@ -885,7 +904,7 @@ void CameraRenderer::RunRenderDataLoop(){
 
     context->UpdateRenderData(*scene, *passCtx);
     context->RenderDataLoopNew([&](RenderData& data){
-        AddRenderData(data); 
+        AddRenderData(data, CameraRenderer::Type::All); 
         //if(data.HasFlag(RenderData::Flag::RenderShadow) == true){
             shadows.AddRenderData(data);
         //} 
@@ -912,16 +931,39 @@ void CameraRenderer::RunRenderDataLoop(){
     #endif
 }
 
-void CameraRenderer::AddRenderData(RenderData& data){
+void CameraRenderer::AddRenderData(RenderData& data, CameraRenderer::Type type){
     //Assert(Mathf::HasNaN(camera.view) == false);
     //Assert(HasNaN(camera.frustum) == false);
 
     if(data.aabb.isOnFrustum(camera.frustum) == false && data.HasFlag(RenderData::Flag::AlwaysDraw) == false) return;
-    context->AddDrawRenderers(data, opaqueDrawSettings, opaqueDrawTarget);
-    context->AddDrawRenderers(data, opaqueForwardOnlyDrawSettings, opaqueForwardOnlyDrawTarget);
-    context->AddDrawRenderers(data, blendDrawSettings, blendDrawTarget);
-    context->AddDrawRenderers(data, decalDrawSettings, decalDrawTarget);
-    context->AddDrawRenderers(data, entityIdDrawSettings, entityIdDrawTarget);
+
+    switch(type){
+        case CameraRenderer::Type::Forward:
+        context->AddDrawRenderers(data, opaqueDrawSettings, opaqueDrawTarget);
+        context->AddDrawRenderers(data, opaqueForwardOnlyDrawSettings, opaqueForwardOnlyDrawTarget);
+        context->AddDrawRenderers(data, blendDrawSettings, blendDrawTarget);
+        break;
+
+        case CameraRenderer::Type::Deferred:
+        context->AddDrawRenderers(data, opaqueDrawSettings, opaqueDrawTarget);
+        context->AddDrawRenderers(data, opaqueForwardOnlyDrawSettings, opaqueForwardOnlyDrawTarget);
+        context->AddDrawRenderers(data, blendDrawSettings, blendDrawTarget);
+        context->AddDrawRenderers(data, decalDrawSettings, decalDrawTarget);
+        break;
+
+        case CameraRenderer::Type::EntityIdDraw:
+        context->AddDrawRenderers(data, entityIdDrawSettings, entityIdDrawTarget);
+        break;
+
+        case CameraRenderer::Type::All:
+        context->AddDrawRenderers(data, opaqueDrawSettings, opaqueDrawTarget);
+        context->AddDrawRenderers(data, opaqueForwardOnlyDrawSettings, opaqueForwardOnlyDrawTarget);
+        context->AddDrawRenderers(data, blendDrawSettings, blendDrawTarget);
+        context->AddDrawRenderers(data, decalDrawSettings, decalDrawTarget);
+        context->AddDrawRenderers(data, entityIdDrawSettings, entityIdDrawTarget);
+        break;
+    }
+
 }
 
 glm::mat4 captureProjection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
@@ -1124,7 +1166,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         environmentSettings.skyIrradianceMapF = ResourceManager::Get().Create<Framebuffer>(specification);
         //environmentSettings.skyIrradianceMapF->Invalidate();
 
-        Ref<Material> irradianceMat = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/IrradianceConvolution.glsl"));
+        Ref<Material> irradianceMat = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/IrradianceConvolution.glsl"));
         irradianceMat->SetCubemap("environmentMap", environmentSettings.skyCubemap);
         irradianceMat->SetMatrix4("projection2", captureProjection);
 
@@ -1149,7 +1191,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         environmentSettings.skyPrefilterMapF = ResourceManager::Get().Create<Framebuffer>(specification);
         //environmentSettings.skyIrradianceMapF->Invalidate();
 
-        Ref<Material> irradianceMat = CreateRef<Material>(Shader::CreateFromFile("Engine/Shaders/Prefilter.glsl"));
+        Ref<Material> irradianceMat = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/Prefilter.glsl"));
         irradianceMat->SetCubemap("environmentMap", environmentSettings.skyCubemap);
         irradianceMat->SetMatrix4("projection2", captureProjection);
 

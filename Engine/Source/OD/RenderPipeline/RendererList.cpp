@@ -2,51 +2,53 @@
 #include "RendererList.h"
 #include "OD/Graphics/Material.h"
 #include "OD/Graphics/Mesh.h"
+#include "OD/Graphics/UniformBuffer.h"
 #include "OD/Graphics/Graphics.h"
 #include "OD/Core/Instrumentor.h"
+#include "OD/Core/ResourceManager.h"
 #include "MeshRendererComponent.h"
 
 namespace OD{
 
 bool DrawMultTypeCommand::operator<(const DrawMultTypeCommand& a) const {
-    return material->MaterialId() < a.material->MaterialId();
+    return material < a.material;
 }
 
 bool DrawCommand::operator<(const DrawCommand& a) const {
-    return material->MaterialId() < a.material->MaterialId();
+    return material < a.material;
 }
 
 bool SkinnedDrawCommand::operator<(const SkinnedDrawCommand& a) const {
-    return material->MaterialId() < a.material->MaterialId();
+    return material < a.material;
 }
 
 bool DrawInstancingCommand::operator<(const DrawCommand& a) const{
-    return material->MaterialId() < a.material->MaterialId();
+    return material < a.material;
 }
 
 bool DrawInstancingCommand2::operator<(const DrawCommand& a) const{
-    return material->MaterialId() < a.material->MaterialId();
+    return material < a.material;
 }
 
 bool DrawInstancingCommand3::operator<(const DrawCommand& a) const{
-    return material->MaterialId() < a.material->MaterialId();
+    return material < a.material;
 }
 
 bool DrawInstancingCommand4::operator<(const DrawInstancingCommand4& a) const {
-    return material->MaterialId() < a.material->MaterialId();
+    return material < a.material;
 }
 
 bool MaterialBind2::operator<(const MaterialBind2& a) const{
     return materialId < a.materialId;
 }
 
-void RendererList::SetOverrideMaterial(Ref<Material> material){
-    overrideMaterial = material;
+void RendererList::SetOverrideMaterial(uint32_t materialId){
+    overrideMaterial = materialId;
 }
 
 void RendererList::AddDrawCommand(DrawCommand&& comand, float distance){
-    Assert(comand.material != nullptr);
-    Assert(comand.meshs != nullptr);
+    Assert(comand.material != INVALID_RESOURCE_ID);
+    Assert(comand.meshs != INVALID_RESOURCE_ID);
 
     if(sortType == SortType::None){
         drawCommandsNorSort.Add(comand.material, std::move(comand));
@@ -54,7 +56,7 @@ void RendererList::AddDrawCommand(DrawCommand&& comand, float distance){
         //drawCommands.Add(std::move(comand));
 
         DrawMultTypeCommand cmd = {comand.subShader, comand.material, comand.meshs, comand.distance};
-        cmd.perDrawData = comand.perDrawData;
+        //cmd.perDrawData = comand.perDrawData;
         cmd.standTrans = comand.trans;
         cmd.type = DrawMultTypeCommand::Type::Stand;
         sortDrawMultTypeCommands.Add(cmd);
@@ -62,11 +64,11 @@ void RendererList::AddDrawCommand(DrawCommand&& comand, float distance){
 }   
 
 void RendererList::AddDrawInstancingCommand(DrawInstancingCommand4&& comand){
-    Assert(comand.material != nullptr);
-    Assert(comand.meshs != nullptr);
+    Assert(comand.material != INVALID_RESOURCE_ID);
+    Assert(comand.meshs != INVALID_RESOURCE_ID);
 
     #ifdef UseExperimentalCommandBucket5
-    DrawInstancingCommand& c = drawIntancingCommands.Get(comand.material->MaterialId(), comand.meshs->Id());
+    DrawInstancingCommand& c = drawIntancingCommands.Get(comand.material, comand.meshs);
     #else
     DrawInstancingCommand& c = drawIntancingCommands.Get(comand.material, comand.meshs);
     #endif
@@ -85,12 +87,12 @@ void RendererList::AddDrawInstancingCommand(DrawInstancingCommand4&& comand){
 } 
 
 void RendererList::AddDrawInstancingCommand(DrawInstancingCommand3&& comand){
-    Assert(comand.material != nullptr);
-    Assert(comand.meshs != nullptr);
+    Assert(comand.material != INVALID_RESOURCE_ID);
+    Assert(comand.meshs != INVALID_RESOURCE_ID);
 
     //if(sortType == SortType::None){
         #ifdef UseExperimentalCommandBucket5
-        DrawInstancingCommand& c = drawIntancingCommands.Get(comand.material->MaterialId(), comand.meshs->Id());
+        DrawInstancingCommand& c = drawIntancingCommands.Get(comand.material, comand.meshs);
         #else
         DrawInstancingCommand& c = drawIntancingCommands.Get(comand.material, comand.meshs);
         #endif
@@ -108,19 +110,19 @@ void RendererList::AddDrawInstancingCommand(DrawInstancingCommand3&& comand){
 }
 
 void RendererList::AddSkinnedDrawCommand(SkinnedDrawCommand&& comand, float distance){
-    Assert(comand.material != nullptr);
-    Assert(comand.meshs != nullptr);
+    Assert(comand.material != INVALID_RESOURCE_ID);
+    Assert(comand.meshs != INVALID_RESOURCE_ID);
 
     if(sortType == SortType::None){
         skinnedDrawCommandsNorSort.Add(comand.material, std::move(comand));
     } else {
         /*skinnedDrawCommands.Add(
-            {distance, comand.material->MaterialId()}, 
+            {distance, comand.material},
             std::move(comand)
         );*/
         
         DrawMultTypeCommand cmd = {comand.subShader, comand.material, comand.meshs, comand.distance};
-        cmd.perDrawData = comand.perDrawData;
+        //cmd.perDrawData = comand.perDrawData;
         cmd.skinnedTrans = comand.trans;
         cmd.skinnedPosePalette = comand.posePalette;
         cmd.type = DrawMultTypeCommand::Type::Skinned;
@@ -129,27 +131,22 @@ void RendererList::AddSkinnedDrawCommand(SkinnedDrawCommand&& comand, float dist
 }
 
 void RendererList::Clean(){
-    overrideMaterial = nullptr;
+    overrideMaterial = INVALID_RESOURCE_ID;
 
     drawCommands.Clear();
     drawCommandsNorSort.Clear();
-    //drawIntancingCommands.Clear();
+#ifdef UseExperimentalCommandBucket5
+    for(auto& i: drawIntancingCommands.commands){
+        for(auto& command: i){
+            command.trans.clear();
+        }
+    }
+#else
+    drawIntancingCommands.Clear();
+#endif
     skinnedDrawCommands.Clear();
     skinnedDrawCommandsNorSort.Clear();
     sortDrawMultTypeCommands.Clear();
-
-    for(auto& i: drawIntancingCommands.commands){
-        #ifdef UseExperimentalCommandBucket5
-        for(auto& j: i){
-            j.trans.clear();
-        }
-        #else
-        for(auto& j: i.second){
-            j.second.trans.clear();
-            j.second.buffers.clear();
-        }
-        #endif
-    }
 
     /*drawCommandsMaterials.clear();
     drawIntancingCommandsMaterials.clear();
@@ -175,7 +172,7 @@ void RendererList::Sort(){
             if(a.material != b.material) return a.material < b.material; 
             return a.meshs < b.meshs;   
             
-            //if(a.material->MaterialId() != b.material->MaterialId()) return a.material->MaterialId() < b.material->MaterialId();
+            //if(a.material != b.material) return a.material < b.material;
             //return a.distance < b.distance;
         };
 
@@ -204,7 +201,7 @@ void RendererList::Sort(){
         };*/
 
         drawCommands.sortFunction = [](auto& a, auto& b){
-            if(a.material->MaterialId() != b.material->MaterialId()) return a.material->MaterialId() < b.material->MaterialId();
+            if(a.material != b.material) return a.material < b.material;
             return a.distance > b.distance;
         };
 
@@ -214,7 +211,7 @@ void RendererList::Sort(){
         };
 
         sortDrawMultTypeCommands.sortFunction = [](auto& a, auto& b){
-            //if(a.material->MaterialId() != b.material->MaterialId()) return a.material->MaterialId() < b.material->MaterialId(); //This can bug the blending order
+            //Comparing material IDs here can change blending order.
             //LogInfo("A: %f, B: %f", a.distance, b.distance);
             return a.distance > b.distance;
         };
@@ -228,15 +225,19 @@ void RendererList::Sort(){
 
 void RendererList::Submit(bool skipEntityId){
     OD_PROFILE_SCOPE("RendererList::Submit");
+    auto* materialView = ResourceManager::Get().GetAllocatorView<Material>();
+    auto* meshView = ResourceManager::Get().GetAllocatorView<Mesh>();
+    auto* instancingBufferView = ResourceManager::Get().GetAllocatorView<InstancingBuffer>();
+    auto* uniformBufferView = ResourceManager::Get().GetAllocatorView<UniformBuffer>();
     Material* lastMat = nullptr;
 
     {
     OD_PROFILE_SCOPE("RendererList::Submit::drawCommands");
     drawCommands.Each([&](auto& cm){
         OD_PROFILE_SCOPE("RendererList::Submit::drawCommands::0");
-        Material* _mat = cm.material;
-
-        if(overrideMaterial != nullptr) _mat = overrideMaterial.get();
+        Material* _mat = overrideMaterial != INVALID_RESOURCE_ID ? materialView->Get(overrideMaterial) : materialView->Get(cm.material);
+        Mesh* mesh = meshView->Get(cm.meshs);
+        if(_mat == nullptr || mesh == nullptr) return;
 
         if(_mat != lastMat){
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
@@ -246,8 +247,8 @@ void RendererList::Submit(bool skipEntityId){
         }
 
         lastMat = _mat;
-        if(skipEntityId) cm.perDrawData.Int_0_SetMask(0, false);
-        Graphics::DrawMesh(*cm.meshs, *_mat, cm.trans, &cm.perDrawData);
+        //if(skipEntityId) cm.perDrawData.Int_0_SetMask(0, false);
+        Graphics::DrawMesh(*mesh, *_mat, cm.trans);//, &cm.perDrawData);
     });
     }
     lastMat = nullptr;
@@ -256,9 +257,9 @@ void RendererList::Submit(bool skipEntityId){
     OD_PROFILE_SCOPE("RendererList::Submit::drawCommandsNorSort");
     drawCommandsNorSort.Each([&](auto& cm){
         OD_PROFILE_SCOPE("RendererList::Submit::drawCommands::0");
-        Material* _mat = cm.material;
-
-        if(overrideMaterial != nullptr) _mat = overrideMaterial.get();
+        Material* _mat = overrideMaterial != INVALID_RESOURCE_ID ? materialView->Get(overrideMaterial) : materialView->Get(cm.material);
+        Mesh* mesh = meshView->Get(cm.meshs);
+        if(_mat == nullptr || mesh == nullptr) return;
 
         if(_mat != lastMat){
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
@@ -268,8 +269,8 @@ void RendererList::Submit(bool skipEntityId){
         }
 
         lastMat = _mat;
-        if(skipEntityId) cm.perDrawData.Int_0_SetMask(0, false);
-        Graphics::DrawMesh(*cm.meshs, *_mat, cm.trans, &cm.perDrawData);
+        //if(skipEntityId) cm.perDrawData.Int_0_SetMask(0, false);
+        Graphics::DrawMesh(*mesh, *_mat, cm.trans);//, &cm.perDrawData);
     });
     }
     lastMat = nullptr;
@@ -279,8 +280,9 @@ void RendererList::Submit(bool skipEntityId){
     OD_PROFILE_SCOPE("RendererList::Submit::drawIntancingCommands");
     drawIntancingCommands.Each([&](auto& cm){
         if(cm.trans.size() == 0 && cm.buffers.size() == 0) return;
-        auto _mat = cm.material;
-        if(overrideMaterial != nullptr) _mat = overrideMaterial.get();
+        Material* _mat = overrideMaterial != INVALID_RESOURCE_ID ? materialView->Get(overrideMaterial) : materialView->Get(cm.material);
+        Mesh* mesh = meshView->Get(cm.meshs);
+        if(_mat == nullptr || mesh == nullptr) return;
 
         if(_mat != lastMat){
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
@@ -294,36 +296,23 @@ void RendererList::Submit(bool skipEntityId){
         
         lastMat = _mat;
         if(cm.trans.size() > 0){
-            Graphics::DrawMeshInstancing(*cm.meshs, *_mat, &cm.trans[0], cm.trans.size());
+            Graphics::DrawMeshInstancing(*mesh, *_mat, &cm.trans[0], cm.trans.size());
         }
-        for(auto& buffer: cm.buffers){
-            Graphics::DrawMeshInstancing(*cm.meshs, *_mat, *buffer, buffer->Count());
+        for(uint32_t bufferId: cm.buffers){
+            InstancingBuffer* buffer = instancingBufferView->Get(bufferId);
+            if(buffer != nullptr) Graphics::DrawMeshInstancing(*mesh, *_mat, *buffer, buffer->Count());
         }
     });
     }
     lastMat = nullptr;
 
     // ---------------Submiting SkinnedDrawCommands-----------------
-    //NOTE: This not working why Materials can shared the same shader
-    /*
-    if(overrideMaterial != nullptr){
-        overrideMaterial->DisableKeyword("INSTANCING");
-        overrideMaterial->EnableKeyword("SKINNED");
-        Material::SubmitGraphicDatas(*overrideMaterial);
-        if(onUpdateMaterial != nullptr) onUpdateMaterial(*overrideMaterial);
-    } else {
-        for(auto i: skinnedDrawCommandsMaterials){
-            i->DisableKeyword("INSTANCING");
-            i->EnableKeyword("SKINNED");
-            Material::SubmitGraphicDatas(*i);
-            if(onUpdateMaterial != nullptr) onUpdateMaterial(*i);
-        }
-    }*/
     {
     OD_PROFILE_SCOPE("RendererList::Submit::skinnedDrawCommands");
     skinnedDrawCommands.Each([&](auto& cm){
-        auto _mat = cm.material;
-        if(overrideMaterial != nullptr) _mat = overrideMaterial.get();
+        Material* _mat = overrideMaterial != INVALID_RESOURCE_ID ? materialView->Get(overrideMaterial) : materialView->Get(cm.material);
+        Mesh* mesh = meshView->Get(cm.meshs);
+        if(_mat == nullptr || mesh == nullptr || cm.posePalette == nullptr) return;
 
         if(_mat != lastMat){
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
@@ -332,16 +321,17 @@ void RendererList::Submit(bool skipEntityId){
         }
 
         lastMat = _mat;
-        if(skipEntityId) cm.perDrawData.Int_0_SetMask(0, false);
-        Graphics::DrawMeshSkinned(*cm.meshs, *_mat, cm.trans, cm.posePalette->data(), cm.posePalette->size(), &cm.perDrawData);
+        //if(skipEntityId) cm.perDrawData.Int_0_SetMask(0, false);
+        Graphics::DrawMeshSkinned(*mesh, *_mat, cm.trans, cm.posePalette->data(), cm.posePalette->size());//, &cm.perDrawData);
     });
     }
     lastMat = nullptr;
     {
     OD_PROFILE_SCOPE("RendererList::Submit::skinnedDrawCommandsNorSort");
     skinnedDrawCommandsNorSort.Each([&](auto& cm){
-        auto _mat = cm.material;
-        if(overrideMaterial != nullptr) _mat = overrideMaterial.get();
+        Material* _mat = overrideMaterial != INVALID_RESOURCE_ID ? materialView->Get(overrideMaterial) : materialView->Get(cm.material);
+        Mesh* mesh = meshView->Get(cm.meshs);
+        if(_mat == nullptr || mesh == nullptr || cm.posePalette == nullptr) return;
 
         if(_mat != lastMat){
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
@@ -351,12 +341,13 @@ void RendererList::Submit(bool skipEntityId){
 
         lastMat = _mat;
 
-        if(skipEntityId) cm.perDrawData.Int_0_SetMask(0, false);
+        //if(skipEntityId) cm.perDrawData.Int_0_SetMask(0, false);
 
-        if(cm.skinnedData != nullptr){
-            Graphics::DrawMeshSkinned(*cm.meshs, *_mat, cm.trans, cm.skinnedData, cm.posePalette->size(), &cm.perDrawData);
+        UniformBuffer* skinnedData = uniformBufferView->Get(cm.skinnedData);
+        if(skinnedData != nullptr){
+            Graphics::DrawMeshSkinned(*mesh, *_mat, cm.trans, skinnedData, cm.posePalette->size());//, &cm.perDrawData);
         } else {
-            Graphics::DrawMeshSkinned(*cm.meshs, *_mat, cm.trans, cm.posePalette->data(), cm.posePalette->size(), &cm.perDrawData);
+            Graphics::DrawMeshSkinned(*mesh, *_mat, cm.trans, cm.posePalette->data(), cm.posePalette->size());//, &cm.perDrawData);
         }
     });
     }
@@ -365,8 +356,9 @@ void RendererList::Submit(bool skipEntityId){
     {
     OD_PROFILE_SCOPE("RendererList::Submit::skinnedDrawCommandsNorSort"); //TODO: Review this and maybe rename
     sortDrawMultTypeCommands.Each([&](auto& cm){//TODO: Review this and maybe rename
-        auto _mat = cm.material;
-        if(overrideMaterial != nullptr) _mat = overrideMaterial.get();
+        Material* _mat = overrideMaterial != INVALID_RESOURCE_ID ? materialView->Get(overrideMaterial) : materialView->Get(cm.material);
+        Mesh* mesh = meshView->Get(cm.meshs);
+        if(_mat == nullptr || mesh == nullptr) return;
 
         if(_mat != lastMat){
             if(onUpdateMaterial != nullptr) onUpdateMaterial(*_mat);
@@ -375,13 +367,14 @@ void RendererList::Submit(bool skipEntityId){
         lastMat = _mat;
 
         if(cm.type == DrawMultTypeCommand::Type::Stand){
-            Graphics::DrawMesh(*cm.meshs, *_mat, cm.standTrans, &cm.perDrawData);
+            Graphics::DrawMesh(*mesh, *_mat, cm.standTrans);//, &cm.perDrawData);
         }
         if(cm.type == DrawMultTypeCommand::Type::Skinned){
-            Graphics::DrawMeshSkinned(*cm.meshs, *_mat, cm.skinnedTrans, cm.skinnedPosePalette->data(), cm.skinnedPosePalette->size(), &cm.perDrawData);
+            if(cm.skinnedPosePalette != nullptr) Graphics::DrawMeshSkinned(*mesh, *_mat, cm.skinnedTrans, cm.skinnedPosePalette->data(), cm.skinnedPosePalette->size());//, &cm.perDrawData);
         }
         if(cm.type == DrawMultTypeCommand::Type::Instancing){
-            Graphics::DrawMeshInstancing(*cm.meshs, *_mat, *cm.instancingBuffer, cm.instancingBuffer->Count());
+            InstancingBuffer* buffer = instancingBufferView->Get(cm.instancingBuffer);
+            if(buffer != nullptr) Graphics::DrawMeshInstancing(*mesh, *_mat, *buffer, buffer->Count());
         }
 
     });

@@ -267,6 +267,13 @@ public:
     //RenderStagePasses* renderStagePasses;
     RenderContext* context;
     RenderingPath renderingPath;
+
+    enum class Type{
+        Forward,
+        Deferred,
+        EntityIdDraw,
+        All
+    };
     
     CameraRenderer();
     ~CameraRenderer();
@@ -315,7 +322,7 @@ private:
     GamaCorrectionPass gamaCorrectionPass;
 
     void RunRenderDataLoop();
-    void AddRenderData(RenderData& data);
+    void AddRenderData(RenderData& data, Type type);
     void RenderVisibleGeometry(EnvironmentSettings& environmentSettings);
     void RenderVisibleGeometryNew(EnvironmentSettings& environmentSettings);
     void RenderSprites();

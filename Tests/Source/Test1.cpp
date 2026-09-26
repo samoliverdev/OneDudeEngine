@@ -37,9 +37,10 @@ int main(int argc, char** argv){
     ::testing::InitGoogleTest(&argc, argv);
 
     // IMPORTANT: skip engine boot when CMake is discovering tests
-    /*if(::testing::GTEST_FLAG(list_tests)){
+    if(::testing::GTEST_FLAG(list_tests) ||
+        ::testing::GTEST_FLAG(filter).find("RenderDataCullingTest.") != std::string::npos){
         return RUN_ALL_TESTS();
-    }*/
+    }
 
     printf("Booting engine for tests...\n");
 

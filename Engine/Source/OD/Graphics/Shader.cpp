@@ -4,6 +4,7 @@
 #include "GraphicsDevice.h"
 #include "OD/Gfx/GfxReflection.h"
 #include "OD/Core/Hash.h"
+#include "OD/Core/ResourceManager.h"
 #include "OD/Serialization/SerializationFull.h"
 #include <numeric>
 #include <fstream>
@@ -301,6 +302,13 @@ bool Shader::InitPass(int pass){
         //continue;
         
         if(i[0] == "MultiCompile"){
+            #ifdef TestNewGPU_API
+            for(int j = 1; j < i.size(); j++){
+                if(i[j] == "Forward") continue;
+                if(i[j] == "Deferred") continue;
+            }
+            #endif
+
             multCompile.push_back(std::vector<std::string>());
             keyworldSpaces.push_back(KeyworldSpace());
 
@@ -588,7 +596,7 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
         if(drawType == Shader::DrawType::InstancingDraw43) shaderSourceData.baseSource.insert(0, instancing43Keyworld);
         if(drawType == Shader::DrawType::SkinnedDraw2) shaderSourceData.baseSource.insert(0, skinned2Keyworld);
 
-        Ref<SubShader> shader = CreateRef<SubShader>();
+        Ref<SubShader> shader = ResourceManager::Get().Create<SubShader>();
 
         std::string baseName = ExtractShaderName(path);
         std::string keywordStr = BuildKeywordString(_enabledKeywords);

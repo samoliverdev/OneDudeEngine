@@ -18,7 +18,7 @@ void SSGISample::OnInit(){
 
     scene->Load("Sandbox/Scenes/SSGI.scene");
 
-    Application::AddModule<Editor>();
+    Application::AddModule<Editor>(false);
     //scene->Start();
     //LogInfo("Tes");
 }

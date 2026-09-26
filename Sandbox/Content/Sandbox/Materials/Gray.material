@@ -1,7 +1,7 @@
 {
     "Material": {
         "enableInstancing": false,
-        "shaderPath": "Engine/Shaders/Lit2.glsl",
+        "shaderPath": "Engine/Shaders/Lit.glsl",
         "maps": [
             {
                 "key": "color",

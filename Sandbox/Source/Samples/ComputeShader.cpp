@@ -1,4 +1,5 @@
 #include "OD/pch.h"
+#include "OD/Core/ResourceManager.h"
 #include "ComputeShader.h"
 #include <OD/Core/Application.h>
 #include <OD/Graphics/ComputeShader.h>
@@ -35,7 +36,7 @@ void ComputeShaderSample::OnInit(){
     BlurParams params;
     params.blurRadius = 25;
     params.sigma = params.blurRadius * 0.5f;
-    buffer = CreateRef<UniformBuffer>(sizeof(BlurParams));
+    buffer = UniformBuffer::Create(sizeof(BlurParams));
     buffer->SetData(&params, sizeof(BlurParams));
 
     FrameBufferSpecification spec;
@@ -45,7 +46,7 @@ void ComputeShaderSample::OnInit(){
     spec.createDepth = false;
     framebuffer = ResourceManager::Get().Create<Framebuffer>(spec);
 
-    mesh = CreateRef<Mesh>();// Mesh::CenterQuad(true);
+    mesh = ResourceManager::Get().Create<Mesh>();// Mesh::CenterQuad(true);
     mesh->vertices.push_back(OD::Vector3(0.5f, 0.5f, 0));
     mesh->vertices.push_back(OD::Vector3(0.5f, -0.5f, 0));
     mesh->vertices.push_back(OD::Vector3(-0.5f, -0.5f, 0));

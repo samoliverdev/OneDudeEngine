@@ -1,4 +1,5 @@
 #include "OD/pch.h"
+#include "OD/Core/ResourceManager.h"
 #include "Model.h"
 #include "Shader.h"
 #include "Mesh.h"
@@ -372,7 +373,7 @@ void Model::LoadFrom(cereal::BinaryInputArchive& ar){
 		ar(has);
 
 		if(has){
-			meshs[i] = CreateRef<Mesh>();
+			meshs[i] = ResourceManager::Get().Create<Mesh>();
 			ar(*meshs[i]);
 		} else {
 			meshs[i] = nullptr;

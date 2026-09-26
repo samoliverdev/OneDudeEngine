@@ -6,6 +6,7 @@
     Name AtrousPass 
     CullFace BACK
     DepthTest DISABLE
+    RenderPass PostProssing
 #pragma EndPassDef 
  
 #include Engine/ShaderLibrary/Base.glsl 
@@ -15,22 +16,17 @@
 BeginUniform(0, 0, Main) 
     Uniform vec4 color; 
     Uniform vec2 giSize; 
-    // 1, 2, 4, 8
-    Uniform float atrousStep;
+    Uniform float atrousStep; // 1, 2, 4, 8
 EndUniform() 
-
 Texture2D(0, 1, mainTex, mainSampler) 
-Texture2D(0, 1, gAlbedoSpec, gAlbedoSpecSampler) 
-
-Texture2D(0, 1, gNormal, gNormalSampler)
-Texture2D(0, 2, gDepth, gDepthSampler)
-
-Texture2D(0, 2, giAO, giAOSampler) 
+Texture2D(0, 2, gAlbedoSpec, gAlbedoSpecSampler) 
+Texture2D(0, 3, gNormal, gNormalSampler)
+Texture2D(0, 4, gDepth, gDepthSampler)
+Texture2D(0, 5, giAO, giAOSampler) 
  
 #if defined(VERTEX) 
     In(0) vec3 vPos; 
     In(1) vec2 vTexCoord; 
-
     Out(0) vec3 pos; 
     Out(1) vec2 texCoord; 
  
@@ -44,7 +40,6 @@ Texture2D(0, 2, giAO, giAOSampler)
 #if defined(FRAGMENT) 
     In(0) vec3 pos; 
     In(1) vec2 texCoord; 
-
     Out(0) vec4 fragColor;
 
     vec3 GetNormal(vec2 uv){

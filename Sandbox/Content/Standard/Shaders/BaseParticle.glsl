@@ -10,13 +10,9 @@ BeginUniform(2, 0, CamDraw)
     Uniform mat4 invView;
 EndUniform()
 
-#if defined(OpenGL_API) && defined(UseUniformBuffer)
-    uniform mat4 model;
-#else
-    BeginUniform(1, 0, PerDraw)
-        Uniform mat4 model;
-    EndUniform()
-#endif
+BeginUniform(1, 0, PerDraw)
+    Uniform mat4 model;
+EndUniform()
 
 #if defined(VERTEX)
 
@@ -30,14 +26,14 @@ layout(location = 2) in vec3 normal;
 layout(location = 4) in vec3 tangents;
 
 
-#ifdef OpenGL_API
+//#ifdef OpenGL_API
 layout(location = 10) in mat4 modelInstancing;
-#else   
+/*#else   
 layout(location = 5) in vec4 a_ModelMatrix_0;
 layout(location = 6) in vec4 a_ModelMatrix_1;
 layout(location = 7) in vec4 a_ModelMatrix_2;
 layout(location = 8) in vec4 a_ModelMatrix_3;
-#endif
+#endif*/
 
 vec4 GetColor(){
     return modelInstancing[3];

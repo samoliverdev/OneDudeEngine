@@ -1,4 +1,5 @@
 #include "OD/pch.h"
+#include "OD/Core/ResourceManager.h"
 #include "ObjLoader.h"
 #include "OD/Graphics/Mesh.h"
 #include "OD/Graphics/Texture.h"
@@ -113,7 +114,7 @@ bool ObjLoadModel(
 
     // Load materials
     for(const auto& mat : materials){
-        auto material = CreateRef<Material>();
+        auto material = ResourceManager::Get().Create<Material>();
         // Populate material properties here as needed
         // mat.diffuse, mat.specular, etc.
         model.materials.push_back(material);

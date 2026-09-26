@@ -1,4 +1,5 @@
 #include "LineRenderer.h"
+#include "OD/Core/ResourceManager.h"
 #include <OD/RenderPipeline/MeshRendererComponent.h>
 
 namespace Standard{
@@ -8,7 +9,7 @@ void LineRenderer::UpdateMesh(Scene& scene, Entity e){
     meshRenderer.material = material;
     
     if(meshRenderer.mesh == nullptr){
-        meshRenderer.mesh = CreateRef<Mesh>();
+        meshRenderer.mesh = ResourceManager::Get().Create<Mesh>();
         /*meshRenderer.mesh->vertices.push_back({-0.1f, -0.1f, 0});
         meshRenderer.mesh->vertices.push_back({0.1f, -0.1f, 0});
         meshRenderer.mesh->vertices.push_back({-0.1f, 0.1f, 0});

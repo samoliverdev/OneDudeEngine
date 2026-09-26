@@ -1,5 +1,6 @@
 #include "OD/pch.h"
 #include "InstancingBuffer.h"
+#include "OD/Core/ResourceManager.h"
 #include "Graphics.h"
 #include "GraphicsDevice.h"
 #include "OD/Defines.h"
@@ -10,7 +11,7 @@ extern GraphicsDevice* graphicsDevice;
 extern Gfx::Device* gfxDevice;
 
 Ref<InstancingBuffer> InstancingBuffer::Create(){
-    Ref<InstancingBuffer> buffer = CreateRef<InstancingBuffer>();
+    Ref<InstancingBuffer> buffer = ResourceManager::Get().Create<InstancingBuffer>();
     #ifdef TestNewGPU_API
     //Assert(false);
     #else

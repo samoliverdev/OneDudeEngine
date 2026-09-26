@@ -1,5 +1,6 @@
 #include "OD/pch.h"
 #include "UniformBuffer.h"
+#include "OD/Core/ResourceManager.h"
 #include "Graphics.h"
 #include "GraphicsDevice.h"
 #include "OD/Defines.h"
@@ -10,7 +11,7 @@ extern GraphicsDevice* graphicsDevice;
 extern Gfx::Device* gfxDevice;
 
 Ref<UniformBuffer> UniformBuffer::Create(size_t size){
-    Ref<UniformBuffer> buffer = CreateRef<UniformBuffer>(size);
+    Ref<UniformBuffer> buffer = ResourceManager::Get().Create<UniformBuffer>(size);
     return buffer;
 
     /*Ref<UniformBuffer> buffer = CreateRef<UniformBuffer>();

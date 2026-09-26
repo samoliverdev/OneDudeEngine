@@ -1,5 +1,5 @@
 #pragma BeginPassDef
-    Name MainPass
+    Name DepthPass
     DrawType _ SKINNED INSTANCING INSTANCINGMATRIX43 SKINNED2
     RenderPass DirectionalShadow OtherShadow
     CullFace BACK

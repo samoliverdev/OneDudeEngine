@@ -1,4 +1,5 @@
 #include "OD/pch.h"
+#include "OD/Core/ResourceManager.h"
 #include "Terrain.h"
 #include "Heightmap.h"
 #include "OD/Scene/SceneManager.h"
@@ -162,7 +163,7 @@ void TerrainSystem::PostPhysicsUpdate(Scene& inscene){
 }
 
 struct TerrainMeshData{
-    Ref<Mesh> mesh = CreateRef<Mesh>();
+    Ref<Mesh> mesh = ResourceManager::Get().Create<Mesh>();
     Ref<MeshShapeData> shapeData;
 
     int triangleIndex = 0;
@@ -208,7 +209,7 @@ struct TerrainMeshData2{
     }
 
     Ref<Mesh> CreateMesh(){
-        Ref<Mesh> mesh = CreateRef<Mesh>();
+        Ref<Mesh> mesh = ResourceManager::Get().Create<Mesh>();
         mesh->Submit(
             &indices, 
             &vertices,
@@ -328,7 +329,7 @@ Ref<Mesh> GenerateTerrainFromHeightmap2(Ref<Heightmap> heightmap, int levelOfDet
     int meshSimplificationIncrement = (levelOfDetail == 0) ? 1 : levelOfDetail * 2;
     int verticesPerLine = (width - 1) / meshSimplificationIncrement + 1;
 
-    Ref<Mesh> out = CreateRef<Mesh>();
+    Ref<Mesh> out = ResourceManager::Get().Create<Mesh>();
     int triangleIndex = 0;
     bool useUv = false;
 
@@ -401,7 +402,7 @@ std::vector<std::pair<Ref<Mesh>, Vector3>> GenerateTerrainChunksFromHeightmap(
             int verticesX = (chunkWidth - 1) / meshSimplificationIncrement + 1;
             int verticesY = (chunkHeight - 1) / meshSimplificationIncrement + 1;
 
-            Ref<Mesh> mesh = CreateRef<Mesh>();
+            Ref<Mesh> mesh = ResourceManager::Get().Create<Mesh>();
             mesh->vertices.resize(verticesX * verticesY);
             mesh->indices.resize((verticesX - 1) * (verticesY - 1) * 6);
 
@@ -482,7 +483,7 @@ std::vector<std::pair<Ref<Mesh>, Vector3>> GenerateTerrainChunksFromHeightmap2(
             int verticesX = (chunkWidth - 1) / meshSimplificationIncrement + 1;
             int verticesY = (chunkHeight - 1) / meshSimplificationIncrement + 1;
 
-            Ref<Mesh> mesh = CreateRef<Mesh>();
+            Ref<Mesh> mesh = ResourceManager::Get().Create<Mesh>();
             mesh->vertices.resize(verticesX * verticesY);
             mesh->indices.resize((verticesX - 1) * (verticesY - 1) * 6);
 
@@ -579,7 +580,7 @@ void TerrainComponent::CreateMeshToNavmesh(Scene& scene){
     _meshToNavmesh.mesh = GenerateTerrainFromHeightmap2(heightmap, meshToNavmeshLod);
     _meshToNavmesh.UpdateAABB();
     }
-    _meshToNavmesh.material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
+    _meshToNavmesh.material = ResourceManager::Get().Create<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Lit.glsl"));
     TransformComponent& meshToNavmeshTrans = scene.GetComponent<TransformComponent>(meshToNavmesh);
     meshToNavmeshTrans.LocalScale(Vector3(
         terrainMeshWidth / (float)heightmap->width,
@@ -1023,7 +1024,7 @@ void TerrainSystem::LoadCood(TerrainComponent& terrain, IVector2 coord){
     terrainMeshRenderer.customShadowPass = terrain.matShadow;
     #else
 
-    terrainMeshRenderer.material = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Terrain.glsl"));
+    terrainMeshRenderer.material = ResourceManager::Get().Create<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Terrain.glsl"));
     terrainMeshRenderer.material->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/White.jpg"));
     terrainMeshRenderer.material->SetTexture("splatmap", terrain.splatmap);
     terrainMeshRenderer.material->SetTexture("tex0", terrain.layer0);
@@ -1041,7 +1042,7 @@ void TerrainSystem::LoadCood(TerrainComponent& terrain, IVector2 coord){
     terrainMeshRenderer.material->SetVector2("heightmapOffset", Vector2(coord.x * offset, coord.y * offset));
     terrainMeshRenderer.material->SetFloat("heightScale", terrain.terrainHeight);
 
-    terrainMeshRenderer.customShadowPass = CreateRef<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/TerrainShadow.glsl"));
+    terrainMeshRenderer.customShadowPass = ResourceManager::Get().Create<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/TerrainShadow.glsl"));
     terrainMeshRenderer.customShadowPass->SetTexture("heightMap", terrain.heightmapTex);
     terrainMeshRenderer.customShadowPass->SetVector2("heightmapTilling", Vector2(offset, offset));
     terrainMeshRenderer.customShadowPass->SetVector2("heightmapOffset", Vector2(coord.x * offset, coord.y * offset));

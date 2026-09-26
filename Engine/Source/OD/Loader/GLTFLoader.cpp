@@ -1,4 +1,5 @@
 #include "OD/pch.h"
+#include "OD/Core/ResourceManager.h"
 #include "GLTFLoader.h"
 #include "OD/Core/Transform.h"
 #include <cgltf.h>
@@ -326,7 +327,7 @@ std::vector<Ref<Mesh>> LoadMeshes(cgltf_data* data){
 		
 		unsigned int numPrims = (unsigned int)node->mesh->primitives_count;
 		for(unsigned int j = 0; j < numPrims; ++j){
-			result.push_back(CreateRef<Mesh>());
+			result.push_back(ResourceManager::Get().Create<Mesh>());
 			Ref<Mesh>& mesh = result[result.size() - 1];
 
 			cgltf_primitive* primitive = &node->mesh->primitives[j];

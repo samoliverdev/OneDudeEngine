@@ -316,6 +316,62 @@ bool AABB::isOnFrustum(const Frustum& camFrustum){
         isOnOrForwardPlane(camFrustum.farFace));
 }
 
+bool AABB::isOnFrustumSIMD(const Frustum& camFrustum) const{
+    const Plane* planes[6] = {
+        &camFrustum.leftFace,
+        &camFrustum.rightFace,
+        &camFrustum.topFace,
+        &camFrustum.bottomFace,
+        &camFrustum.nearFace,
+        &camFrustum.farFace
+    };
+
+    const __m128 centerX = _mm_set1_ps(center.x);
+    const __m128 centerY = _mm_set1_ps(center.y);
+    const __m128 centerZ = _mm_set1_ps(center.z);
+    const __m128 extentX = _mm_set1_ps(extents.x);
+    const __m128 extentY = _mm_set1_ps(extents.y);
+    const __m128 extentZ = _mm_set1_ps(extents.z);
+
+    for(int base = 0; base < 6; base += 4){
+        alignas(16) float nx[4] = {};
+        alignas(16) float ny[4] = {};
+        alignas(16) float nz[4] = {};
+        alignas(16) float distance[4] = {1.f, 1.f, 1.f, 1.f};
+        alignas(16) float absNx[4] = {};
+        alignas(16) float absNy[4] = {};
+        alignas(16) float absNz[4] = {};
+
+        for(int lane = 0; lane < 4 && base + lane < 6; lane++){
+            const Plane& plane = *planes[base + lane];
+            nx[lane] = plane.n.x;
+            ny[lane] = plane.n.y;
+            nz[lane] = plane.n.z;
+            distance[lane] = plane.n.w;
+            absNx[lane] = plane.absN.x;
+            absNy[lane] = plane.absN.y;
+            absNz[lane] = plane.absN.z;
+        }
+
+        __m128 signedDistance = _mm_add_ps(
+            _mm_add_ps(
+                _mm_add_ps(_mm_mul_ps(_mm_load_ps(nx), centerX), _mm_mul_ps(_mm_load_ps(ny), centerY)),
+                _mm_mul_ps(_mm_load_ps(nz), centerZ)
+            ),
+            _mm_load_ps(distance)
+        );
+        __m128 radius = _mm_add_ps(
+            _mm_add_ps(_mm_mul_ps(_mm_load_ps(absNx), extentX), _mm_mul_ps(_mm_load_ps(absNy), extentY)),
+            _mm_mul_ps(_mm_load_ps(absNz), extentZ)
+        );
+
+        __m128 intersects = _mm_cmpge_ps(signedDistance, _mm_sub_ps(_mm_setzero_ps(), radius));
+        if(_mm_movemask_ps(intersects) != 0xF) return false;
+    }
+
+    return true;
+}
+
 bool AABB::isOnFrustum(const Frustum& camFrustum, Transform& transform) const{
     //Get global scale thanks to our transform
     const Vector3 globalCenter{ transform.GetModelMatrix() * Vector4(center, 1.f) };

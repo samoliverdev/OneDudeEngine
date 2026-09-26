@@ -767,7 +767,11 @@ Gfx::BindGroup Graphics::BindMaterial(Material& mat){
                     Assert(false);
                 }
             } else {
-                Assert(false);
+                //Assert(false);
+                bindGroupEntries[bindGroupInfo.entriesCount] = {};
+                bindGroupEntries[bindGroupInfo.entriesCount].binding = i.binding;
+                bindGroupEntries[bindGroupInfo.entriesCount].texture = defaultTex;
+                bindGroupInfo.entriesCount += 1;
             }
         }
 

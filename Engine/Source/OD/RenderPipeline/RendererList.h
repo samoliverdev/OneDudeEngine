@@ -22,12 +22,12 @@ class SubShader;
 struct DrawMultTypeCommand{
     enum class Type{Stand, Skinned, Instancing};
 
-    SubShader* subShader;
-    Material* material; //Ref<Material> material;
-    Mesh* meshs;// Ref<Mesh> meshs;
+    uint32_t subShader = INVALID_RESOURCE_ID;
+    uint32_t material = INVALID_RESOURCE_ID;
+    uint32_t meshs = INVALID_RESOURCE_ID;
     float distance;
 
-    PerDrawData perDrawData;
+    //PerDrawData perDrawData;
 
     union{
         struct {
@@ -40,7 +40,7 @@ struct DrawMultTypeCommand{
         };
 
         struct {
-            InstancingBuffer* instancingBuffer;
+            uint32_t instancingBuffer;
         };
     };
     
@@ -51,10 +51,10 @@ struct DrawMultTypeCommand{
 
 struct OD_API alignas(16) DrawCommand{
     Matrix4 trans;
-    PerDrawData perDrawData;
-    SubShader* subShader;
-    Material* material; //Ref<Material> material;
-    Mesh* meshs;// Ref<Mesh> meshs;
+    //PerDrawData perDrawData;
+    uint32_t subShader = INVALID_RESOURCE_ID;
+    uint32_t material = INVALID_RESOURCE_ID;
+    uint32_t meshs = INVALID_RESOURCE_ID;
     float distance;
 
     /*#if EnableExperimentalPerDrawCustomData
@@ -67,12 +67,12 @@ struct OD_API alignas(16) DrawCommand{
 
 struct OD_API alignas(16) SkinnedDrawCommand{
     Matrix4 trans;
-    PerDrawData perDrawData;
-    SubShader* subShader;
-    Material* material;// Ref<Material> material;
-    Mesh* meshs;// Ref<Mesh> meshs;
+    //PerDrawData perDrawData;
+    uint32_t subShader = INVALID_RESOURCE_ID;
+    uint32_t material = INVALID_RESOURCE_ID;
+    uint32_t meshs = INVALID_RESOURCE_ID;
     AlignedVector<Matrix4>* posePalette;
-    UniformBuffer* skinnedData = nullptr;
+    uint32_t skinnedData = INVALID_RESOURCE_ID;
     float distance;
 
     bool operator<(const SkinnedDrawCommand& a) const;
@@ -91,17 +91,22 @@ struct OD_API DrawInstancingCommand{
     ReusableVector<Matrix4> trans;
     #endif
 
-    ReusableVector<InstancingBuffer*> buffers;
+    ReusableVector<uint32_t> buffers;
 
-    SubShader* subShader;
-    Material* material;
-    Mesh* meshs;
+    uint32_t subShader = INVALID_RESOURCE_ID;
+    uint32_t material = INVALID_RESOURCE_ID;
+    uint32_t meshs = INVALID_RESOURCE_ID;
     
     bool operator<(const DrawCommand& a) const;
 };
 
+inline void CleanDrawInstancingCommand(DrawInstancingCommand& command){
+    command.buffers.clear();
+    command.trans.clear();
+}
+
 struct OD_API DrawInstancingCommand2{
-    Ref<InstancingBuffer> buffer;
+    uint32_t buffer = INVALID_RESOURCE_ID;
 
     #ifdef USE_INSTANCING_MATRIX43
     ReusableVector<Matrix4x3> trans;
@@ -109,18 +114,18 @@ struct OD_API DrawInstancingCommand2{
     ReusableVector<Matrix4> trans;
     #endif
     
-    SubShader* subShader;
-    Material* material;
-    Mesh* meshs;
+    uint32_t subShader = INVALID_RESOURCE_ID;
+    uint32_t material = INVALID_RESOURCE_ID;
+    uint32_t meshs = INVALID_RESOURCE_ID;
     
     bool operator<(const DrawCommand& a) const;
 };
 
 struct OD_API DrawInstancingCommand3{
-    InstancingBuffer* buffer;
-    SubShader* subShader;
-    Material* material;
-    Mesh* meshs;
+    uint32_t buffer = INVALID_RESOURCE_ID;
+    uint32_t subShader = INVALID_RESOURCE_ID;
+    uint32_t material = INVALID_RESOURCE_ID;
+    uint32_t meshs = INVALID_RESOURCE_ID;
     float distance;
     
     bool operator<(const DrawCommand& a) const;
@@ -128,9 +133,9 @@ struct OD_API DrawInstancingCommand3{
 
 struct OD_API alignas(16) DrawInstancingCommand4{
     Matrix4 trans;
-    SubShader* subShader;
-    Material* material; //Ref<Material> material;
-    Mesh* meshs;// Ref<Mesh> meshs;
+    uint32_t subShader = INVALID_RESOURCE_ID;
+    uint32_t material = INVALID_RESOURCE_ID;
+    uint32_t meshs = INVALID_RESOURCE_ID;
     float distance;
 
     bool operator<(const DrawInstancingCommand4& a) const;
@@ -152,7 +157,7 @@ struct OD_API RendererList{
     std::function<void(Material& material)> onUpdateMaterial = nullptr;
     SortType sortType = SortType::None;
 
-    void SetOverrideMaterial(Ref<Material> shader);
+    void SetOverrideMaterial(uint32_t materialId);
 
     void AddDrawCommand(DrawCommand&& comand, float distance = 0);  
     void AddDrawInstancingCommand(DrawInstancingCommand4&& comand);
@@ -165,30 +170,25 @@ struct OD_API RendererList{
 
 private:
     CommandBucket0<DrawCommand> drawCommands;
-    CommandBucket3<Material*, DrawCommand> drawCommandsNorSort;
+    CommandBucket3<uint32_t, DrawCommand> drawCommandsNorSort;
 
     //CommandBucket1<MaterialBind2, DrawCommand> drawCommands;
 
     #ifdef UseExperimentalCommandBucket5
     CommandBucket5<DrawInstancingCommand> drawIntancingCommands;
     #else
-    CommandBucket4<Material*, Mesh*, DrawInstancingCommand> drawIntancingCommands;
+    CommandBucket4<uint32_t, uint32_t, DrawInstancingCommand, &CleanDrawInstancingCommand> drawIntancingCommands;
     #endif
 
     //CommandBucket0<DrawInstancingCommand3> drawIntancingCommands2;
 
     CommandBucket1<MaterialBind2, SkinnedDrawCommand> skinnedDrawCommands;
-    CommandBucket3<Material*, SkinnedDrawCommand> skinnedDrawCommandsNorSort;
+    CommandBucket3<uint32_t, SkinnedDrawCommand> skinnedDrawCommandsNorSort;
 
     //NOTE: This not working why Materials can shared the same shader
-    /*std::unordered_set<Ref<Material>> drawCommandsMaterials;
-    //std::vector<Ref<Material>> drawCommandsMaterials;
-    std::set<Ref<Material>> drawIntancingCommandsMaterials;
-    std::set<Ref<Material>> skinnedDrawCommandsMaterials;*/
-
     CommandBucket0<DrawMultTypeCommand> sortDrawMultTypeCommands;
 
-    Ref<Material> overrideMaterial = nullptr;
+    uint32_t overrideMaterial = INVALID_RESOURCE_ID;
 };
 
 }

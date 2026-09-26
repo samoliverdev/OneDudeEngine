@@ -1,5 +1,6 @@
 #ifdef OPENGL_SUPPORT
 #include "OD/pch.h"
+#include "OD/Core/ResourceManager.h"
 #include "OpenGLGraphicsDevice.h"
 #include "GL.h"
 #include "OD/Graphics/Common.h"
@@ -497,7 +498,7 @@ void OpenGLGraphicsDevice::Initialize(){
     glCheckError();
     #endif
 
-    _cubeMesh = CreateRef<Mesh>();
+    _cubeMesh = ResourceManager::Get().Create<Mesh>();
     _cubeMesh->vertices = {
         // +X
         {1.0f, -1.0f, -1.0f}, {1.0f, -1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, -1.0f},

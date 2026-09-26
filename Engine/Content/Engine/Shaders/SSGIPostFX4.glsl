@@ -2,19 +2,13 @@
     Name MainPass
     CullFace BACK
     DepthTest DISABLE
+    RenderPass PostProssing
 #pragma EndPassDef
 
 //Source: https://github.com/mrdoob/three.js/blob/master/examples/jsm/tsl/display/SSGINode.js License: The MIT License
 
 #include Engine/ShaderLibrary/Base.glsl
 #include Engine/ShaderLibrary/Common.glsl
-
-Texture2D(0, 5,  mainTex,        mainTexSampler)
-Texture2D(0, 7,  gNormal,        gNormalSampler)
-Texture2D(0, 7,  gAlbedoSpec,    gAlbedoSpecSampler)
-Texture2D(0, 12, gDepth,         gDepthSampler)
-Texture2D(0, 11, noise,          noiseSampler)
-Texture2D(0, 12, lastIndirect, lastIndirectSampler)
 
 BeginUniform(0, 0, Main)
     Uniform vec2  screenSize;
@@ -48,19 +42,27 @@ BeginUniform(0, 0, Main)
     Uniform float _UseLinearThickness;      // 0 or 1
     Uniform float _UseScreenSpaceSampling;  // 0 or 1
 EndUniform()
+Texture2D(0, 1,  mainTex,        mainTexSampler)
+Texture2D(0, 2,  gNormal,        gNormalSampler)
+Texture2D(0, 3,  gAlbedoSpec,    gAlbedoSpecSampler)
+Texture2D(0, 4, gDepth,         gDepthSampler)
+Texture2D(0, 5, noise,          noiseSampler)
+Texture2D(0, 6, lastIndirect, lastIndirectSampler)
+
+#include Engine/ShaderLibrary/Vertex.glsl
 
 // ============================================================
 // VERTEX
 // ============================================================
 #if defined(VERTEX) && defined(MainPass)
-    layout (location = 0) in vec3 _pos;
-    layout (location = 1) in vec2 _texCoord;
+    //layout (location = 0) in vec3 _pos;
+    //layout (location = 1) in vec2 _texCoord;
 
-    out vec2 vUV;
+    Out(0) vec2 vUV;
 
     void main(){
-        vUV = _texCoord;
-        gl_Position = vec4(_pos, 1.0);
+        vUV = texCoord;
+        gl_Position = GetLocalPos(); //vec4(_pos, 1.0);
     }
 #endif
 
@@ -69,10 +71,8 @@ EndUniform()
 // ============================================================
 #if defined(FRAGMENT) && defined(MainPass)
 
-in vec2 vUV;
-out vec4 FragColor;
-
-#include Engine/ShaderLibrary/Vertex.glsl
+In(0) vec2 vUV;
+Out(0) vec4 FragColor;
 
 const float PI      = 3.14159265359;
 const float HALF_PI = 1.57079632679;

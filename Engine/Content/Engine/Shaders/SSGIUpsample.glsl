@@ -1,13 +1,16 @@
 #pragma BeginPassDef
     Name NormalDepthDownsample
+    RenderPass PostProssing
 #pragma EndPassDef
 
 #pragma BeginPassDef
     Name UpSample
+    RenderPass PostProssing
 #pragma EndPassDef
 
 #pragma BeginPassDef
     Name UpSample2
+    RenderPass PostProssing
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl
@@ -27,15 +30,14 @@ BeginUniform(0, 0, Main)
 
         Uniform float normalSigma;
 EndUniform()
-Texture2D(0, 13, gDepth, gDepthSampler)
-Texture2D(0, 7,  gNormal, gNormalSampler)
-
-Texture2D(0, 12, giLow, giLowSampler);
+Texture2D(0, 1, gDepth, gDepthSampler)
+Texture2D(0, 2, gNormal, gNormalSampler)
+Texture2D(0, 3, giLow, giLowSampler)
 
 // Surface-aware low-resolution geometry.
 // RGB = representative normal
 // A   = representative linear depth
-Texture2D(0, 14, giSurface, giSurfaceSampler);
+Texture2D(0, 4, giSurface, giSurfaceSampler)
 
 #if defined(VERTEX)
     In(0) vec3 vPos;

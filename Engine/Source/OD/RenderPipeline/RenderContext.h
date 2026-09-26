@@ -2,6 +2,7 @@
 #include "OD/Defines.h"
 #include "OD/Core/AlignedAllocator.h"
 #include "OD/Graphics/Framebuffer.h"
+#include "OD/Core/ResourceManager.h"
 #include "ChunkedVector.h"
 #include "RenderData.h"
 #include "RendererFeature.h"
@@ -347,6 +348,11 @@ private:
     //void SetupDrawTarget(CommandBaseData& cmd, DrawingTarget& target);
     //void SetupShadowDrawTarget(CommandBaseData& cmd, ShadowDrawingTarget& target);
     //static void SetStandUniforms(Camera& cam, SubShader& shader);
+
+    IResourceView<Material>* materialView = nullptr;
+    IResourceView<Mesh>* meshView = nullptr;
+    IResourceView<UniformBuffer>* uniformBufferView = nullptr;
+    IResourceView<InstancingBuffer>* instancingBufferView = nullptr;
 };
 
 }

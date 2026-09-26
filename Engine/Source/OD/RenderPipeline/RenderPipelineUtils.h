@@ -142,7 +142,7 @@ struct CommandBucket3{
     }
 };
 
-template<typename Key, typename Key2, typename Value>
+template<typename Key, typename Key2, typename Value, void(*CleanValue)(Value&) = nullptr>
 struct CommandBucket4{
     ankerl::unordered_dense::map< Key, ankerl::unordered_dense::map<Key2, Value> > commands;
     //std::unordered_map<Key, std::unordered_map<Key2, Value> > commands;
@@ -152,7 +152,15 @@ struct CommandBucket4{
     }
 
     inline void Clear(){
-        commands.clear();
+        if constexpr(CleanValue == nullptr){
+            commands.clear();
+        } else {
+            for(auto& i: commands){
+                for(auto& j: i.second){
+                    CleanValue(j.second);
+                }
+            }
+        }
     }
 
     inline Value& Get(Key k, Key2 k2){

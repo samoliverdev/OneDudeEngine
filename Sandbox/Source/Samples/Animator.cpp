@@ -614,7 +614,7 @@ void AnimatorSample::OnInit(){
     }
     LogInfo("Characters Count: {}", count);
 
-    //scene->Start();
+    scene->Start();
     //RenderContext::GetSettings().enableGizmos = false;
     //Application::AddModule<Editor>(false);
 

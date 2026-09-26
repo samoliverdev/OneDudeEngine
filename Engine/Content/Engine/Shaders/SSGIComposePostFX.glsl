@@ -4,10 +4,12 @@
 
 #pragma BeginPassDef
     Name MainPass
+    RenderPass PostProssing
 #pragma EndPassDef
 
 #pragma BeginPassDef
     Name DebugPass
+    RenderPass PostProssing
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl
@@ -19,8 +21,8 @@ BeginUniform(0, 0, Main)
     Uniform vec2 screenSize;
 EndUniform()
 Texture2D(0, 1, mainTex, mainSampler)
-Texture2D(0, 1, gAlbedoSpec, gAlbedoSpecSampler)
-Texture2D(0, 2, giAO, giAOSampler)
+Texture2D(0, 2, gAlbedoSpec, gAlbedoSpecSampler)
+Texture2D(0, 3, giAO, giAOSampler)
 
 #if defined(VERTEX)
     In(0) vec3 vPos;

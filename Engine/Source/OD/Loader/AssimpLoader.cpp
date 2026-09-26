@@ -1,6 +1,7 @@
 //#define USE_ASSIMP
 #ifdef USE_ASSIMP
 #include "OD/pch.h"
+#include "OD/Core/ResourceManager.h"
 #include "AssimpLoader.h"
 #include "OD/Core/Resource.h"
 #include "OD/Graphics/SubShader.h"
@@ -467,7 +468,7 @@ Ref<Texture2D> LoadTextureInternal(LoadData& data, aiTexture* tex, ModelLoadSett
     //int meshIndex = getMaterialIndex(material, scene);
     //if(meshIndex != -1 && loadData.materialDb.count(meshIndex)) return loadData.materialDb[meshIndex];
 
-    Ref<Material> out = CreateRef<Material>();
+    Ref<Material> out = ResourceManager::Get().Create<Material>();
 
     if(customShader == nullptr){
         out->shader(AssetManager::Get().LoadShaderFromFile("res/Builtins/Shaders/Model.glsl"));
@@ -615,7 +616,7 @@ int getMeshIndex(aiMesh *mesh, const aiScene *scene){
     //int meshIndex = getMeshIndex(mesh, scene);
     //if(meshIndex != -1 && loadData.meshDb.count(meshIndex)) return loadData.meshDb[meshIndex];
 
-    Ref<Mesh> out = CreateRef<Mesh>();
+    Ref<Mesh> out = ResourceManager::Get().Create<Mesh>();
 
     //LogInfo("Mesh Index: %d", meshIndex);
 
@@ -781,7 +782,7 @@ void LoadAnimation(LoadData& loadData, aiAnimation* animation, Clip& outClip){
 }
 
 Ref<Mesh> LoadMesh(LoadData& data, aiMesh* mesh){
-    Ref<Mesh> out = CreateRef<Mesh>(std::string(mesh->mName.C_Str()));
+    Ref<Mesh> out = ResourceManager::Get().Create<Mesh>(std::string(mesh->mName.C_Str()));
 
     // walk through each of the mesh's vertices
     for(unsigned int i = 0; i < mesh->mNumVertices; i++){

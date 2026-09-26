@@ -5,6 +5,7 @@
 #include <OD/Graphics/Geometry.h>
 #include <OD/Graphics/Material.h>
 #include <OD/Graphics/Model.h>
+#include <OD/Graphics/Mesh.h>
 #include <OD/Core/ImGui.h>
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/random.hpp> // glm::linearRand, glm::sphericalRand
@@ -831,11 +832,11 @@ void ParticleRendererFeature::OnCollectRenderData(Scene& scene, RenderContext& c
             renderData.distance -= i * 0.01f; 
             renderData.targetMatrix = modelMatrix; //trans.GlobalModelMatrix();
             renderData.aabb = transform_aabb_optimized_abs_center_extents(AABB({0, 0, 0}, 10, 10, 10), renderData.targetMatrix);
-            renderData.targetMaterial = emiter.rendererModule.material.get(); //material.get();
-            renderData.targetMesh = emiter.rendererModule.model->meshs[0].get(); //mesh->meshs[0].get();
-            renderData.instancingBuffer = emiter.dataBuffer.get();
+            renderData.targetMaterial = emiter.rendererModule.material->GetId(); //material.get();
+            renderData.targetMesh = emiter.rendererModule.model->meshs[0]->GetId(); //mesh->meshs[0].get();
+            renderData.instancingBuffer = emiter.dataBuffer == nullptr ? INVALID_RESOURCE_ID : emiter.dataBuffer->GetId();
             renderData.SetFlag(RenderData::Flag::RenderShadow, material->IsBlend() == false); //renderData.renderShadow = material->IsBlend() == false;
-            renderData.customShadowPass = material->DepthPass() != -1 ? renderData.targetMaterial : nullptr;
+            renderData.customShadowPass = material->DepthPass() != -1 ? material->GetId() : INVALID_RESOURCE_ID;
             outRenderData.push_back(renderData);
         }
     }
@@ -915,11 +916,11 @@ void ParticleRendererFeature::OnCollectRenderData(Scene& scene, RenderContext& c
             renderData.distance -= i * 0.01f; 
             renderData.targetMatrix = trans.GlobalModelMatrix();
             renderData.aabb = transform_aabb_optimized_abs_center_extents(AABB({0, 0, 0}, 10, 10, 10), renderData.targetMatrix);
-            renderData.targetMaterial = emiter.rendererModule.material.get(); //material.get();
-            renderData.targetMesh = emiter.rendererModule.model->meshs[0].get(); //mesh->meshs[0].get();
-            renderData.instancingBuffer = emiter.dataBuffer.get();
+            renderData.targetMaterial = emiter.rendererModule.material->GetId(); //material.get();
+            renderData.targetMesh = emiter.rendererModule.model->meshs[0]->GetId(); //mesh->meshs[0].get();
+            renderData.instancingBuffer = emiter.dataBuffer == nullptr ? INVALID_RESOURCE_ID : emiter.dataBuffer->GetId();
             renderData.SetFlag(RenderData::Flag::RenderShadow, material->IsBlend() == false); //renderData.renderShadow = material->IsBlend() == false;
-            renderData.customShadowPass = material->DepthPass() != -1 ? renderData.targetMaterial : nullptr;
+            renderData.customShadowPass = material->DepthPass() != -1 ? material->GetId() : INVALID_RESOURCE_ID;
         }
     });
 
@@ -948,7 +949,7 @@ void ParticleManageSystem::Update(Scene& scene){
     auto view = scene.GetRegistry().view<TransformComponent, ParticleComponent>();
     for(auto [entity, trans, particle]: view.each()){
         /*if(particle.drawData == nullptr){
-            particle.drawData = CreateRef<InstancingBuffer>();
+            particle.drawData = InstancingBuffer::Create();
         }*/
 
         /*if(particle.particleSystem.CurState() != ParticleSystem::State::Running){
