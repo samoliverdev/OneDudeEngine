@@ -47,19 +47,19 @@ Texture2D(0, 4, gAlbedoSpec, gAlbedoSpecSampler)
 Texture2D(0, 4, gOther, gOtherSpecSampler)
 Texture2D(0, 10, gDepth, gDepthSampler)
 
-uniform int perDrawInt_1;
-
 #if defined(VERTEX) && defined(MainPass)
     //flat out mat4 outDecalWorldToLocal;
 
-    flat out vec4 vDecalInvRow0;
-    flat out vec4 vDecalInvRow1;
-    flat out vec4 vDecalInvRow2;
-    flat out vec4 vDecalInvRow3;
-
-    out vec3 decalNormalWS;
+    OutFlat(0) vec4 vDecalInvRow0;
+    OutFlat(1) vec4 vDecalInvRow1;
+    OutFlat(2) vec4 vDecalInvRow2;
+    OutFlat(3) vec4 vDecalInvRow3;
+    Out(4) vec3 decalNormalWS;
+    OutFlat(5) vec4 perInstanceDataOut;
 
     void main(){
+        perInstanceDataOut = GetPerInstanceData();
+
         mat4 targetModelMatrix = GetModelMatrix();
         OutPosition = projection * view * targetModelMatrix * GetLocalPos();
         //OutPosition.z -= 0.001 * OutPosition.w;
@@ -89,12 +89,12 @@ uniform int perDrawInt_1;
 
     //flat in mat4 outDecalWorldToLocal;
 
-    flat in vec4 vDecalInvRow0;
-    flat in vec4 vDecalInvRow1;
-    flat in vec4 vDecalInvRow2;
-    flat in vec4 vDecalInvRow3;
-
-    in vec3 decalNormalWS;
+    InFlat(0) vec4 vDecalInvRow0;
+    InFlat(1) vec4 vDecalInvRow1;
+    InFlat(2) vec4 vDecalInvRow2;
+    InFlat(3) vec4 vDecalInvRow3;
+    In(4) vec3 decalNormalWS;
+    InFlat(5) vec4 perInstanceDataOut;
 
     //Out(2) vec4 gAlbedo;
     layout(location = 1) out vec4 gAlbedoOut;
@@ -129,7 +129,7 @@ uniform int perDrawInt_1;
         vec4 other = texture(gOther, screenUV);
         //gAlbedoOut = vec4(texture(gOther, screenUV).aaa, 1);
         //return;
-        if(perDrawInt_1 >= 0 && perDrawInt_1 != other.a) discard;
+        if(perInstanceDataOut.w >= 0 && perInstanceDataOut.w != other.a) discard;
 
         // Compute UV inside decal box
         vec2 uv = localPos.xy + 0.5;

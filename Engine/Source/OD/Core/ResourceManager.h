@@ -192,6 +192,7 @@ struct OD_API ResourceVectorRefSerialize{
 
         for(int i = 0; i < isNull.size(); i++){
             assets.push_back(isNull[i] ? nullptr : ResourceManager::Get().LoadByPath<T>(path[i])); 
+            //if(isNull[i] == false) Assert(assets[i] != nullptr);
         }
     }
 };
@@ -276,7 +277,7 @@ Ref<T> ResourceManager::LoadByPath(const std::string& path, Args&& ... args){
         }
 
         if(find == false){
-            LogError("Asset not found with any supported extension: {}", path);
+            LogError("Not found with any supported extension: {}", path);
             return nullptr;
         }
     }
@@ -321,7 +322,10 @@ Ref<T> ResourceManager::LoadByPath(const std::string& path, Args&& ... args){
     }
 
     if(hasLoadedFromPackage == false){
-        if(asset->LoadFromFile(resolvedPath) == false) return nullptr;
+        if(asset->LoadFromFile(resolvedPath) == false){
+            LogError("Could not be loaded: {}", path);
+            return nullptr;
+        }
     }
     
     #ifdef USE_WEAK_PTR

@@ -394,7 +394,7 @@ bool ReflectSPIRV(const void* spirvData, size_t spirvSize, ShaderReflection& ref
     return true;
 }
 
-std::vector<uint32_t> CompileGLSL(const std::string& source, EShLanguage stage){
+bool CompileGLSL(const std::string& source, EShLanguage stage, std::vector<uint32_t>& spirv){
     static bool initialized = false;
     if(!initialized){
         glslang::InitializeProcess();
@@ -416,6 +416,7 @@ std::vector<uint32_t> CompileGLSL(const std::string& source, EShLanguage stage){
     if(!shader.parse(resources, 450, false, messages)){
         std::string error = "GLSL compilation failed:\n" + std::string(shader.getInfoLog()) + "\n" + shader.getInfoDebugLog();
         LogInfo("Error: {}", error);
+        return false;
         throw std::runtime_error(error);
     }
 
@@ -425,10 +426,11 @@ std::vector<uint32_t> CompileGLSL(const std::string& source, EShLanguage stage){
     if(!program.link(messages)){
         std::string error = "GLSL linking failed:\n" + std::string(program.getInfoLog()) + "\n" + program.getInfoDebugLog();
         LogInfo("Error: {}", error);
+        return false;
         throw std::runtime_error(error);
     }
 
-    std::vector<uint32_t> spirv;
+    //std::vector<uint32_t> spirv;
     spv::SpvBuildLogger logger;
     glslang::SpvOptions options;
     /*options.stripDebugInfo = true;
@@ -439,7 +441,7 @@ std::vector<uint32_t> CompileGLSL(const std::string& source, EShLanguage stage){
     options.optimizeSize = false;
 
     glslang::GlslangToSpv(*program.getIntermediate(shaderStage), spirv, &logger, &options);
-    return spirv;
+    return true;
 }
 
 bool Reflect(const char* shaderSource, ShaderReflection& reflection){
@@ -447,8 +449,10 @@ bool Reflect(const char* shaderSource, ShaderReflection& reflection){
     std::string vertexSource = "#version 450\n#define GFX_API\n#define Vulkan_API\n#define VERTEX\n" + srcStr;
     std::string fragmentSource = "#version 450\n#define GFX_API\n#define Vulkan_API\n#define FRAGMENT\n" + srcStr;
 
-    std::vector<uint32_t> spirvV = CompileGLSL(vertexSource, EShLangVertex);
-    std::vector<uint32_t> spirvF = CompileGLSL(fragmentSource, EShLangFragment);
+    std::vector<uint32_t> spirvV;
+    std::vector<uint32_t> spirvF;
+    if(CompileGLSL(vertexSource, EShLangVertex, spirvV) == false) return false; 
+    if(CompileGLSL(fragmentSource, EShLangFragment, spirvF) == false) return false;
 
     reflection.vertexAttributes.clear();
     reflection.bindings.clear();
@@ -456,7 +460,7 @@ bool Reflect(const char* shaderSource, ShaderReflection& reflection){
     ReflectSPIRV(spirvV.data(), spirvV.size() * sizeof(uint32_t), reflection, false);
     ReflectSPIRV(spirvF.data(), spirvF.size() * sizeof(uint32_t), reflection, true);
 
-    return false;
+    return true;
 }
 
 void ShaderReflectionToPipelineInfo(const ShaderReflection& reflection, PipelineInfo& pipelineOut, std::vector<BindGroupLayoutInfo>& layoutsOut){

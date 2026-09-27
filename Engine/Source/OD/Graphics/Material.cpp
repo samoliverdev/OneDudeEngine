@@ -606,6 +606,9 @@ void Material::OnGui(){
         }
 
         if(map.type == MaterialMap::Type::Texture){
+            #ifdef TestNewGPU_API
+            continue;
+            #endif
             if(map.texture == nullptr) continue;
             const float widthSize = 60;
             float aspect = 1;

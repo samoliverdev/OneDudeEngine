@@ -147,6 +147,7 @@ bool Shader::LoadFromFile(const std::string& path){
 
         if(isComplete == false){
             LogError("Error To Compile Shader: {}", path);
+            Assert(false);
             Destroy();
             return false;
         } 
@@ -557,7 +558,10 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
 
     if(key.empty() && materialBindGroupLayout == Gfx::InvalidID){
         #ifdef TestNewGPU_API
-        Gfx::Reflect(shaderSourceData.baseSource.c_str(), reflection);
+        if(Gfx::Reflect(shaderSourceData.baseSource.c_str(), reflection) == false){
+            isComplete = false;
+            return;
+        }
         
         pipelineInfo = {};
         layoutsOut.clear();
@@ -696,7 +700,11 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
         pipelineInfo.vertexLayout.buffers[6] = { sizeof(Vector4), Gfx::VertexInputRate::Vertex };
         pipelineInfo.vertexLayout.buffers[7] = { sizeof(Matrix4), Gfx::VertexInputRate::Instance };
 
-        shader->_pipelines[renderPassIndex] = gfxDevice->CreatePipeline(shaderSourceData.baseSource.c_str(), pipelineInfo);
+        auto pipe = gfxDevice->CreatePipeline(shaderSourceData.baseSource.c_str(), pipelineInfo);
+        if(pipe == Gfx::InvalidID){
+            isComplete = false;
+        }
+        shader->_pipelines[renderPassIndex] = pipe;
 
         shaderSourceData.baseSource.erase(0, passDefine.size());
         }

@@ -1,14 +1,14 @@
 #ifndef DECAL_PIPELINE_GLSL
 #define DECAL_PIPELINE_GLSL
 
-flat in vec4 vDecalInvRow0;
-flat in vec4 vDecalInvRow1;
-flat in vec4 vDecalInvRow2;
-flat in vec4 vDecalInvRow3;
+InFlat(0) vec4 vDecalInvRow0;
+InFlat(1) vec4 vDecalInvRow1;
+InFlat(2) vec4 vDecalInvRow2;
+InFlat(3) vec4 vDecalInvRow3;
 
-in vec3 decalNormalWS;
-in vec3 objWorldPos;
-flat in vec4 perInstanceData;
+In(4) vec3 decalNormalWS;
+In(5) vec3 objWorldPos;
+InFlat(6) vec4 perInstanceData;
 
 layout(location = 1) out vec4 gAlbedoOut;
 layout(location = 2) out vec4 gOtherOut;

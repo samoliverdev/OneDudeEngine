@@ -1,14 +1,14 @@
 #ifndef DECAL_VERTEX_GLSL
 #define DECAL_VERTEX_GLSL
 
-flat out vec4 vDecalInvRow0;
-flat out vec4 vDecalInvRow1;
-flat out vec4 vDecalInvRow2;
-flat out vec4 vDecalInvRow3;
+OutFlat(0) vec4 vDecalInvRow0;
+OutFlat(1) vec4 vDecalInvRow1;
+OutFlat(2) vec4 vDecalInvRow2;
+OutFlat(3) vec4 vDecalInvRow3;
 
-out vec3 decalNormalWS;
-out vec3 objWorldPos;
-flat out vec4 perInstanceData;
+Out(4) vec3 decalNormalWS;
+Out(5) vec3 objWorldPos;
+OutFlat(6) vec4 perInstanceData;
 
 void main() {
     mat4 model = GetModelMatrix();

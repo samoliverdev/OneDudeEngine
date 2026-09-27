@@ -28,9 +28,7 @@
 
 #include Engine/ShaderLibrary/Base.glsl
 #include Engine/ShaderLibrary/Vertex.glsl
-
-#include Engine/ShaderLibrary/UniformsDef.glsl
-#include Engine/ShaderLibrary/TexturesDef.glsl
+#include Engine/ShaderLibrary/PipelineDataDef.glsl
 
 BeginUniform(0, 0, Main)
     Uniform float normalStrength;
@@ -43,13 +41,11 @@ BeginUniform(0, 0, Main)
     Uniform float cutoff;
     Uniform float emissionIntensity;
 EndUniform()
+Texture2D(0, 10, mainTex, mainTexSampler)
+Texture2D(0, 11, normalMap, normalMapSampler)
+Texture2D(0, 12, emissionMap, emissionMapSampler)
+Texture2D(0, 13, maskMap, maskMapSampler)
 
-Texture2D(0, 6, mainTex, mainTexSampler)
-Texture2D(0, 7, normalMap, normalMapSampler)
-Texture2D(0, 8, emissionMap, emissionMapSampler)
-Texture2D(0, 9, maskMap, maskMapSampler)
-
-uniform int perDrawInt_1;
 
 #if defined(VERTEX) && defined(MainPass)
     Out(0) vec3 outPos;
@@ -61,8 +57,7 @@ uniform int perDrawInt_1;
     Out(5) vec3 outT;
     Out(6) vec3 outB;
     Out(7) vec3 outN;
-
-    out vec4 perInstanceDataOut;
+    Out(8) vec4 perInstanceDataOut;
 
     void main(){
         vec4 localPos = GetLocalPos();
@@ -106,8 +101,7 @@ uniform int perDrawInt_1;
     In(5) vec3 outT;
     In(6) vec3 outB;
     In(7) vec3 outN;
-
-    in vec4 perInstanceDataOut;
+    In(8) vec4 perInstanceDataOut;
     
     #ifdef Deferred
         /*Out(9) vec4 gAlbedoSpec;

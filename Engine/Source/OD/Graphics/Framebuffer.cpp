@@ -284,7 +284,7 @@ int Framebuffer::ReadPixel(int attachmentIndex, int x, int y){
 
 void* Framebuffer::ColorAttachmentId(int index){
     #ifdef TestNewGPU_API
-    Assert(false);
+    //Assert(false);
     return nullptr;
     #else
     return graphicsDevice->FramebufferColorAttachmentId(*this, index);

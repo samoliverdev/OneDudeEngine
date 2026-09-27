@@ -20,8 +20,7 @@
 
 #include Engine/ShaderLibrary/Base.glsl
 #include Engine/ShaderLibrary/Vertex.glsl
-#include Engine/ShaderLibrary/UniformsDef.glsl
-#include Engine/ShaderLibrary/TexturesDef.glsl
+#include Engine/ShaderLibrary/PipelineDataDef.glsl
 #include Engine/ShaderLibrary/SurfaceCore.glsl
 
 BeginUniform(0, 0, Main)
@@ -31,7 +30,7 @@ BeginUniform(0, 0, Main)
     Uniform float metallic;
     Uniform float roughness;
 EndUniform()
-Texture2D(0, 6, mainTex, mainTexSampler)
+Texture2D(0, 10, mainTex, mainTexSampler)
 
 // =====================================================
 // VERTEX

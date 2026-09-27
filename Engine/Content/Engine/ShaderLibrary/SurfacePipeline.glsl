@@ -18,8 +18,6 @@ layout(location = 3) out vec3 gEmission;
 Out(0) vec4 fragColor;
 #endif
 
-uniform int perDrawInt_1;
-
 Surface ConvertToEngineSurface(SurfaceOutput s, SurfaceInput IN){
     Surface surface;
 

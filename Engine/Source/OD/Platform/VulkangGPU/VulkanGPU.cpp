@@ -3282,6 +3282,8 @@ void VulkanGPUDevice::DestroyPipeline(Pipeline id){
 }
 
 Buffer VulkanGPUDevice::CreateBuffer(size_t size, BufferUsage usage, BufferMemory memory){
+    Assert(size > 0);
+
     #ifdef DONT_DEFERRED_RESOURCE_CREATION
 
     BufferData data;

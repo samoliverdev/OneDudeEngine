@@ -27,9 +27,7 @@
 
 #include Engine/ShaderLibrary/Base.glsl
 #include Engine/ShaderLibrary/Vertex.glsl
-
-#include Engine/ShaderLibrary/UniformsDef.glsl
-#include Engine/ShaderLibrary/TexturesDef.glsl
+#include Engine/ShaderLibrary/PipelineDataDef.glsl
 
 BeginUniform(0, 0, Main)
     Uniform float normalStrength;
@@ -41,13 +39,10 @@ BeginUniform(0, 0, Main)
     Uniform float roughness;
     Uniform float cutoff;
 EndUniform()
-
-Texture2D(0, 6, mainTex, mainTexSampler)
-Texture2D(0, 7, normalMap, normalMapSampler)
-Texture2D(0, 8, emissionMap, emissionMapSampler)
-Texture2D(0, 9, maskMap, maskMapSampler)
-
-uniform int perDrawInt_1;
+Texture2D(0, 10, mainTex, mainTexSampler)
+Texture2D(0, 11, normalMap, normalMapSampler)
+Texture2D(0, 12, emissionMap, emissionMapSampler)
+Texture2D(0, 13, maskMap, maskMapSampler)
 
 #if defined(VERTEX) && defined(MainPass)
     Out(0) vec3 outPos;
@@ -194,7 +189,7 @@ uniform int perDrawInt_1;
             surface.roughness,
             surface.metallic,
             surface.occlusion,
-            perDrawInt_1
+            0
         );
         
         #else
