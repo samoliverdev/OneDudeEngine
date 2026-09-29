@@ -44,7 +44,7 @@ OtherShadowData GetOtherShadowData(int lightIndex){
 	data.isPoint = _OtherLightShadowData[lightIndex].z == 1.0;
 	data.lightDirectionWS = vec3(0.0);
 	data.lightPositionWS = vec3(0.0);
-	//data.diffuseFactor = dot(surfaceWS.normal, -_DirectionalLightDirections[lightIndex].xyz);
+	data.diffuseFactor = 0; //dot(surfaceWS.normal, -_DirectionalLightDirections[lightIndex].xyz);
 	data.shadowMaskChannel = int(_OtherLightShadowData[lightIndex].w);
 	return data;
 }
@@ -86,9 +86,9 @@ Light GetOtherLight(int index, Surface surfaceWS, ShadowData shadowData){
 	OtherShadowData otherShadowData = GetOtherShadowData(index);
 	otherShadowData.lightDirectionWS = light.direction;
 	otherShadowData.lightPositionWS = _OtherLightPositions[index].xyz;
+	otherShadowData.diffuseFactor = clamp(dot(normalize(surfaceWS.normal), light.direction), 0.0, 1.0);
 
-	light.attenuation = GetOtherShadowAttenuation(otherShadowData, shadowData, surfaceWS) *
-		spotAttenuation * rangeAttenuation / distanceSqr;
+	light.attenuation = GetOtherShadowAttenuation(otherShadowData, shadowData, surfaceWS) * spotAttenuation * rangeAttenuation / distanceSqr;
 	
 	return light;
 }

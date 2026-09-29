@@ -165,6 +165,9 @@ RenderContext::RenderContext(){
     otherShadowAtlas = ResourceManager::Get().Create<Framebuffer>("OtherShadow", 1024, 1024);
     otherShadowAtlas->name = "otherShadowAtlas";
 
+    screenSpaceShadowOutput = ResourceManager::Get().Create<Framebuffer>("PostProssing", Application::ScreenWidth(), Application::ScreenHeight());
+    screenSpaceShadowOutput->name = "screenSpaceShadowOutput";
+
     #else
     FrameBufferSpecification framebufferSpecification = {Application::ScreenWidth(), Application::ScreenHeight()};
 
@@ -494,13 +497,13 @@ glm::vec4 GetInvDeviceZToWorldZTransform(const glm::mat4& projection){
 }
 
 void RenderContext::CleanSSS(){
-    #ifndef TestNewGPU_API
+    //#ifndef TestNewGPU_API
     auto camera = GetCamera();
     screenSpaceShadowOutput->Resize(camera.width, camera.height);
 
     Graphics::BeginFramebuffer(*screenSpaceShadowOutput, true, {1, 1, 1, 1}, 0, 0);
     Graphics::EndFramebuffer();
-    #endif
+    //#endif
 }
 
 void RenderContext::DrawSSS(Vector3 _lightDir, SSS_Settings settings){

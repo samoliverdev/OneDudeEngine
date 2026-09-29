@@ -235,16 +235,23 @@ float SampleDirectionalShadowAtlas(vec4 positionSTS, int layer, float diffuseFac
 #endif
 
 float SampleOtherShadowAltas(vec4 positionSTS, int layer, float diffuseFactor){
-    vec3 projCoords = positionSTS.xyz / positionSTS.w;
-    projCoords = projCoords * 0.5 + 0.5;
+    //vec3 projCoords = positionSTS.xyz / positionSTS.w;
+    //projCoords = projCoords * 0.5 + 0.5;
+    vec3 projCoords = GetShadowProjectionCoordinates(positionSTS);
+
     float closestDepth = SampleTexture2DArray(_OtherShadowAtlas, _OtherShadowAtlasSampler, vec3(projCoords.xy, layer)).r; 
     
     float currentDepth = projCoords.z;
     if(currentDepth > 1.0) return 1.0;
     
     float bias = _ShadowBias / 4.0;
+    bias = 0.001;
     //bias = 0.001/2;
     bias = mix(bias, 0.0, diffuseFactor);
+
+    #ifdef Vulkan_API
+    bias *= 2.0;
+    #endif
 
     float shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0; 
 
@@ -255,8 +262,9 @@ float SampleOtherShadowAltas(vec4 positionSTS, int layer, float diffuseFactor){
     float FilterOtherShadow(vec4 positionSTS, int layer, float diffuseFactor){
     #if defined(_DIRECTIONAL_PCF)
 
-        vec3 projCoords = positionSTS.xyz / positionSTS.w;
-        projCoords = projCoords * 0.5 + 0.5;
+        //vec3 projCoords = positionSTS.xyz / positionSTS.w;
+        //projCoords = projCoords * 0.5 + 0.5;
+        vec3 projCoords = GetShadowProjectionCoordinates(positionSTS);
 
         if(projCoords.z > 1.0)
             return 1.0;

@@ -145,7 +145,7 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
     if(callbacks.onInit != nullptr) callbacks.onInit();
 
     //MemoryTracker::SetAllocationBreakpointSize(1024*1024);
-    MemoryTracker::SetAllocationBreakpointSize(1);
+    //MemoryTracker::SetAllocationBreakpointSize(0);
 
     return true;
 }

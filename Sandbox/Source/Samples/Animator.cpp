@@ -538,7 +538,7 @@ void AnimatorSample::OnInit(){
 
     camera = scene->AddEntity("Camera");
     CameraComponent& cam = scene->AddComponent<CameraComponent>(camera);
-    cam.renderingPath = RenderingPath::Forward;
+    cam.renderingPath = RenderingPath::Deferred;
     scene->GetComponent<TransformComponent>(camera).LocalPosition(Vector3(0, 15, 15));
     scene->GetComponent<TransformComponent>(camera).LocalEulerAngles(Vector3(-25, 0, 0));
     scene->AddComponent<ScriptComponent>(camera).AddScript<CameraMovementScript>()->moveSpeed = 60;

@@ -8,20 +8,13 @@
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl
+#include Engine/ShaderLibrary/CameraData.glsl
 #include Engine/ShaderLibrary/PipelineDataDef.glsl
 
-BeginUniform(2, 0, CamDraw)
-    Uniform mat4 projection;
-    Uniform mat4 view;
-    Uniform mat4 invProjection;
-    Uniform mat4 invView;
-EndUniform()
-
 BeginUniform(0, 0, Main)
-    Uniform int lightIndex;
+    Uniform int lightIndex;  //INFO: how this is passing by material, with new Gfx, what have deferred calls, this can bug
 EndUniform()
 
-//Texture2D(0, 10, gPosition, gPositionSampler)
 Texture2D(0, 11, gNormal, gNormalSampler)
 Texture2D(0, 12, gAlbedoSpec, gAlbedoSpecSampler)
 Texture2D(0, 13, gEmission, gEmissionSampler)
@@ -64,9 +57,7 @@ Texture2D(0, 16, sss, sssSampler)
         //return;
 
         float depth = texture(gDepth, texCoord).r;
-        
         if(depth >= 1.0) discard;
-
 
         vec3 FragPos = reconstructWorldPos(texCoord, depth, invProjection, invView);
 
@@ -139,6 +130,7 @@ Texture2D(0, 16, sss, sssSampler)
 		    vec3 color = EvaluateDirectLight(surface, light);
             //color += Emission; //TODO: Review this later to check if is right
             FragColor = vec4(color, 1); //surface.alpha);
+            return;
         #endif
     }
 #endif

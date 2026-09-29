@@ -18,7 +18,18 @@ using Buffer = uint32_t;
 using BindGroupLayout = uint32_t;
 using BindGroup = uint32_t;
 using Texture2D = uint32_t;
+using Texture2DArray = uint32_t;
 using Cubemap = uint32_t;
+
+enum class CubemapFace : uint8_t{
+    // Values follow cubemap image layer order: +X, -X, +Y, -Y, +Z, -Z.
+    PositiveX,
+    NegativeX,
+    PositiveY,
+    NegativeY,
+    PositiveZ,
+    NegativeZ
+};
 
 enum class OD_API_IMPORT TextureFilter : uint8_t{
     Nearest,
@@ -113,6 +124,21 @@ struct OD_API Texture2DInfo{
     TextureFilter filter = TextureFilter::Linear;
     TextureWrapping wrapping = TextureWrapping::Repeat;
     bool mipmap = true;
+    // Zero selects the full chain when mipmap is enabled. A nonzero value
+    // allocates that many levels and disables automatic mip generation.
+    uint32_t mipLevels = 0;
+};
+
+struct OD_API Texture2DArrayInfo{
+    uint32_t width = 1;
+    uint32_t height = 1;
+    uint32_t arrayElements = 1;
+    ImageFormat format = ImageFormat::R8G8B8A8_UNORM;
+    TextureFilter filter = TextureFilter::Linear;
+    TextureWrapping wrapping = TextureWrapping::Repeat;
+    bool mipmap = true;
+    // Zero selects the full chain when mipmap is enabled. A nonzero value
+    // allocates that many levels and disables automatic mip generation.
     uint32_t mipLevels = 0;
 };
 
@@ -123,6 +149,8 @@ struct OD_API CubemapInfo{
     TextureFilter filter = TextureFilter::Linear;
     TextureWrapping wrapping = TextureWrapping::Repeat;
     bool mipmap = true;
+    // Zero selects the full chain when mipmap is enabled. A nonzero value
+    // allocates that many levels and disables automatic mip generation.
     uint32_t mipLevels = 0;
 };
 
@@ -338,6 +366,7 @@ struct BindingEntry{
     bool dynamicOffset = false;
 
     Texture2D texture = InvalidID;
+    Texture2DArray textureArray = InvalidID;
     Cubemap cubemap = InvalidID;
 
     Framebuffer framebuffer = InvalidID;
@@ -615,8 +644,12 @@ struct OD_API ResourceCommands{
         CreateTexture2D,
         UploadTexture2D,
         DestroyTexture2D,
+        CreateTexture2DArray,
+        UploadTexture2DArray,
+        DestroyTexture2DArray,
         CreateCubemap,
         UploadCubemap,
+        UploadCubemapFace,
         DestroyCubemap,
 
         CreateBindGroupLayout,
@@ -675,7 +708,12 @@ struct OD_API ResourceCommands{
                 Texture2D id;
                 const void* data;
                 size_t size;
+                int mipLevel;
             } uploadTexture2D;
+
+            struct { Texture2DArray id; Texture2DArrayInfo info; } createTexture2DArray;
+            struct { Texture2DArray id; const void* data; size_t size; int arrayElement; int mipLevel; } uploadTexture2DArray;
+            struct { Texture2DArray id; } destroyTexture2DArray;
             
             struct {
                 Framebuffer framebuffer;
@@ -701,7 +739,16 @@ struct OD_API ResourceCommands{
                 Cubemap id;
                 const void* data;
                 size_t size;
+                int mipLevel;
             } uploadCubemap;
+
+            struct {
+                Cubemap id;
+                const void* data;
+                size_t size;
+                CubemapFace face;
+                int mipLevel;
+            } uploadCubemapFace;
 
             struct {
                 Cubemap id;
@@ -785,7 +832,7 @@ struct OD_API ResourceCommands{
         commands.push_back(cmd);
     }
 
-    inline void UploadTexture2D(Texture2D id, const void* data, size_t size){
+    inline void UploadTexture2D(Texture2D id, const void* data, size_t size, int mipLevel = 0){
         void *copyData = resourceUploads.AllocateData(size);
         std::memcpy(copyData, data, size);
 
@@ -794,6 +841,7 @@ struct OD_API ResourceCommands{
         cmd.uploadTexture2D.id = id;
         cmd.uploadTexture2D.data = copyData;
         cmd.uploadTexture2D.size = size;
+        cmd.uploadTexture2D.mipLevel = mipLevel;
         commands.push_back(cmd);
     }
 
@@ -801,6 +849,26 @@ struct OD_API ResourceCommands{
         Command cmd{};
         cmd.type = Type::DestroyTexture2D;
         cmd.destroyTexture2D.id = id;
+        commands.push_back(cmd);
+    }
+
+    inline void CreateTexture2DArray(Texture2DArray id, Texture2DArrayInfo& info){
+        Command cmd{}; cmd.type = Type::CreateTexture2DArray;
+        cmd.createTexture2DArray.id = id; cmd.createTexture2DArray.info = info;
+        commands.push_back(cmd);
+    }
+
+    inline void UploadTexture2DArray(Texture2DArray id, const void* data, size_t size, int arrayElement, int mipLevel){
+        void* copyData = resourceUploads.AllocateData(size);
+        std::memcpy(copyData, data, size);
+        Command cmd{}; cmd.type = Type::UploadTexture2DArray;
+        cmd.uploadTexture2DArray.id = id; cmd.uploadTexture2DArray.data = copyData;
+        cmd.uploadTexture2DArray.size = size; cmd.uploadTexture2DArray.arrayElement = arrayElement;
+        cmd.uploadTexture2DArray.mipLevel = mipLevel; commands.push_back(cmd);
+    }
+
+    inline void DestroyTexture2DArray(Texture2DArray id){
+        Command cmd{}; cmd.type = Type::DestroyTexture2DArray; cmd.destroyTexture2DArray.id = id;
         commands.push_back(cmd);
     }
 
@@ -812,7 +880,7 @@ struct OD_API ResourceCommands{
         commands.push_back(cmd);
     }
 
-    inline void UploadCubemap(Cubemap id, const void* data, size_t size){
+    inline void UploadCubemap(Cubemap id, const void* data, size_t size, int mipLevel = 0){
         void* copyData = resourceUploads.AllocateData(size);
         std::memcpy(copyData, data, size);
         Command cmd{};
@@ -820,6 +888,20 @@ struct OD_API ResourceCommands{
         cmd.uploadCubemap.id = id;
         cmd.uploadCubemap.data = copyData;
         cmd.uploadCubemap.size = size;
+        cmd.uploadCubemap.mipLevel = mipLevel;
+        commands.push_back(cmd);
+    }
+
+    inline void UploadCubemap(Cubemap id, const void* data, size_t size, CubemapFace face, int mipLevel = 0){
+        void* copyData = resourceUploads.AllocateData(size);
+        std::memcpy(copyData, data, size);
+        Command cmd{};
+        cmd.type = Type::UploadCubemapFace;
+        cmd.uploadCubemapFace.id = id;
+        cmd.uploadCubemapFace.data = copyData;
+        cmd.uploadCubemapFace.size = size;
+        cmd.uploadCubemapFace.face = face;
+        cmd.uploadCubemapFace.mipLevel = mipLevel;
         commands.push_back(cmd);
     }
 
@@ -1223,10 +1305,14 @@ public:
     virtual void DestroyBuffer(Buffer id){}
 
     virtual Texture2D CreateTexture2D(Texture2DInfo& info){ return InvalidID; }
-    virtual void UploadTexture2D(Texture2D texture, const void* data, size_t size){}
+    virtual void UploadTexture2D(Texture2D texture, const void* data, size_t size, int mipLevel = 0){}
     virtual void DestroyTexture2D(Texture2D tex){}
+    virtual Texture2DArray CreateTexture2DArray(Texture2DArrayInfo& info){ return InvalidID; }
+    virtual void UploadTexture2DArray(Texture2DArray texture, const void* data, size_t size, int arrayElement, int mipLevel = 0){}
+    virtual void DestroyTexture2DArray(Texture2DArray tex){}
     virtual Cubemap CreateCubemap(CubemapInfo& info){ return InvalidID; }
-    virtual void UploadCubemap(Cubemap cubemap, const void* data, size_t size){}
+    virtual void UploadCubemap(Cubemap cubemap, const void* data, size_t size, int mipLevel = 0){}
+    virtual void UploadCubemap(Cubemap cubemap, const void* data, size_t size, CubemapFace face, int mipLevel = 0){}
     virtual void DestroyCubemap(Cubemap cubemap){}
 
     virtual BindGroupLayout CreateBindGroupLayout(BindGroupLayoutInfo& info){ return InvalidID; }

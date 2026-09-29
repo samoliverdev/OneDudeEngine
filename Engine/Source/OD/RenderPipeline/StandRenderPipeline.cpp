@@ -87,7 +87,7 @@ public:
 void StandRenderPipelineModuleInit(){
     RenderPassInfo renderPassInfo = {};
     renderPassInfo.colorAttachments = { {FramebufferTextureFormat::RED_INTEGER} };
-    renderPassInfo.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT16};
+    renderPassInfo.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT32};
     renderPassInfo.type = FramebufferAttachmentType::TEXTURE_2D; 
     renderPassInfo.sample = 1;
     renderPassInfo.createDepth = true;
@@ -95,7 +95,7 @@ void StandRenderPipelineModuleInit(){
 
     renderPassInfo = {};
     renderPassInfo.colorAttachments = { {FramebufferTextureFormat::RGBA16F} };
-    renderPassInfo.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT16};
+    renderPassInfo.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT32};
     renderPassInfo.type = FramebufferAttachmentType::TEXTURE_2D; 
     renderPassInfo.sample = 1;
     renderPassInfo.createDepth = true;
@@ -108,7 +108,7 @@ void StandRenderPipelineModuleInit(){
         {FramebufferTextureFormat::RGBA16F},
         {FramebufferTextureFormat::RGB11B10F}
     };
-    renderPassInfo.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT16};
+    renderPassInfo.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT32};
     renderPassInfo.type = FramebufferAttachmentType::TEXTURE_2D; 
     renderPassInfo.sample = 1;
     renderPassInfo.createDepth = true;
@@ -127,20 +127,20 @@ void StandRenderPipelineModuleInit(){
     renderPassInfo = {};
     renderPassInfo.type = FramebufferAttachmentType::TEXTURE_2D_ARRAY; 
     renderPassInfo.sample = MAX_SHADOWED_DIRECTIONAL_LIGHT_COUNT * MAX_CASCADE_COUNT;
-    renderPassInfo.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT16};
+    renderPassInfo.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT32};
     renderPassInfo.createDepth = true;
     FramebufferRenderPass::RegisterRenderPass("DirectionalShadow", renderPassInfo);
 
     renderPassInfo = {};
     renderPassInfo.type = FramebufferAttachmentType::TEXTURE_2D_ARRAY; 
     renderPassInfo.sample = MAX_SHADOWED_OTHER_LIGHT_COUNT;
-    renderPassInfo.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT16};
+    renderPassInfo.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT32};
     renderPassInfo.createDepth = true;
     FramebufferRenderPass::RegisterRenderPass("OtherShadow", renderPassInfo);
 
     renderPassInfo = {};
     renderPassInfo.colorAttachments = { {FramebufferTextureFormat::RGBA16F} };
-    renderPassInfo.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT16};
+    renderPassInfo.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT32};
     renderPassInfo.type = FramebufferAttachmentType::TEXTURE_2D; 
     renderPassInfo.sample = 1;
     renderPassInfo.createDepth = true;

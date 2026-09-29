@@ -46,10 +46,14 @@ public:
     virtual void DestroyBuffer(Buffer id) override;
 
     virtual Texture2D CreateTexture2D(Texture2DInfo& info) override;
-    virtual void UploadTexture2D(Texture2D texture, const void* data, size_t size) override;
+    virtual void UploadTexture2D(Texture2D texture, const void* data, size_t size, int mipLevel = 0) override;
     virtual void DestroyTexture2D(Texture2D tex) override;
+    virtual Texture2DArray CreateTexture2DArray(Texture2DArrayInfo& info) override;
+    virtual void UploadTexture2DArray(Texture2DArray texture, const void* data, size_t size, int arrayElement, int mipLevel) override;
+    virtual void DestroyTexture2DArray(Texture2DArray tex) override;
     virtual Cubemap CreateCubemap(CubemapInfo& info) override;
-    virtual void UploadCubemap(Cubemap cubemap, const void* data, size_t size) override;
+    virtual void UploadCubemap(Cubemap cubemap, const void* data, size_t size, int mipLevel = 0) override;
+    virtual void UploadCubemap(Cubemap cubemap, const void* data, size_t size, CubemapFace face, int mipLevel = 0) override;
     virtual void DestroyCubemap(Cubemap cubemap) override;
 
     virtual BindGroupLayout CreateBindGroupLayout(BindGroupLayoutInfo& info) override;
@@ -85,6 +89,9 @@ private:
         Texture2DInfo info;
     };
     ResourcePool<Texture2DData> texture2DPool;
+
+    struct Texture2DArrayData{ uint32_t tex = 0; Texture2DArrayInfo info; };
+    ResourcePool<Texture2DArrayData> texture2DArrayPool;
 
     struct CubemapData{
         uint32_t tex = 0;
@@ -164,10 +171,14 @@ private:
     void _DestroyFramebuffer(FramebufferData& data);
 
     bool _CreateTexture2D(Texture2DData& data, const Texture2DInfo& info); 
-    void _UploadTexture2D(Texture2DData& data, const void* _data, size_t size);
+    void _UploadTexture2D(Texture2DData& data, const void* _data, size_t size, int mipLevel);
     void _DestroyTexture2D(Texture2DData& data); 
+    bool _CreateTexture2DArray(Texture2DArrayData& data, const Texture2DArrayInfo& info);
+    void _UploadTexture2DArray(Texture2DArrayData& data, const void* bytes, size_t size, int arrayElement, int mipLevel);
+    void _DestroyTexture2DArray(Texture2DArrayData& data);
     bool _CreateCubemap(CubemapData& data, const CubemapInfo& info);
-    void _UploadCubemap(CubemapData& data, const void* rawData, size_t size);
+    void _UploadCubemap(CubemapData& data, const void* rawData, size_t size, int mipLevel);
+    void _UploadCubemapFace(CubemapData& data, const void* rawData, size_t size, CubemapFace face, int mipLevel);
     void _DestroyCubemap(CubemapData& data);
 
     bool _CreateBindGroupLayout(BindGroupLayoutData& data, const BindGroupLayoutInfo& info);

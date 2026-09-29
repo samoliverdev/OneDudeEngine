@@ -2,16 +2,10 @@
 #define VERTEX_INCLUDED
 
 #include Engine/ShaderLibrary/Base.glsl
+#include Engine/ShaderLibrary/CameraData.glsl
 
 const int MAX_BONES = 120;
 const int MAX_BONE_INFLUENCE = 4;
-
-BeginUniform(2, 0, CamDraw)
-    Uniform mat4 projection;
-    Uniform mat4 view;
-    Uniform mat4 invProjection;
-    Uniform mat4 invView;
-EndUniform()
 
 #if defined(OpenGL_API) && defined(UseUniformBuffer) && !defined(GFX_API)
     uniform mat4 model;

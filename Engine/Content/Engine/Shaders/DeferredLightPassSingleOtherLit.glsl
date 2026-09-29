@@ -72,7 +72,7 @@ Texture2D(0, 16, sss, sssSampler)
         surface.roughness = Specular; //clamp(1.0 - surface.smoothness, 0.05, 1);
 
         surface.clearCoat = texture(gNormal, screenUV).b * dot(surface.normal, vec3(0, 1, 0)); //1;
-        //surface.clearCoatRoughness = texture(gAlbedoSpec, texCoord).a; //0.05; //0.05;
+        surface.clearCoatRoughness = texture(gAlbedoSpec, screenUV).a; //0.05; //0.05;
 
         //BRDF brdf = GetBRDF(surface);
         //GI gi = GetGI(surface, brdf);
@@ -80,7 +80,7 @@ Texture2D(0, 16, sss, sssSampler)
         ShadowData shadowData = GetShadowData(surface);
         Light light = GetOtherLight(lightIndex, surface, shadowData);
 
-        float sss = texture(sss, screenUV).r;
+        //float sss = texture(sss, screenUV).r;
         //light.attenuation = min(light.attenuation, sss);
         
         vec3 color = EvaluateDirectLight(surface, light);

@@ -90,7 +90,14 @@ vec3 unpack_normal_octahedron(vec2 packed_nrm) {
 
 vec3 reconstructWorldPos(vec2 uv, float depth, mat4 invProj, mat4 invView){
     // Convert [0,1] UV to Normalized Device Coordinates [-1,1]
-    vec4 ndc = vec4(uv * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+    //vec4 ndc = vec4(uv * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+
+    #ifdef Vulkan_API
+    float ndcZ = depth;
+    #else
+    float ndcZ = depth * 2.0 - 1.0;
+    #endif
+    vec4 ndc = vec4(uv * 2.0 - 1.0, ndcZ, 1.0);
 
     // View space position
     vec4 viewPos = invProj * ndc;

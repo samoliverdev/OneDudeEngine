@@ -158,6 +158,7 @@ inline void SetIndexBufferCached(Gfx::CommandBuffer* cmd, Gfx::Buffer buffer){
 }
 
 Gfx::Texture2D defaultTex;
+Gfx::Texture2DArray defaultTexArray;
 Gfx::Cubemap defaultCubemap;
 Gfx::Buffer defaultBuffer;
 #ifdef TestNewGPU_API
@@ -231,6 +232,8 @@ InstancingBufferPool drawMeshInstancingPool;
 Material* curMat = nullptr;
 SubShader* curShader = nullptr;
 Gfx::BindGroup curBindGroup;
+
+Ref<Cubemap> defaultSkybox = nullptr;
 
 struct CameraData{
     Matrix4 projection = Matrix4Identity;
@@ -355,6 +358,15 @@ void Graphics::Initialize(){
     Assert(defaultTex != Gfx::InvalidID);
     gfxDevice->UploadTexture2D(defaultTex, texPixels.data(), texPixels.size());
 
+    Gfx::Texture2DArrayInfo texArryInfo{};
+    texArryInfo.width = 256;
+    texArryInfo.height = 256;
+    texArryInfo.format = Gfx::ImageFormat::R8G8B8A8_SRGB;
+    texArryInfo.mipmap = false;
+    defaultTexArray = gfxDevice->CreateTexture2DArray(texArryInfo);
+    Assert(defaultTexArray != Gfx::InvalidID);
+    gfxDevice->UploadTexture2DArray(defaultTex, texPixels.data(), texPixels.size(), 0);
+
     std::vector<uint8_t> pixels(static_cast<size_t>(256) * 256 * 6 * 4, 255);
     Gfx::CubemapInfo cubeInfo{};
     cubeInfo.width = 256;
@@ -366,10 +378,22 @@ void Graphics::Initialize(){
     gfxDevice->UploadCubemap(defaultCubemap, pixels.data(), pixels.size());
 
     fullScreenQuad = Mesh::FullScreenQuad();
+
+
+    defaultSkybox = Cubemap::CreateFromFile(
+        "Engine/Textures/Skybox/right.jpg",
+        "Engine/Textures/Skybox/left.jpg",
+        "Engine/Textures/Skybox/top.jpg",
+        "Engine/Textures/Skybox/bottom.jpg",
+        "Engine/Textures/Skybox/front.jpg",
+        "Engine/Textures/Skybox/back.jpg"
+    );
+    ResourceManager::Get().AddByPath("DefaultSkyboxCubemap", defaultSkybox);
     #endif
 }
 
 void Graphics::Shutdown(){
+    defaultSkybox = nullptr;
     Material::CleanGlobalUniformsData();
     
 #ifdef TestNewGPU_API
@@ -848,7 +872,11 @@ Gfx::BindGroup Graphics::BindMaterial(Material& mat){
                     Assert(false);
                 }
             } else {
-                Assert(false);
+                //Assert(false);
+                bindGroupEntries[bindGroupInfo.entriesCount] = {};
+                bindGroupEntries[bindGroupInfo.entriesCount].binding = i.binding;
+                bindGroupEntries[bindGroupInfo.entriesCount].textureArray = defaultTexArray;
+                bindGroupInfo.entriesCount += 1;
             }
         }
 

@@ -541,6 +541,7 @@ bool OpenglGPUDevice::_CreateTexture2D(Texture2DData& texData, const Texture2DIn
     if(texData.info.mipmap) glGenerateMipmap(GL_TEXTURE_2D);
     glCheckError();*/
     
+    if(info.width == 0 || info.height == 0 || info.mipLevels > GetTextureMipLevels(info.width, info.height, true)) return false;
     texData.info = info;
 
     glGenTextures(1, &texData.tex);  
@@ -561,24 +562,61 @@ bool OpenglGPUDevice::_CreateTexture2D(Texture2DData& texData, const Texture2DIn
             std::max(1u, texData.info.width >> mip), std::max(1u, texData.info.height >> mip), 0,
             GetTextureFormat(texData.info.format), GetTextureDataType(texData.info.format), nullptr);
     glCheckError();
-    if(mipLevels > 1 && texData.info.mipmap && texData.info.mipLevels == 0) glGenerateMipmap(GL_TEXTURE_2D);
-    glCheckError();
-
     return true;
 } 
 
-void OpenglGPUDevice::_UploadTexture2D(Texture2DData& texData, const void* data, size_t size){
+void OpenglGPUDevice::_UploadTexture2D(Texture2DData& texData, const void* data, size_t size, int mipLevel){
+    const uint32_t mipLevels = GetTextureMipLevels(texData.info.width, texData.info.height, texData.info.mipmap, texData.info.mipLevels);
+    if(mipLevel < 0 || static_cast<uint32_t>(mipLevel) >= mipLevels || size == 0) return;
+    const uint32_t width = std::max(1u, texData.info.width >> mipLevel);
+    const uint32_t height = std::max(1u, texData.info.height >> mipLevel);
     glBindTexture(GL_TEXTURE_2D, texData.tex);
     glCheckError();
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, texData.info.width, texData.info.height, GetTextureFormat(texData.info.format), GetTextureDataType(texData.info.format), data);
+    glTexSubImage2D(GL_TEXTURE_2D, mipLevel, 0, 0, width, height, GetTextureFormat(texData.info.format), GetTextureDataType(texData.info.format), data);
     glCheckError();
-    if(texData.info.mipmap) glGenerateMipmap(GL_TEXTURE_2D);
+    if(texData.info.mipmap && texData.info.mipLevels == 0 && mipLevel == 0) glGenerateMipmap(GL_TEXTURE_2D);
     glCheckError();
 }
 
 void OpenglGPUDevice::_DestroyTexture2D(Texture2DData& data){
 
 } 
+
+bool OpenglGPUDevice::_CreateTexture2DArray(Texture2DArrayData& data, const Texture2DArrayInfo& info){
+    if(info.width == 0 || info.height == 0 || info.arrayElements == 0) return false;
+    if(info.mipLevels > GetTextureMipLevels(info.width, info.height, true)) return false;
+    data.info = info;
+    const uint32_t mipLevels = GetTextureMipLevels(info.width, info.height, info.mipmap, info.mipLevels);
+    glGenTextures(1, &data.tex);
+    glBindTexture(GL_TEXTURE_2D_ARRAY, data.tex);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, ToGLTextureWrapping(info.wrapping));
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, ToGLTextureWrapping(info.wrapping));
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BASE_LEVEL, 0);
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAX_LEVEL, static_cast<GLint>(mipLevels - 1));
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, ToGLTextureFilter(info.filter, mipLevels > 1));
+    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, ToGLTextureFilter(info.filter));
+    for(uint32_t mip = 0; mip < mipLevels; ++mip)
+        glTexImage3D(GL_TEXTURE_2D_ARRAY, mip, GetTextureInternalFormat(info.format),
+            std::max(1u, info.width >> mip), std::max(1u, info.height >> mip), info.arrayElements,
+            0, GetTextureFormat(info.format), GetTextureDataType(info.format), nullptr);
+    glCheckError();
+    return true;
+}
+
+void OpenglGPUDevice::_UploadTexture2DArray(Texture2DArrayData& data, const void* bytes, size_t, int arrayElement, int mipLevel){
+    if(arrayElement < 0 || mipLevel < 0 || static_cast<uint32_t>(arrayElement) >= data.info.arrayElements || static_cast<uint32_t>(mipLevel) >= GetTextureMipLevels(data.info.width, data.info.height, data.info.mipmap, data.info.mipLevels)) return;
+    glBindTexture(GL_TEXTURE_2D_ARRAY, data.tex);
+    glTexSubImage3D(GL_TEXTURE_2D_ARRAY, mipLevel, 0, 0, arrayElement,
+        std::max(1u, data.info.width >> mipLevel), std::max(1u, data.info.height >> mipLevel), 1,
+        GetTextureFormat(data.info.format), GetTextureDataType(data.info.format), bytes);
+    if(data.info.mipmap && data.info.mipLevels == 0 && mipLevel == 0) glGenerateMipmap(GL_TEXTURE_2D_ARRAY);
+    glCheckError();
+}
+
+void OpenglGPUDevice::_DestroyTexture2DArray(Texture2DArrayData& data){
+    if(data.tex) glDeleteTextures(1, &data.tex);
+    data = {};
+}
 
 bool OpenglGPUDevice::_CreateCubemap(CubemapData& data, const CubemapInfo& info){
     /*data.info = info;
@@ -596,6 +634,7 @@ bool OpenglGPUDevice::_CreateCubemap(CubemapData& data, const CubemapInfo& info)
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, ToGLTextureWrapping(info.wrapping));
     if(info.mipmap) glGenerateMipmap(GL_TEXTURE_CUBE_MAP);*/
 
+    if(info.width == 0 || info.height == 0 || info.mipLevels > GetTextureMipLevels(info.width, info.height, true)) return false;
     data.info = info;
     glGenTextures(1, &data.tex);
     glBindTexture(GL_TEXTURE_CUBE_MAP, data.tex);
@@ -612,22 +651,40 @@ bool OpenglGPUDevice::_CreateCubemap(CubemapData& data, const CubemapInfo& info)
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, mip, GetTextureInternalFormat(info.format),
                 std::max(1u, info.width >> mip), std::max(1u, info.height >> mip), 0,
                 GetTextureFormat(info.format), GetTextureDataType(info.format), nullptr);
-    if(mipLevels > 1 && info.mipmap && info.mipLevels == 0) glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
     return true;
 }
 
-void OpenglGPUDevice::_UploadCubemap(CubemapData& data, const void* rawData, size_t size){
+void OpenglGPUDevice::_UploadCubemap(CubemapData& data, const void* rawData, size_t size, int mipLevel){
+    const uint32_t mipLevels = GetTextureMipLevels(data.info.width, data.info.height, data.info.mipmap, data.info.mipLevels);
+    if(mipLevel < 0 || static_cast<uint32_t>(mipLevel) >= mipLevels || size == 0) return;
+    const uint32_t width = std::max(1u, data.info.width >> mipLevel);
+    const uint32_t height = std::max(1u, data.info.height >> mipLevel);
+    const size_t bytesPerPixel = data.info.format == ImageFormat::R8G8B8_UNORM || data.info.format == ImageFormat::R8G8B8_SRGB ? 3 : 4;
+    const size_t expectedFaceSize = static_cast<size_t>(width) * height * bytesPerPixel;
+    const size_t expected = expectedFaceSize * 6;
+    if(size < expected || size % 6 != 0) return;
     const size_t faceSize = size / 6;
-    const size_t expected = static_cast<size_t>(data.info.width) * data.info.height * 4 * 6;
-    if(size < expected) return;
     glBindTexture(GL_TEXTURE_CUBE_MAP, data.tex);
     for(int face = 0; face < 6; ++face){
-        glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0, 0, 0,
-            data.info.width, data.info.height, GetTextureFormat(data.info.format),
+        glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, mipLevel, 0, 0,
+            width, height, GetTextureFormat(data.info.format),
             GetTextureDataType(data.info.format), static_cast<const uint8_t*>(rawData) + face * faceSize);
         glCheckError();
     }
-    if(data.info.mipmap) glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+    if(data.info.mipmap && data.info.mipLevels == 0 && mipLevel == 0) glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+    glCheckError();
+}
+
+void OpenglGPUDevice::_UploadCubemapFace(CubemapData& data, const void* rawData, size_t size, CubemapFace face, int mipLevel){
+    const uint32_t faceIndex = static_cast<uint32_t>(face);
+    const uint32_t mipLevels = GetTextureMipLevels(data.info.width, data.info.height, data.info.mipmap, data.info.mipLevels);
+    if(faceIndex >= 6 || mipLevel < 0 || static_cast<uint32_t>(mipLevel) >= mipLevels || size == 0) return;
+    const uint32_t width = std::max(1u, data.info.width >> mipLevel);
+    const uint32_t height = std::max(1u, data.info.height >> mipLevel);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, data.tex);
+    glTexSubImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + faceIndex, mipLevel, 0, 0, width, height,
+        GetTextureFormat(data.info.format), GetTextureDataType(data.info.format), rawData);
+    if(data.info.mipmap && data.info.mipLevels == 0 && mipLevel == 0) glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
     glCheckError();
 }
 
@@ -1021,6 +1078,7 @@ void OpenglGPUDevice::_Init(){
 
 void OpenglGPUDevice::_Shut(){
     LogInfo("OpenglGPUDevice::Shut");
+    texture2DArrayPool.ForEach([&](uint32_t, Texture2DArrayData& data){ if(data.tex != 0) _DestroyTexture2DArray(data); });
     cubemapPool.ForEach([&](uint32_t, CubemapData& data){
         if(data.tex != 0) _DestroyCubemap(data);
     });
@@ -1402,7 +1460,7 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
         case ResourceCommands::Type::UploadTexture2D:{
             Assert(texture2DPool.IsValid(cmd.uploadTexture2D.id));
             auto& data = texture2DPool.Get(cmd.uploadTexture2D.id);
-            _UploadTexture2D(data, cmd.uploadTexture2D.data, cmd.uploadTexture2D.size);
+            _UploadTexture2D(data, cmd.uploadTexture2D.data, cmd.uploadTexture2D.size, cmd.uploadTexture2D.mipLevel);
             break;
         }
 
@@ -1414,6 +1472,26 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
             break;
         }
 
+        case ResourceCommands::Type::CreateTexture2DArray:{
+            Assert(texture2DArrayPool.IsValid(cmd.createTexture2DArray.id));
+            auto& data = texture2DArrayPool.Get(cmd.createTexture2DArray.id);
+            if(!_CreateTexture2DArray(data, cmd.createTexture2DArray.info)) texture2DArrayPool.AddDestroyedId(cmd.createTexture2DArray.id);
+            break;
+        }
+        case ResourceCommands::Type::UploadTexture2DArray:{
+            Assert(texture2DArrayPool.IsValid(cmd.uploadTexture2DArray.id));
+            auto& data = texture2DArrayPool.Get(cmd.uploadTexture2DArray.id);
+            _UploadTexture2DArray(data, cmd.uploadTexture2DArray.data, cmd.uploadTexture2DArray.size,
+                cmd.uploadTexture2DArray.arrayElement, cmd.uploadTexture2DArray.mipLevel);
+            break;
+        }
+        case ResourceCommands::Type::DestroyTexture2DArray:{
+            Assert(texture2DArrayPool.IsValid(cmd.destroyTexture2DArray.id));
+            _DestroyTexture2DArray(texture2DArrayPool.Get(cmd.destroyTexture2DArray.id));
+            texture2DArrayPool.AddDestroyedId(cmd.destroyTexture2DArray.id);
+            break;
+        }
+
         case ResourceCommands::Type::CreateCubemap:{
             Assert(cubemapPool.IsValid(cmd.createCubemap.id));
             auto& data = cubemapPool.Get(cmd.createCubemap.id);
@@ -1422,7 +1500,13 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
         }
         case ResourceCommands::Type::UploadCubemap:{
             Assert(cubemapPool.IsValid(cmd.uploadCubemap.id));
-            _UploadCubemap(cubemapPool.Get(cmd.uploadCubemap.id), cmd.uploadCubemap.data, cmd.uploadCubemap.size);
+            _UploadCubemap(cubemapPool.Get(cmd.uploadCubemap.id), cmd.uploadCubemap.data, cmd.uploadCubemap.size, cmd.uploadCubemap.mipLevel);
+            break;
+        }
+        case ResourceCommands::Type::UploadCubemapFace:{
+            Assert(cubemapPool.IsValid(cmd.uploadCubemapFace.id));
+            _UploadCubemapFace(cubemapPool.Get(cmd.uploadCubemapFace.id), cmd.uploadCubemapFace.data,
+                cmd.uploadCubemapFace.size, cmd.uploadCubemapFace.face, cmd.uploadCubemapFace.mipLevel);
             break;
         }
         case ResourceCommands::Type::DestroyCubemap:{
@@ -1652,6 +1736,7 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                     Assert(pipeline.info.bindGroupLayouts[cmd.setBindGroup.slot] == bindGroup.layout);
 
                     GLuint blockIndex = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].blockIndex;
+                    if(blockIndex == GL_INVALID_INDEX) continue;
                     Assert(blockIndex != GL_INVALID_INDEX);
                     Assert(pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].bufferSize <= buffer.size);
 
@@ -1704,7 +1789,16 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
 
                 if(bindGroupLayout.info.entries[i].type == BindingType::Texture2DArray){
                     const BindingEntry& binding = bindGroup.entries[i];
-                    if(binding.framebuffer != InvalidID){
+                    if(binding.textureArray != InvalidID){
+                        const Texture2DArrayData& tex = texture2DArrayPool.Get(binding.textureArray);
+                        GLuint uniformLoc = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].uniformLoc;
+                        Assert(uniformLoc >= 0);
+                        glActiveTexture(GL_TEXTURE0 + curTextureIndex);
+                        glBindTexture(GL_TEXTURE_2D_ARRAY, tex.tex);
+                        glUniform1i(uniformLoc, curTextureIndex);
+                        glCheckError();
+                        curTextureIndex += 1;
+                    } else if(binding.framebuffer != InvalidID){
                         const FramebufferData& tex = framebufferPool.Get(binding.framebuffer);
 
                         GLuint uniformLoc = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].uniformLoc;
@@ -1953,6 +2047,7 @@ void OpenglGPUDevice::SyncSingleThreadData(){
     pipelinePool.SyncSingleThreadData();
     bindGroupPool.SyncSingleThreadData();
     cubemapPool.SyncSingleThreadData();
+    texture2DArrayPool.SyncSingleThreadData();
 
     profilesCpu.clear();
     for(auto& i :profilesGpu) profilesCpu.push_back(i);
@@ -2028,12 +2123,34 @@ Texture2D OpenglGPUDevice::CreateTexture2D(Texture2DInfo& info){
     #endif
 }
 
-void OpenglGPUDevice::UploadTexture2D(Texture2D texture, const void* data, size_t size){
-    multithreadRendererContext.simulationFrame->resourceCommands.UploadTexture2D(texture, data, size);
+void OpenglGPUDevice::UploadTexture2D(Texture2D texture, const void* data, size_t size, int mipLevel){
+    multithreadRendererContext.simulationFrame->resourceCommands.UploadTexture2D(texture, data, size, mipLevel);
 }
 
 void OpenglGPUDevice::DestroyTexture2D(Texture2D tex){
     multithreadRendererContext.simulationFrame->resourceCommands.DestroyTexture2D(tex);
+}
+
+Texture2DArray OpenglGPUDevice::CreateTexture2DArray(Texture2DArrayInfo& info){
+#ifdef DONT_DEFERRED_RESOURCE_CREATION
+    Texture2DArrayData data{};
+    if(!_CreateTexture2DArray(data, info)) return InvalidID;
+    auto id = texture2DArrayPool.AllocId();
+    texture2DArrayPool.CpuPushResource(id, data);
+    return id;
+#else
+    auto id = texture2DArrayPool.AllocId();
+    multithreadRendererContext.simulationFrame->resourceCommands.CreateTexture2DArray(id, info);
+    return id;
+#endif
+}
+
+void OpenglGPUDevice::UploadTexture2DArray(Texture2DArray texture, const void* data, size_t size, int arrayElement, int mipLevel){
+    multithreadRendererContext.simulationFrame->resourceCommands.UploadTexture2DArray(texture, data, size, arrayElement, mipLevel);
+}
+
+void OpenglGPUDevice::DestroyTexture2DArray(Texture2DArray tex){
+    multithreadRendererContext.simulationFrame->resourceCommands.DestroyTexture2DArray(tex);
 }
 
 Cubemap OpenglGPUDevice::CreateCubemap(CubemapInfo& info){
@@ -2054,8 +2171,12 @@ Cubemap OpenglGPUDevice::CreateCubemap(CubemapInfo& info){
     #endif
 }
 
-void OpenglGPUDevice::UploadCubemap(Cubemap cubemap, const void* data, size_t size){
-    multithreadRendererContext.simulationFrame->resourceCommands.UploadCubemap(cubemap, data, size);
+void OpenglGPUDevice::UploadCubemap(Cubemap cubemap, const void* data, size_t size, int mipLevel){
+    multithreadRendererContext.simulationFrame->resourceCommands.UploadCubemap(cubemap, data, size, mipLevel);
+}
+
+void OpenglGPUDevice::UploadCubemap(Cubemap cubemap, const void* data, size_t size, CubemapFace face, int mipLevel){
+    multithreadRendererContext.simulationFrame->resourceCommands.UploadCubemap(cubemap, data, size, face, mipLevel);
 }
 
 void OpenglGPUDevice::DestroyCubemap(Cubemap cubemap){

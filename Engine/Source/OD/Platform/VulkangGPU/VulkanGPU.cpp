@@ -377,7 +377,7 @@ VmaMemoryUsage GetVulkanMemoryUsage(BufferMemory memory){
 }
 
 VkCullModeFlags GetVulkanCullMode(CullFace cull){
-    return VK_CULL_MODE_NONE;
+    //return VK_CULL_MODE_NONE;
     
     switch(cull){
         case CullFace::NONE:           return VK_CULL_MODE_NONE;
@@ -388,9 +388,10 @@ VkCullModeFlags GetVulkanCullMode(CullFace cull){
         case CullFace::BACK:           return VK_CULL_MODE_BACK_BIT; 
         case CullFace::FRONT:          return VK_CULL_MODE_FRONT_BIT; 
         #endif
-    
         case CullFace::FRONT_AND_BACK: return VK_CULL_MODE_FRONT_AND_BACK;
     }
+
+    Assert(false);
     return VK_CULL_MODE_BACK_BIT;
 }
 
@@ -819,7 +820,7 @@ VkFormat ToVkDepthFormat(FramebufferDepthTextureFormat format){
         case FramebufferDepthTextureFormat::DEPTH24_STENCIL8: return VK_FORMAT_D24_UNORM_S8_UINT;
         case FramebufferDepthTextureFormat::DEPTH32F_STENCIL8: return VK_FORMAT_D32_SFLOAT_S8_UINT;
         case FramebufferDepthTextureFormat::DEPTH_COMPONENT16: return VK_FORMAT_D16_UNORM;
-        case FramebufferDepthTextureFormat::DEPTH_COMPONENT24: return VK_FORMAT_D16_UNORM; //VK_FORMAT_D24_UNORM;
+        case FramebufferDepthTextureFormat::DEPTH_COMPONENT24: return VK_FORMAT_D32_SFLOAT;// VK_FORMAT_X8_D24_UNORM_PACK32;
         case FramebufferDepthTextureFormat::DEPTH_COMPONENT32: return VK_FORMAT_D32_SFLOAT;
         case FramebufferDepthTextureFormat::DEPTH_COMPONENT32F: return VK_FORMAT_D32_SFLOAT;
         //default: return VK_FORMAT_UNDEFINED;
@@ -1037,7 +1038,22 @@ static uint32_t GetTextureMipLevels(uint32_t width, uint32_t height, bool mipmap
     return levels;
 }
 
+static bool SupportsAutomaticMipGeneration(VkFormat format, TextureFilter filter){
+    VkFormatProperties properties{};
+    vkGetPhysicalDeviceFormatProperties(_chosenGPU, format, &properties);
+    VkFormatFeatureFlags required = VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_BLIT_DST_BIT |
+        VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
+    if(filter == TextureFilter::Linear) required |= VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT;
+    return (properties.optimalTilingFeatures & required) == required;
+}
+
 bool VulkanGPUDevice::_CreateTexture2D(Texture2DData& texData, const Texture2DInfo& info){
+    if(info.width == 0 || info.height == 0 || info.mipLevels > GetTextureMipLevels(info.width, info.height, true)) return false;
+    const uint32_t mipLevels = GetTextureMipLevels(info.width, info.height, info.mipmap, info.mipLevels);
+    if(info.mipmap && info.mipLevels == 0 && mipLevels > 1 && !SupportsAutomaticMipGeneration(GetImageFormat(info.format), info.filter)){
+        LogError("Texture2D: automatic mip generation is unsupported for this format; provide mip levels explicitly or disable mipmaps.");
+        return false;
+    }
     texData.info = info;
 
     //the format R8G8B8A8 matches exactly with the pixels loaded from stb_image lib
@@ -1051,10 +1067,9 @@ bool VulkanGPUDevice::_CreateTexture2D(Texture2DData& texData, const Texture2DIn
     imageExtent.height = info.height;
     imageExtent.depth = 1;
 
-    const uint32_t mipLevels = GetTextureMipLevels(info.width, info.height, info.mipmap, info.mipLevels);
     VkImageCreateInfo dimg_info = vkinit::image_create_info(image_format,
         VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-        (info.mipmap ? VK_IMAGE_USAGE_TRANSFER_SRC_BIT : 0), imageExtent);
+        ((info.mipmap && info.mipLevels == 0 && mipLevels > 1) ? VK_IMAGE_USAGE_TRANSFER_SRC_BIT : 0), imageExtent);
     dimg_info.mipLevels = mipLevels;
 
     VmaAllocationCreateInfo dimg_allocinfo = {};
@@ -1075,12 +1090,17 @@ bool VulkanGPUDevice::_CreateTexture2D(Texture2DData& texData, const Texture2DIn
 }
 
 bool VulkanGPUDevice::_CreateCubemap(CubemapData& data, const CubemapInfo& info){
+    if(info.width == 0 || info.height == 0 || info.mipLevels > GetTextureMipLevels(info.width, info.height, true)) return false;
     data.info = info;
     VkExtent3D extent{info.width, info.height, 1};
     const uint32_t mipLevels = GetTextureMipLevels(info.width, info.height, info.mipmap, info.mipLevels);
+    if(info.mipmap && info.mipLevels == 0 && mipLevels > 1 && !SupportsAutomaticMipGeneration(GetImageFormat(info.format), info.filter)){
+        LogError("Cubemap: automatic mip generation is unsupported for this format; provide mip levels explicitly or disable mipmaps.");
+        return false;
+    }
     VkImageCreateInfo imageInfo = vkinit::image_create_info(GetImageFormat(info.format),
         VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-        (info.mipmap ? VK_IMAGE_USAGE_TRANSFER_SRC_BIT : 0), extent);
+        ((info.mipmap && info.mipLevels == 0 && mipLevels > 1) ? VK_IMAGE_USAGE_TRANSFER_SRC_BIT : 0), extent);
     imageInfo.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
     imageInfo.arrayLayers = 6;
     imageInfo.mipLevels = mipLevels;
@@ -1098,17 +1118,125 @@ bool VulkanGPUDevice::_CreateCubemap(CubemapData& data, const CubemapInfo& info)
     return true;
 }
 
-void VulkanGPUDevice::_UploadCubemap(CubemapData& data, const void* rawData, size_t size){
+bool VulkanGPUDevice::_CreateTexture2DArray(Texture2DArrayData& data, const Texture2DArrayInfo& info){
+    if(info.width == 0 || info.height == 0 || info.arrayElements == 0) return false;
+    if(info.mipLevels > GetTextureMipLevels(info.width, info.height, true)) return false;
+    data.info = info;
+    const uint32_t mipLevels = GetTextureMipLevels(info.width, info.height, info.mipmap, info.mipLevels);
+    if(info.mipmap && info.mipLevels == 0 && mipLevels > 1 && !SupportsAutomaticMipGeneration(GetImageFormat(info.format), info.filter)){
+        LogError("Texture2DArray: automatic mip generation is unsupported for this format; provide mip levels explicitly or disable mipmaps.");
+        return false;
+    }
+    VkExtent3D extent{info.width, info.height, 1};
+    VkImageCreateInfo imageInfo = vkinit::image_create_info(GetImageFormat(info.format),
+        VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+        ((info.mipmap && info.mipLevels == 0 && mipLevels > 1) ? VK_IMAGE_USAGE_TRANSFER_SRC_BIT : 0), extent);
+    imageInfo.arrayLayers = info.arrayElements;
+    imageInfo.mipLevels = mipLevels;
+    VmaAllocationCreateInfo allocInfo{};
+    allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    VK_CHECK(vmaCreateImage(_allocator, &imageInfo, &allocInfo, &data.image, &data.allocation, nullptr));
+
+    VkImageViewCreateInfo viewInfo = vkinit::imageview_create_info(GetImageFormat(info.format), data.image, GetImageAspect(info.format));
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    viewInfo.subresourceRange.layerCount = info.arrayElements;
+    viewInfo.subresourceRange.levelCount = mipLevels;
+    VK_CHECK(vkCreateImageView(_device, &viewInfo, nullptr, &data.imageView));
+    VkSamplerCreateInfo samplerInfo = CreateTextureSampler(info.filter, info.wrapping);
+    samplerInfo.maxLod = static_cast<float>(mipLevels);
+    VK_CHECK(vkCreateSampler(_device, &samplerInfo, nullptr, &data.sampler));
+    return true;
+}
+
+void VulkanGPUDevice::_UploadTexture2DArray(Texture2DArrayData& data, const void* bytes, size_t size, int arrayElement, int mipLevel){
+    const uint32_t mipLevels = GetTextureMipLevels(data.info.width, data.info.height, data.info.mipmap, data.info.mipLevels);
+    if(arrayElement < 0 || mipLevel < 0 || static_cast<uint32_t>(arrayElement) >= data.info.arrayElements || static_cast<uint32_t>(mipLevel) >= mipLevels || size == 0) return;
+    const uint32_t uploadArrayElement = static_cast<uint32_t>(arrayElement);
+    const uint32_t uploadMipLevel = static_cast<uint32_t>(mipLevel);
+    AllocatedBuffer staging = create_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+    void* mapped = nullptr;
+    vmaMapMemory(_allocator, staging._allocation, &mapped);
+    memcpy(mapped, bytes, size);
+    vmaUnmapMemory(_allocator, staging._allocation);
+    immediate_submit([&](VkCommandBuffer command){
+        const bool generateMips = data.info.mipmap && data.info.mipLevels == 0 && mipLevel == 0 && mipLevels > 1;
+        VkImageSubresourceRange range{GetImageAspect(data.info.format), generateMips ? 0u : uploadMipLevel, generateMips ? mipLevels : 1u, uploadArrayElement, 1};
+        VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.image = data.image; barrier.subresourceRange = range;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+        VkBufferImageCopy copy{};
+        copy.imageSubresource = {GetImageAspect(data.info.format), uploadMipLevel, uploadArrayElement, 1};
+        copy.imageExtent = {std::max(1u, data.info.width >> uploadMipLevel), std::max(1u, data.info.height >> uploadMipLevel), 1};
+        vkCmdCopyBufferToImage(command, staging._buffer, data.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+
+        if(generateMips){
+            for(uint32_t mip = 1; mip < mipLevels; ++mip){
+                VkImageMemoryBarrier mipBarrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+                mipBarrier.image = data.image;
+                mipBarrier.subresourceRange = {GetImageAspect(data.info.format), mip - 1, 1, uploadArrayElement, 1};
+                mipBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                mipBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                mipBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                mipBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+                vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &mipBarrier);
+                VkImageBlit blit{};
+                blit.srcSubresource = {GetImageAspect(data.info.format), mip - 1, uploadArrayElement, 1};
+                blit.srcOffsets[1] = {static_cast<int32_t>(std::max(1u, data.info.width >> (mip - 1))), static_cast<int32_t>(std::max(1u, data.info.height >> (mip - 1))), 1};
+                blit.dstSubresource = {GetImageAspect(data.info.format), mip, uploadArrayElement, 1};
+                blit.dstOffsets[1] = {static_cast<int32_t>(std::max(1u, data.info.width >> mip)), static_cast<int32_t>(std::max(1u, data.info.height >> mip)), 1};
+                vkCmdBlitImage(command, data.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, data.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit,
+                    data.info.filter == TextureFilter::Nearest ? VK_FILTER_NEAREST : VK_FILTER_LINEAR);
+            }
+            std::vector<VkImageMemoryBarrier> barriers(mipLevels);
+            for(uint32_t mip = 0; mip < mipLevels; ++mip){
+                auto& finalBarrier = barriers[mip];
+                finalBarrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+                finalBarrier.image = data.image;
+                finalBarrier.subresourceRange = {GetImageAspect(data.info.format), mip, 1, uploadArrayElement, 1};
+                finalBarrier.oldLayout = mip + 1 == mipLevels ? VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                finalBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                finalBarrier.srcAccessMask = mip + 1 == mipLevels ? VK_ACCESS_TRANSFER_WRITE_BIT : VK_ACCESS_TRANSFER_READ_BIT;
+                finalBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            }
+            vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, static_cast<uint32_t>(barriers.size()), barriers.data());
+            return;
+        }
+        barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    });
+    vmaDestroyBuffer(_allocator, staging._buffer, staging._allocation);
+}
+
+void VulkanGPUDevice::_DestroyTexture2DArray(Texture2DArrayData& data){
+    if(data.sampler) vkDestroySampler(_device, data.sampler, nullptr);
+    if(data.imageView) vkDestroyImageView(_device, data.imageView, nullptr);
+    if(data.image) vmaDestroyImage(_allocator, data.image, data.allocation);
+    data = {};
+}
+
+void VulkanGPUDevice::_UploadCubemap(CubemapData& data, const void* rawData, size_t size, int mipLevel){
+    const uint32_t mipLevels = GetTextureMipLevels(data.info.width, data.info.height, data.info.mipmap, data.info.mipLevels);
+    if(mipLevel < 0 || static_cast<uint32_t>(mipLevel) >= mipLevels || size == 0) return;
+    const uint32_t uploadMipLevel = static_cast<uint32_t>(mipLevel);
+    const uint32_t width = std::max(1u, data.info.width >> uploadMipLevel);
+    const uint32_t height = std::max(1u, data.info.height >> uploadMipLevel);
+    const size_t expectedFaceSize = static_cast<size_t>(width) * height * 4;
+    if(size < expectedFaceSize * 6 || size % 6 != 0) return;
     const size_t faceSize = size / 6;
-    if(size < static_cast<size_t>(data.info.width) * data.info.height * 4 * 6) return;
     AllocatedBuffer staging = create_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
     void* mapped = nullptr;
     vmaMapMemory(_allocator, staging._allocation, &mapped);
     memcpy(mapped, rawData, size);
     vmaUnmapMemory(_allocator, staging._allocation);
-    const uint32_t mipLevels = GetTextureMipLevels(data.info.width, data.info.height, data.info.mipmap, data.info.mipLevels);
     immediate_submit([&](VkCommandBuffer command){
-        VkImageSubresourceRange range{VK_IMAGE_ASPECT_COLOR_BIT, 0, mipLevels, 0, 6};
+        const bool generateMips = data.info.mipmap && data.info.mipLevels == 0 && mipLevel == 0 && mipLevels > 1;
+        VkImageSubresourceRange range{VK_IMAGE_ASPECT_COLOR_BIT, generateMips ? 0u : uploadMipLevel, generateMips ? mipLevels : 1u, 0, 6};
         VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
         barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -1118,11 +1246,11 @@ void VulkanGPUDevice::_UploadCubemap(CubemapData& data, const void* rawData, siz
         VkBufferImageCopy copies[6]{};
         for(uint32_t face = 0; face < 6; ++face){
             copies[face].bufferOffset = face * faceSize;
-            copies[face].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, face, 1};
-            copies[face].imageExtent = {data.info.width, data.info.height, 1};
+            copies[face].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, uploadMipLevel, face, 1};
+            copies[face].imageExtent = {width, height, 1};
         }
         vkCmdCopyBufferToImage(command, staging._buffer, data.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 6, copies);
-        if(!data.info.mipmap){
+        if(!generateMips){
             barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
             barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -1146,7 +1274,8 @@ void VulkanGPUDevice::_UploadCubemap(CubemapData& data, const void* rawData, siz
             blit.srcOffsets[1] = {static_cast<int32_t>(std::max(1u, data.info.width >> (mip - 1))), static_cast<int32_t>(std::max(1u, data.info.height >> (mip - 1))), 1};
             blit.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, mip, 0, 6};
             blit.dstOffsets[1] = {static_cast<int32_t>(std::max(1u, data.info.width >> mip)), static_cast<int32_t>(std::max(1u, data.info.height >> mip)), 1};
-            vkCmdBlitImage(command, data.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, data.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
+            vkCmdBlitImage(command, data.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, data.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit,
+                data.info.filter == TextureFilter::Nearest ? VK_FILTER_NEAREST : VK_FILTER_LINEAR);
         }
 
         VkImageMemoryBarrier generatedBarriers[2]{};
@@ -1169,6 +1298,78 @@ void VulkanGPUDevice::_UploadCubemap(CubemapData& data, const void* rawData, siz
     vmaDestroyBuffer(_allocator, staging._buffer, staging._allocation);
 }
 
+void VulkanGPUDevice::_UploadCubemapFace(CubemapData& data, const void* rawData, size_t size, CubemapFace face, int mipLevel){
+    const uint32_t faceIndex = static_cast<uint32_t>(face);
+    const uint32_t mipLevels = GetTextureMipLevels(data.info.width, data.info.height, data.info.mipmap, data.info.mipLevels);
+    if(faceIndex >= 6 || mipLevel < 0 || static_cast<uint32_t>(mipLevel) >= mipLevels || size == 0) return;
+    const uint32_t uploadMipLevel = static_cast<uint32_t>(mipLevel);
+    const uint32_t width = std::max(1u, data.info.width >> uploadMipLevel);
+    const uint32_t height = std::max(1u, data.info.height >> uploadMipLevel);
+
+    AllocatedBuffer staging = create_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+    void* mapped = nullptr;
+    vmaMapMemory(_allocator, staging._allocation, &mapped);
+    memcpy(mapped, rawData, size);
+    vmaUnmapMemory(_allocator, staging._allocation);
+    immediate_submit([&](VkCommandBuffer command){
+        const bool generateMips = data.info.mipmap && data.info.mipLevels == 0 && mipLevel == 0 && mipLevels > 1;
+        VkImageSubresourceRange range{VK_IMAGE_ASPECT_COLOR_BIT, generateMips ? 0u : uploadMipLevel, generateMips ? mipLevels : 1u, faceIndex, 1};
+        VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.image = data.image;
+        barrier.subresourceRange = range;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+        VkBufferImageCopy copy{};
+        copy.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, uploadMipLevel, faceIndex, 1};
+        copy.imageExtent = {width, height, 1};
+        vkCmdCopyBufferToImage(command, staging._buffer, data.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+
+        if(generateMips){
+            for(uint32_t mip = 1; mip < mipLevels; ++mip){
+                VkImageMemoryBarrier mipBarrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+                mipBarrier.image = data.image;
+                mipBarrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, mip - 1, 1, faceIndex, 1};
+                mipBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                mipBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                mipBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+                mipBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+                vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &mipBarrier);
+
+                VkImageBlit blit{};
+                blit.srcSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, mip - 1, faceIndex, 1};
+                blit.srcOffsets[1] = {static_cast<int32_t>(std::max(1u, data.info.width >> (mip - 1))), static_cast<int32_t>(std::max(1u, data.info.height >> (mip - 1))), 1};
+                blit.dstSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, mip, faceIndex, 1};
+                blit.dstOffsets[1] = {static_cast<int32_t>(std::max(1u, data.info.width >> mip)), static_cast<int32_t>(std::max(1u, data.info.height >> mip)), 1};
+                vkCmdBlitImage(command, data.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, data.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit,
+                    data.info.filter == TextureFilter::Nearest ? VK_FILTER_NEAREST : VK_FILTER_LINEAR);
+            }
+
+            std::vector<VkImageMemoryBarrier> barriers(mipLevels);
+            for(uint32_t mip = 0; mip < mipLevels; ++mip){
+                auto& finalBarrier = barriers[mip];
+                finalBarrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+                finalBarrier.image = data.image;
+                finalBarrier.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, mip, 1, faceIndex, 1};
+                finalBarrier.oldLayout = mip + 1 == mipLevels ? VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL : VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+                finalBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                finalBarrier.srcAccessMask = mip + 1 == mipLevels ? VK_ACCESS_TRANSFER_WRITE_BIT : VK_ACCESS_TRANSFER_READ_BIT;
+                finalBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            }
+            vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, static_cast<uint32_t>(barriers.size()), barriers.data());
+        } else {
+            barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+        }
+    });
+    vmaDestroyBuffer(_allocator, staging._buffer, staging._allocation);
+}
+
 void VulkanGPUDevice::_DestroyCubemap(CubemapData& data){
     if(data.sampler) vkDestroySampler(_device, data.sampler, nullptr);
     if(data.imageView) vkDestroyImageView(_device, data.imageView, nullptr);
@@ -1176,16 +1377,21 @@ void VulkanGPUDevice::_DestroyCubemap(CubemapData& data){
     data = {};
 }
 
-void VulkanGPUDevice::_UploadTexture2D(Texture2DData& texData, const void* data, size_t size){
+void VulkanGPUDevice::_UploadTexture2D(Texture2DData& texData, const void* data, size_t size, int mipLevel){
+    const uint32_t mipLevels = GetTextureMipLevels(texData.width, texData.height, texData.info.mipmap, texData.info.mipLevels);
+    if(mipLevel < 0 || static_cast<uint32_t>(mipLevel) >= mipLevels || size == 0) return;
+    const uint32_t uploadMipLevel = static_cast<uint32_t>(mipLevel);
+    const uint32_t width = std::max(1u, texData.width >> uploadMipLevel);
+    const uint32_t height = std::max(1u, texData.height >> uploadMipLevel);
     AllocatedBuffer staging = create_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
     void* mapped = nullptr;
     vmaMapMemory(_allocator, staging._allocation, &mapped);
     memcpy(mapped, data, size);
     vmaUnmapMemory(_allocator, staging._allocation);
-    VkExtent3D extent{texData.width, texData.height, 1};
-    const uint32_t mipLevels = GetTextureMipLevels(texData.width, texData.height, texData.info.mipmap, texData.info.mipLevels);
+    VkExtent3D extent{width, height, 1};
     immediate_submit([&](VkCommandBuffer command){
-        VkImageSubresourceRange range{VK_IMAGE_ASPECT_COLOR_BIT, 0, mipLevels, 0, 1};
+        const bool generateMips = texData.info.mipmap && texData.info.mipLevels == 0 && mipLevel == 0 && mipLevels > 1;
+        VkImageSubresourceRange range{VK_IMAGE_ASPECT_COLOR_BIT, generateMips ? 0u : uploadMipLevel, generateMips ? mipLevels : 1u, 0, 1};
         VkImageMemoryBarrier barrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
         barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -1193,9 +1399,9 @@ void VulkanGPUDevice::_UploadTexture2D(Texture2DData& texData, const void* data,
         barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
         VkBufferImageCopy copy{};
-        copy.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1}; copy.imageExtent = extent;
+        copy.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, uploadMipLevel, 0, 1}; copy.imageExtent = extent;
         vkCmdCopyBufferToImage(command, staging._buffer, texData.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
-        if(!texData.info.mipmap){
+        if(!generateMips){
             barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
             barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -1375,7 +1581,15 @@ bool VulkanGPUDevice::_CreateBindGroup(BindGroupData& data, const BindGroupInfo&
                 info.entries[i].binding
             );
         } else if(layoutData.info.entries[i].type == BindingType::Texture2DArray){
-            if(info.entries[i].framebuffer != InvalidID){
+            if(info.entries[i].textureArray != InvalidID){
+                Texture2DArrayData& textureData = texture2DArrayPool.Get(info.entries[i].textureArray);
+                VkDescriptorImageInfo& imageInfo = imageInfos[i];
+                imageInfo.sampler = textureData.sampler;
+                imageInfo.imageView = textureData.imageView;
+                imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                writes[i] = vkinit::write_descriptor_image(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                    data.descriptorSet, &imageInfo, info.entries[i].binding);
+            } else if(info.entries[i].framebuffer != InvalidID){
                 FramebufferData& framebufferData = framebufferPool.Get(info.entries[i].framebuffer);
                 int attacment = info.entries[i].framebufferAttacement;
                 VkDescriptorImageInfo& imageInfo = imageInfos[i];
@@ -2086,6 +2300,7 @@ void VulkanGPUDevice::Cleanup(){
         if(data.image == VK_NULL_HANDLE) return;
         _DestroyTexture2D(data);
     });
+    texture2DArrayPool.ForEach([&](uint32_t, Texture2DArrayData& data){ if(data.image != VK_NULL_HANDLE) _DestroyTexture2DArray(data); });
 
     cubemapPool.ForEach([&](uint32_t id, CubemapData& data){
         if(data.image == VK_NULL_HANDLE) return;
@@ -2382,10 +2597,13 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                 auto& data = texture2DPool.Get(cmd.uploadTexture2D.id);
 
                 if(data.info.format == ImageFormat::R8G8B8_UNORM || data.info.format == ImageFormat::R8G8B8_SRGB){
-                    auto rgba = ConvertRGBToRGBA((uint8_t*)cmd.uploadTexture2D.data, data.width, data.height);
-                    _UploadTexture2D(data, rgba.data(), rgba.size());
+                    if(cmd.uploadTexture2D.mipLevel < 0 || static_cast<uint32_t>(cmd.uploadTexture2D.mipLevel) >= GetTextureMipLevels(data.width, data.height, data.info.mipmap, data.info.mipLevels)) break;
+                    const uint32_t width = std::max(1u, data.width >> cmd.uploadTexture2D.mipLevel);
+                    const uint32_t height = std::max(1u, data.height >> cmd.uploadTexture2D.mipLevel);
+                    auto rgba = ConvertRGBToRGBA(static_cast<const uint8_t*>(cmd.uploadTexture2D.data), width, height);
+                    _UploadTexture2D(data, rgba.data(), rgba.size(), cmd.uploadTexture2D.mipLevel);
                 } else {
-                    _UploadTexture2D(data, cmd.uploadTexture2D.data, cmd.uploadTexture2D.size);
+                    _UploadTexture2D(data, cmd.uploadTexture2D.data, cmd.uploadTexture2D.size, cmd.uploadTexture2D.mipLevel);
                 }
                 break;
             }
@@ -2398,6 +2616,36 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                 break;
             }
 
+            case ResourceCommands::Type::CreateTexture2DArray:{
+                Assert(texture2DArrayPool.IsValid(cmd.createTexture2DArray.id));
+                auto& data = texture2DArrayPool.Get(cmd.createTexture2DArray.id);
+                if(!_CreateTexture2DArray(data, cmd.createTexture2DArray.info)) texture2DArrayPool.AddDestroyedId(cmd.createTexture2DArray.id);
+                break;
+            }
+            case ResourceCommands::Type::UploadTexture2DArray:{
+                Assert(texture2DArrayPool.IsValid(cmd.uploadTexture2DArray.id));
+                auto& data = texture2DArrayPool.Get(cmd.uploadTexture2DArray.id);
+                if(cmd.uploadTexture2DArray.arrayElement < 0 || cmd.uploadTexture2DArray.mipLevel < 0 ||
+                    static_cast<uint32_t>(cmd.uploadTexture2DArray.arrayElement) >= data.info.arrayElements ||
+                    static_cast<uint32_t>(cmd.uploadTexture2DArray.mipLevel) >= GetTextureMipLevels(data.info.width, data.info.height, data.info.mipmap, data.info.mipLevels)) break;
+                if(data.info.format == ImageFormat::R8G8B8_UNORM || data.info.format == ImageFormat::R8G8B8_SRGB){
+                    const uint32_t width = std::max(1u, data.info.width >> cmd.uploadTexture2DArray.mipLevel);
+                    const uint32_t height = std::max(1u, data.info.height >> cmd.uploadTexture2DArray.mipLevel);
+                    auto rgba = ConvertRGBToRGBA(static_cast<const uint8_t*>(cmd.uploadTexture2DArray.data), width, height);
+                    _UploadTexture2DArray(data, rgba.data(), rgba.size(), cmd.uploadTexture2DArray.arrayElement, cmd.uploadTexture2DArray.mipLevel);
+                } else {
+                    _UploadTexture2DArray(data, cmd.uploadTexture2DArray.data, cmd.uploadTexture2DArray.size,
+                        cmd.uploadTexture2DArray.arrayElement, cmd.uploadTexture2DArray.mipLevel);
+                }
+                break;
+            }
+            case ResourceCommands::Type::DestroyTexture2DArray:{
+                Assert(texture2DArrayPool.IsValid(cmd.destroyTexture2DArray.id));
+                _DestroyTexture2DArray(texture2DArrayPool.Get(cmd.destroyTexture2DArray.id));
+                texture2DArrayPool.AddDestroyedId(cmd.destroyTexture2DArray.id);
+                break;
+            }
+
             case ResourceCommands::Type::CreateCubemap:{
                 Assert(cubemapPool.IsValid(cmd.createCubemap.id));
                 auto& data = cubemapPool.Get(cmd.createCubemap.id);
@@ -2406,7 +2654,41 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
             }
             case ResourceCommands::Type::UploadCubemap:{
                 Assert(cubemapPool.IsValid(cmd.uploadCubemap.id));
-                _UploadCubemap(cubemapPool.Get(cmd.uploadCubemap.id), cmd.uploadCubemap.data, cmd.uploadCubemap.size);
+                auto& data = cubemapPool.Get(cmd.uploadCubemap.id);
+                if((data.info.format == ImageFormat::R8G8B8_UNORM || data.info.format == ImageFormat::R8G8B8_SRGB) && cmd.uploadCubemap.mipLevel >= 0 &&
+                    static_cast<uint32_t>(cmd.uploadCubemap.mipLevel) < GetTextureMipLevels(data.info.width, data.info.height, data.info.mipmap, data.info.mipLevels)){
+                    const uint32_t width = std::max(1u, data.info.width >> cmd.uploadCubemap.mipLevel);
+                    const uint32_t height = std::max(1u, data.info.height >> cmd.uploadCubemap.mipLevel);
+                    const size_t faceSize = static_cast<size_t>(width) * height * 3;
+                    if(cmd.uploadCubemap.size < faceSize * 6) break;
+                    std::vector<uint8_t> rgba;
+                    rgba.reserve(static_cast<size_t>(width) * height * 4 * 6);
+                    for(uint32_t face = 0; face < 6; ++face){
+                        auto converted = ConvertRGBToRGBA(static_cast<const uint8_t*>(cmd.uploadCubemap.data) + face * faceSize, width, height);
+                        rgba.insert(rgba.end(), converted.begin(), converted.end());
+                    }
+                    _UploadCubemap(data, rgba.data(), rgba.size(), cmd.uploadCubemap.mipLevel);
+                } else {
+                    _UploadCubemap(data, cmd.uploadCubemap.data, cmd.uploadCubemap.size, cmd.uploadCubemap.mipLevel);
+                }
+                break;
+            }
+            case ResourceCommands::Type::UploadCubemapFace:{
+                Assert(cubemapPool.IsValid(cmd.uploadCubemapFace.id));
+                auto& data = cubemapPool.Get(cmd.uploadCubemapFace.id);
+                const uint32_t faceIndex = static_cast<uint32_t>(cmd.uploadCubemapFace.face);
+                if(faceIndex >= 6 || cmd.uploadCubemapFace.mipLevel < 0 ||
+                    static_cast<uint32_t>(cmd.uploadCubemapFace.mipLevel) >= GetTextureMipLevels(data.info.width, data.info.height, data.info.mipmap, data.info.mipLevels)) break;
+                if(data.info.format == ImageFormat::R8G8B8_UNORM || data.info.format == ImageFormat::R8G8B8_SRGB){
+                    const uint32_t width = std::max(1u, data.info.width >> cmd.uploadCubemapFace.mipLevel);
+                    const uint32_t height = std::max(1u, data.info.height >> cmd.uploadCubemapFace.mipLevel);
+                    if(cmd.uploadCubemapFace.size < static_cast<size_t>(width) * height * 3) break;
+                    auto rgba = ConvertRGBToRGBA(static_cast<const uint8_t*>(cmd.uploadCubemapFace.data), width, height);
+                    _UploadCubemapFace(data, rgba.data(), rgba.size(), cmd.uploadCubemapFace.face, cmd.uploadCubemapFace.mipLevel);
+                } else {
+                    _UploadCubemapFace(data, cmd.uploadCubemapFace.data, cmd.uploadCubemapFace.size,
+                        cmd.uploadCubemapFace.face, cmd.uploadCubemapFace.mipLevel);
+                }
                 break;
             }
             case ResourceCommands::Type::DestroyCubemap:{
@@ -3247,6 +3529,7 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
 void VulkanGPUDevice::SyncSingleThreadData(){
     bufferPool.SyncSingleThreadData();
     texture2DPool.SyncSingleThreadData();
+    texture2DArrayPool.SyncSingleThreadData();
     cubemapPool.SyncSingleThreadData();
     pipelinePool.SyncSingleThreadData();
     bindGroupLayoutPool.SyncSingleThreadData();
@@ -3327,12 +3610,34 @@ Texture2D VulkanGPUDevice::CreateTexture2D(Texture2DInfo& info){
     #endif
 }
 
-void VulkanGPUDevice::UploadTexture2D(Texture2D texture, const void* data, size_t size){
-    multithreadRendererContext.simulationFrame->resourceCommands.UploadTexture2D(texture, data, size);
+void VulkanGPUDevice::UploadTexture2D(Texture2D texture, const void* data, size_t size, int mipLevel){
+    multithreadRendererContext.simulationFrame->resourceCommands.UploadTexture2D(texture, data, size, mipLevel);
 }
 
 void VulkanGPUDevice::DestroyTexture2D(Texture2D tex){
     multithreadRendererContext.simulationFrame->resourceCommands.DestroyTexture2D(tex);
+}
+
+Texture2DArray VulkanGPUDevice::CreateTexture2DArray(Texture2DArrayInfo& info){
+#ifdef DONT_DEFERRED_RESOURCE_CREATION
+    Texture2DArrayData data{};
+    if(!_CreateTexture2DArray(data, info)) return InvalidID;
+    auto id = texture2DArrayPool.AllocId();
+    texture2DArrayPool.CpuPushResource(id, data);
+    return id;
+#else
+    auto id = texture2DArrayPool.AllocId();
+    multithreadRendererContext.simulationFrame->resourceCommands.CreateTexture2DArray(id, info);
+    return id;
+#endif
+}
+
+void VulkanGPUDevice::UploadTexture2DArray(Texture2DArray texture, const void* data, size_t size, int arrayElement, int mipLevel){
+    multithreadRendererContext.simulationFrame->resourceCommands.UploadTexture2DArray(texture, data, size, arrayElement, mipLevel);
+}
+
+void VulkanGPUDevice::DestroyTexture2DArray(Texture2DArray tex){
+    multithreadRendererContext.simulationFrame->resourceCommands.DestroyTexture2DArray(tex);
 }
 
 Cubemap VulkanGPUDevice::CreateCubemap(CubemapInfo& info){
@@ -3353,8 +3658,12 @@ Cubemap VulkanGPUDevice::CreateCubemap(CubemapInfo& info){
     #endif
 }
 
-void VulkanGPUDevice::UploadCubemap(Cubemap cubemap, const void* data, size_t size){
-    multithreadRendererContext.simulationFrame->resourceCommands.UploadCubemap(cubemap, data, size);
+void VulkanGPUDevice::UploadCubemap(Cubemap cubemap, const void* data, size_t size, int mipLevel){
+    multithreadRendererContext.simulationFrame->resourceCommands.UploadCubemap(cubemap, data, size, mipLevel);
+}
+
+void VulkanGPUDevice::UploadCubemap(Cubemap cubemap, const void* data, size_t size, CubemapFace face, int mipLevel){
+    multithreadRendererContext.simulationFrame->resourceCommands.UploadCubemap(cubemap, data, size, face, mipLevel);
 }
 
 void VulkanGPUDevice::DestroyCubemap(Cubemap cubemap){

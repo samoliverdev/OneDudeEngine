@@ -40,6 +40,7 @@
 #include "Samples/GPUSample8.h"
 #include "Samples/GPUSample9.h"
 #include "Samples/GPUSample10.h"
+#include "Samples/GPUSample11.h"
 
 #include <OD/Graphics/Texture.h>
 
@@ -53,11 +54,11 @@ OD::ApplicationConfig GetStartAppConfig(){
 }
 
 OD::Module* CreateMainModule(){
-    int i = 34; //10; //-1; //35;
+    int i = 10; //10; //-1; //35;
     //if(OD::Application::GetArgs().size() > 1) i = atoi(OD::Application::GetArgs()[1].c_str());
 
     #ifdef TestNewGPU_API
-    i = 22; //-4; //-3; //-2;
+    i = 34; //-4; //-3; //-2;
     #endif
     
     if(i == -2) return new GPUSample1();
@@ -70,6 +71,7 @@ OD::Module* CreateMainModule(){
     if(i == -9) return new GPUSample8();
     if(i == -10) return new GPUSample9();
     if(i == -11) return new GPUSample10();
+    if(i == -12) return new GPUSample11();
 
     if(i == -1) return new LoadSceneSample();
     
