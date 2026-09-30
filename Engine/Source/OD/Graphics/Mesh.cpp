@@ -57,6 +57,7 @@ Mesh::~Mesh(){
     graphicsDevice->MeshDestroy(*this);
 
     #ifdef TestNewGPU_API
+    Graphics::TrackMemoryUsage(GraphicsMemoryCategory::Mesh, vramUsage, 0);
     if(vertexVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(vertexVbo);
     if(uvVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(uvVbo);
     if(normalVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(normalVbo);
@@ -221,6 +222,8 @@ void Mesh::Submit(
     std::vector<IVector4>* influences
 ){
     #ifdef TestNewGPU_API
+    Graphics::TrackMemoryUsage(GraphicsMemoryCategory::Mesh, vramUsage, 0);
+    vramUsage = 0;
     if(ebo != Gfx::InvalidID) gfxDevice->DestroyBuffer(ebo);
     if(vertexVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(vertexVbo);
     if(uvVbo != Gfx::InvalidID) gfxDevice->DestroyBuffer(uvVbo);
@@ -290,6 +293,18 @@ void Mesh::Submit(
     
     indiceCount = indices == nullptr ? 0 : indices->size();
     vertexCount = vertices->size();
+    auto allocatedBytes = [](size_t count, size_t elementSize){
+        return std::max<size_t>(1, count) * elementSize;
+    };
+    vramUsage = allocatedBytes(indices ? indices->size() : 0, sizeof(unsigned int))
+        + allocatedBytes(vertices->size(), sizeof(Vector3))
+        + allocatedBytes(uv ? uv->size() : 0, sizeof(Vector3))
+        + allocatedBytes(normals ? normals->size() : 0, sizeof(Vector3))
+        + allocatedBytes(colors ? colors->size() : 0, sizeof(Vector4))
+        + allocatedBytes(tangents ? tangents->size() : 0, sizeof(Vector3))
+        + allocatedBytes(weights ? weights->size() : 0, sizeof(Vector3))
+        + allocatedBytes(influences ? influences->size() : 0, sizeof(IVector4));
+    Graphics::TrackMemoryUsage(GraphicsMemoryCategory::Mesh, 0, vramUsage);
     #else
     //Assert(isReadable == true && "Only can Update isReadable Mesh");
     //Destroy();

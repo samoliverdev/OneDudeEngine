@@ -124,7 +124,7 @@ private:
     unsigned int vertexCount = 0;
     unsigned int indiceCount = 0;
     size_t ramUsage;
-    size_t vramUsage;
+    size_t vramUsage = 0;
     MeshDataGL;
     MeshDataWG;
 

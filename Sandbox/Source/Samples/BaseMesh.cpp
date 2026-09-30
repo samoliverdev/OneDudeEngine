@@ -81,9 +81,13 @@ void BaseMeshSample::OnInit(){
 
     meshMat = ResourceManager::Get().Create<Material>(Resource::CreateFromFile<Shader>("Sandbox/Shaders/test.glsl")); //CreateRef<Material>(Shader::CreateFromFile("Sandbox/Shaders/test.glsl"));
 
-    font = Resource::CreateFromFile<Font>("Engine/Fonts/OpenSans/static/OpenSans_Condensed-MediumItalic.ttf", FontSettings{32, FontType::Raster});
+    /*font = Resource::CreateFromFile<Font>("Engine/Fonts/OpenSans/static/OpenSans_Condensed-MediumItalic.ttf", FontSettings{32, FontType::Raster});
     Assert(font != nullptr);
-    fontMat = ResourceManager::Get().Create<OD::Material>(Shader::CreateFromFile("Engine/Shaders/Font.glsl"));
+    fontMat = ResourceManager::Get().Create<OD::Material>(Shader::CreateFromFile("Engine/Shaders/Font.glsl"));*/
+
+    font =  ResourceManager::Get().LoadByPath<Font>("Engine/Fonts/OpenSans/static/OpenSans_Condensed-MediumItalic.ttf", FontSettings{8*3, FontType::MSDF});
+    fontMat = OD::CreateRef<OD::Material>(OD::Shader::CreateFromFile("Engine/Shaders/FontMSDF.glsl"));
+    fontMat->SetFloat("pxRange", font->MsdfPxRange());
 }
 
 void BaseMeshSample::OnUpdate(float deltaTime){
@@ -117,12 +121,17 @@ void BaseMeshSample::OnRender(float deltaTime){
     //Graphics::DrawMesh(mesh, *meshMat, math::translate(Vector3(-0.5f, 0, 0)));
     cmd.Execute();
     
-    /*cam = {Matrix4Identity,math::ortho(0.0f, (float)Application::ScreenWidth(), 0.0f, (float)Application::ScreenHeight(), -10.0f, 10.0f)};
+    cam = {Matrix4Identity,math::ortho(0.0f, (float)Application::ScreenWidth(), 0.0f, (float)Application::ScreenHeight(), -10.0f, 10.0f)};
     Graphics::SetCamera(cam);
+
     Transform tt;
     tt.Position(Vector3(25*2, 25*2, 0));
     tt.Scale(Vector3(25*2));
-    Graphics::DrawText(*font, *fontMat, "(C) LearnOpenGL.com", tt.GetModelMatrix(), false, {});*/
+    Graphics::DrawText(*font, *fontMat, "(C) LearnOpenGL.com", tt.GetModelMatrix(), false, {});
+
+    tt.Position(Vector3(25*2, 50*2, 0));
+    tt.Scale(Vector3(25*2));
+    Graphics::DrawText(*font, *fontMat, "(C) LearnOpenGL.com 2", tt.GetModelMatrix(), false, {});
     
     Graphics::EndRenderToScreen();
 

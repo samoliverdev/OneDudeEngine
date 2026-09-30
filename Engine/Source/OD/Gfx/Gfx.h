@@ -984,6 +984,7 @@ struct OD_API CommandBuffer{
     enum class Type{
         Clear,
         Viewport,
+        Scissor,
         SetPipeline,
         SetVertexBuffer,
         SetIndexBuffer,
@@ -1012,6 +1013,11 @@ struct OD_API CommandBuffer{
             struct {
                 uint32_t x, y, w, h;
             } viewport;
+
+            struct {
+                uint32_t x, y;
+                int32_t w, h;
+            } scissor;
 
             struct{
                 ClearFlags flags;
@@ -1097,6 +1103,16 @@ struct OD_API CommandBuffer{
         cmd.viewport.y = y;
         cmd.viewport.w = w;
         cmd.viewport.h = h;
+        commands.push_back(cmd);
+    }
+
+    inline void Scissor(uint32_t x, uint32_t y, int32_t w, int32_t h){
+        Command cmd{};
+        cmd.type = Type::Scissor;
+        cmd.scissor.x = x;
+        cmd.scissor.y = y;
+        cmd.scissor.w = w;
+        cmd.scissor.h = h;
         commands.push_back(cmd);
     }
 

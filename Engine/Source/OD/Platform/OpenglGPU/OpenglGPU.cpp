@@ -1619,6 +1619,12 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
             break;
         }
 
+        case CommandBuffer::Type::Scissor:{
+            glScissor(cmd.scissor.x, cmd.scissor.y, cmd.scissor.w, cmd.scissor.h);
+            glCheckError();
+            break;
+        }
+
         case CommandBuffer::Type::SetPipeline:{
             PipelineData& pipeline = pipelinePool.Get(cmd.setPipeline.id);
 

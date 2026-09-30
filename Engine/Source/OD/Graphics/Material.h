@@ -6,6 +6,8 @@
 #include "OD/Platform/OpenGL/GL.h"
 #include "OD/Gfx/Gfx.h"
 
+#define MaterialBindTest
+
 namespace sol{ class state; }
 
 namespace OD{
@@ -229,6 +231,18 @@ private:
     Gfx::ShaderBindingInfo materialBindGroupInfo;
     void* materialBufferData = nullptr;
     size_t materialBufferSize;
+
+#ifdef MaterialBindTest
+    struct MaterialBufferPoolEntry{
+        Gfx::Buffer buffer = Gfx::InvalidID;
+        size_t capacity = 0;
+    };
+
+    std::vector<MaterialBufferPoolEntry> materialBufferPool;
+    std::vector<MaterialBufferPoolEntry> retiredMaterialBuffers;
+    uint32_t materialBufferPoolIndex = 0;
+    uint64_t materialBufferPoolFrame = UINT64_MAX;
+#endif
 
     Ref<Texture2D> keepAlive = nullptr;
 

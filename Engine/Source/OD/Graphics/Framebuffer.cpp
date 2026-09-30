@@ -14,6 +14,39 @@ extern GraphicsDevice* graphicsDevice;
 extern Gfx::Device* gfxDevice;
 
 #ifdef TestNewGPU_API
+static size_t EstimateFramebufferBytes(const Gfx::FrameBufferLayout& layout, int width, int height){
+    auto colorBytes = [](Gfx::FramebufferTextureFormat format) -> size_t {
+        switch(format){
+            case Gfx::FramebufferTextureFormat::RED_INTEGER: return 4;
+            case Gfx::FramebufferTextureFormat::RGB: return 3;
+            case Gfx::FramebufferTextureFormat::RGB16F: return 6;
+            case Gfx::FramebufferTextureFormat::RGB11B10F: return 4;
+            case Gfx::FramebufferTextureFormat::RGBA8: return 4;
+            case Gfx::FramebufferTextureFormat::RGBA16F: return 8;
+            case Gfx::FramebufferTextureFormat::RGB32F: return 12;
+            case Gfx::FramebufferTextureFormat::RGBA32F: return 16;
+            default: return 0;
+        }
+    };
+    auto depthBytes = [](Gfx::FramebufferDepthTextureFormat format) -> size_t {
+        switch(format){
+            case Gfx::FramebufferDepthTextureFormat::DEPTH24_STENCIL8: return 4;
+            case Gfx::FramebufferDepthTextureFormat::DEPTH32F_STENCIL8: return 8;
+            case Gfx::FramebufferDepthTextureFormat::DEPTH_COMPONENT16: return 2;
+            case Gfx::FramebufferDepthTextureFormat::DEPTH_COMPONENT24: return 4;
+            case Gfx::FramebufferDepthTextureFormat::DEPTH_COMPONENT32: return 4;
+            case Gfx::FramebufferDepthTextureFormat::DEPTH_COMPONENT32F: return 4;
+            default: return 0;
+        }
+    };
+    size_t bytesPerPixel = depthBytes(layout.depthAttachment.format);
+    for(uint32_t i = 0; i < layout.colorAttachmentsCount; ++i)
+        bytesPerPixel += colorBytes(layout.colorAttachments[i].format);
+    const size_t layers = layout.type == Gfx::FramebufferAttachmentType::CUBEMAP ? 6 :
+        layout.type == Gfx::FramebufferAttachmentType::TEXTURE_2D_ARRAY ? std::max(1, static_cast<int>(layout.layers)) : 1;
+    return static_cast<size_t>(std::max(0, width)) * std::max(0, height) * bytesPerPixel * layers * std::max(1, static_cast<int>(layout.samples));
+}
+
 static void InitializeGfxFramebuffer(Gfx::Framebuffer framebuffer, const Gfx::FrameBufferLayout& layout){
     const uint32_t layerCount = layout.type == Gfx::FramebufferAttachmentType::CUBEMAP ? 6u :
         layout.type == Gfx::FramebufferAttachmentType::TEXTURE_2D_ARRAY ? std::max(1u, static_cast<uint32_t>(layout.layers)) : 1u;
@@ -189,6 +222,8 @@ Framebuffer::Framebuffer(const std::string& name, int width, int height, int lay
     info.wrapping = Gfx::TextureWrapping::ClampToBorder;
     framebuffer = gfxDevice->CreateFramebuffer(info);
     Assert(framebuffer != Gfx::InvalidID);
+    vramUsage = EstimateFramebufferBytes(data->layout, width, height);
+    Graphics::TrackMemoryUsage(GraphicsMemoryCategory::Framebuffer, 0, vramUsage);
     InitializeGfxFramebuffer(framebuffer, data->layout);
     #else
     graphicsDevice->FramebufferCreate(*this);
@@ -197,6 +232,7 @@ Framebuffer::Framebuffer(const std::string& name, int width, int height, int lay
 
 Framebuffer::~Framebuffer(){
     #ifdef TestNewGPU_API
+    Graphics::TrackMemoryUsage(GraphicsMemoryCategory::Framebuffer, vramUsage, 0);
     if(framebuffer != Gfx::InvalidID) gfxDevice->DestroyFramebuffer(framebuffer);
     #else
     graphicsDevice->FramebufferDestroy(*this);
@@ -235,6 +271,9 @@ void Framebuffer::Resize(int width, int height){
     info.wrapping = Gfx::TextureWrapping::ClampToBorder;
     framebuffer = gfxDevice->CreateFramebuffer(info);
     Assert(framebuffer != Gfx::InvalidID);
+    const size_t oldVramUsage = vramUsage;
+    vramUsage = EstimateFramebufferBytes(data->layout, width, height);
+    Graphics::TrackMemoryUsage(GraphicsMemoryCategory::Framebuffer, oldVramUsage, vramUsage);
     InitializeGfxFramebuffer(framebuffer, data->layout);
     #else
     if(width == 0 || height == 0) return; // avoid crash

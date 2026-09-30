@@ -478,7 +478,7 @@ bool Font::LoadFromFile(const std::string& inPath){
                 );
             }
 
-            success = true;
+            success = fontAtlas != nullptr;
             msdfgen::destroyFont(font);
         }
 

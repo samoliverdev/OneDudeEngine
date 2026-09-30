@@ -9,6 +9,7 @@
     Blend SRC_ALPHA ONE_MINUS_SRC_ALPHA
     DepthMask True
     DepthTest DISABLE
+    RenderPass DefaultWindows Forward
 #pragma EndPassDef
 
 #pragma BeginPassDef
@@ -17,6 +18,7 @@
     Blend SRC_ALPHA ONE_MINUS_SRC_ALPHA
     DepthMask True
     DepthTest LESS
+    RenderPass DefaultWindows Forward
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl
@@ -68,6 +70,7 @@ Texture2D(0, 1, mainTex, mainSampler)
         float alpha = clamp(screenPxDistance + 0.5, 0.0, 1.0);
         
         fragColor = vec4(color.rgb, alpha);
+        //fragColor = vec4(vec3(1,1,1), alpha);
 
         //fragColor = vec4(msd, 1.0);
         //return;

@@ -8,6 +8,7 @@
     Blend SRC_ALPHA ONE_MINUS_SRC_ALPHA
     DepthMask True
     DepthTest DISABLE
+    RenderPass DefaultWindows Forward
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl

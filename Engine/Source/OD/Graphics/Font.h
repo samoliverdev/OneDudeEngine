@@ -47,6 +47,7 @@ struct OD_API FontSettings{
 };
 
 class OD_API Font: public Resource{
+    friend class Graphics;
     friend class OpenGLGraphicsDevice;
 public:
     //Fixme opengl texture memory leak

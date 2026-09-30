@@ -62,6 +62,8 @@ Ref<Texture2D> Texture2D::CreateFromRaw(void* data, int width, int height, Textu
     Ref<Texture2D> tex = CreateRef<Texture2D>();
     tex->SetLoadSettings(settings);
     tex->settings = settings;
+    tex->width = width;
+    tex->height = height;
 
     #ifdef TestNewGPU_API
     //Assert(false);
@@ -73,6 +75,8 @@ Ref<Texture2D> Texture2D::CreateFromRaw(void* data, int width, int height, Textu
     tex->tex = gfxDevice->CreateTexture2D(info);
     if(tex->tex == Gfx::InvalidID) return nullptr;
     gfxDevice->UploadTexture2D(tex->tex, data, height * width * GetFormatSize(settings.textureFormat));
+    tex->vramUsage = static_cast<size_t>(width) * height * GetFormatSize(settings.textureFormat);
+    Graphics::TrackMemoryUsage(GraphicsMemoryCategory::Texture, 0, tex->vramUsage);
 
     #else
     if(graphicsDevice->Texture2DCreate(*tex, data, width, height, dataType) == false){
@@ -262,6 +266,11 @@ bool Texture2D::LoadFromFile(const std::string& inpath){
         }
 
         gfxDevice->UploadTexture2D(tex, data, height * width * GetFormatSize(settings.textureFormat));
+        this->width = width;
+        this->height = height;
+        const size_t oldVramUsage = vramUsage;
+        vramUsage = static_cast<size_t>(width) * height * GetFormatSize(settings.textureFormat);
+        Graphics::TrackMemoryUsage(GraphicsMemoryCategory::Texture, oldVramUsage, vramUsage);
         stbi_image_free(data);
 
         #else
@@ -619,6 +628,7 @@ Texture2D::~Texture2D(){
     #ifdef TestNewGPU_API
     //Assert(false);
     Assert(gfxDevice != nullptr);
+    Graphics::TrackMemoryUsage(GraphicsMemoryCategory::Texture, vramUsage, 0);
     if(tex != Gfx::InvalidID) gfxDevice->DestroyTexture2D(tex);
     #else
     Assert(graphicsDevice != nullptr);

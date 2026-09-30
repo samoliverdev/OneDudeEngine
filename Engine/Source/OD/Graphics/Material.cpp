@@ -56,6 +56,27 @@ Material::~Material(){
     //printf("~Material\n");
     Assert(graphicsDevice != nullptr);
     graphicsDevice->MaterialDestroy(*this);
+#ifdef TestNewGPU_API
+    if(materialBuffer != Gfx::InvalidID){
+        Graphics::TrackMemoryUsage(GraphicsMemoryCategory::Buffer, materialBufferSize, 0);
+        gfxDevice->DestroyBuffer(materialBuffer);
+    }
+#ifdef MaterialBindTest
+    for(const auto& entry : materialBufferPool){
+        if(entry.buffer != Gfx::InvalidID){
+            Graphics::TrackMemoryUsage(GraphicsMemoryCategory::Buffer, entry.capacity, 0);
+            gfxDevice->DestroyBuffer(entry.buffer);
+        }
+    }
+    for(const auto& entry : retiredMaterialBuffers){
+        if(entry.buffer != Gfx::InvalidID){
+            Graphics::TrackMemoryUsage(GraphicsMemoryCategory::Buffer, entry.capacity, 0);
+            gfxDevice->DestroyBuffer(entry.buffer);
+        }
+    }
+#endif
+    std::free(materialBufferData);
+#endif
     materialIdPool.Push(id);
 }
 
@@ -85,7 +106,10 @@ void Material::SetShader(Ref<Shader> s){
     graphicsDevice->MaterialOnSetShader(*this);
 
     #ifdef TestNewGPU_API
-    gfxDevice->DestroyBuffer(materialBuffer);
+    if(materialBuffer != Gfx::InvalidID){
+        Graphics::TrackMemoryUsage(GraphicsMemoryCategory::Buffer, materialBufferSize, 0);
+        gfxDevice->DestroyBuffer(materialBuffer);
+    }
     std::free(materialBufferData);
 
     if(shader->materialBindGroupLayout != emptyLayout){
@@ -94,7 +118,10 @@ void Material::SetShader(Ref<Shader> s){
         for(auto& i: shader->reflection.bindings){
             if(i.type == Gfx::BindingType::UniformBuffer && i.blockName == "Main"){
                 materialBindGroupInfo = i;
+#ifndef MaterialBindTest
                 materialBuffer = gfxDevice->CreateBuffer(i.size, Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
+                Graphics::TrackMemoryUsage(GraphicsMemoryCategory::Buffer, 0, i.size);
+#endif
                 materialBufferData = std::malloc(i.size);
                 materialBufferSize = i.size;
 

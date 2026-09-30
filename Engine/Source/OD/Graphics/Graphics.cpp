@@ -88,6 +88,8 @@ constexpr int MaxBonesPerDraw = 120;
 int curGraphicsDevice = 1;
 GraphicsDevice* graphicsDevice = nullptr;
 Gfx::Device* gfxDevice = nullptr;
+GraphicsStats gfxGraphicsStats{};
+GPUMemoryStats gfxMemoryStats{};
 
 Gfx::BindGroupLayout emptyLayout;
 Gfx::BindGroupLayout camGroupLayout;
@@ -104,6 +106,7 @@ Gfx::Buffer emptyInstacingVbo;
 
 std::string curFramebufferRenderPassName;
 int curFramebufferRenderPassIndex = -1;
+uint64_t graphicsFrameIndex = 0;
 
 Gfx::BindGroup curCameraBindGroup;
 
@@ -112,6 +115,8 @@ Gfx::Pipeline cachedPipeline = Gfx::InvalidID;
 Gfx::Buffer cachedVertexBuffers[MaxCachedVertexBufferSlots];
 Gfx::Buffer cachedIndexBuffer = Gfx::InvalidID;
 Gfx::BindGroup cachedBindGroups[4];
+
+IVector4 curViewport;
 
 inline void ResetBindingCache(){
     cachedPipeline = Gfx::InvalidID;
@@ -126,6 +131,9 @@ inline void SetPipelineCached(Gfx::CommandBuffer* cmd, Gfx::Pipeline pipeline){
 
     cmd->SetPipeline(pipeline);
     cachedPipeline = pipeline;
+#ifdef TestNewGPU_API
+    ++gfxGraphicsStats.shaderBinds;
+#endif
 
     // OpenGL configures vertex attributes against the active pipeline, so all
     // vertex bindings must be reapplied after a pipeline change.
@@ -140,6 +148,9 @@ inline void SetBindGroupCached(Gfx::CommandBuffer* cmd, uint8_t slot, Gfx::BindG
 
     cmd->SetBindGroup(slot, bindGroup);
     cachedBindGroups[slot] = bindGroup;
+#ifdef TestNewGPU_API
+    ++gfxGraphicsStats.uniformSet;
+#endif
 }
 
 inline void SetVertexBufferCached(Gfx::CommandBuffer* cmd, uint32_t slot, Gfx::Buffer buffer){
@@ -174,11 +185,13 @@ struct UniformBufferPool{
         if(buffers.size() <= curIndex){
             auto buffer = device.CreateBuffer(size, Gfx::BufferUsage::Uniform, Gfx::BufferMemory::CPUToGPU);
             Assert(buffer != Gfx::InvalidID);
+            Graphics::TrackMemoryUsage(GraphicsMemoryCategory::Buffer, 0, size);
             buffers.push_back(buffer);
         }
 
         auto buffer = buffers[curIndex];
         device.UpdatedBuffer(buffer, data, size);
+        ++gfxGraphicsStats.uniformBufferUpdates;
         curIndex += 1;
         return buffer;
     }
@@ -200,6 +213,34 @@ struct UniformBufferPool{
     }
 };
 
+struct VertexIndexBufferPool{
+    struct Entry{
+        Gfx::Buffer buffer = Gfx::InvalidID;
+        size_t capacity = 0;
+    };
+
+    std::vector<Entry> buffers;
+    uint32_t curIndex = 0;
+
+    Gfx::Buffer GetBuffer(Gfx::Device& device, const void* data, size_t size, Gfx::BufferUsage usage){
+        if(buffers.size() <= curIndex) buffers.emplace_back();
+        Entry& entry = buffers[curIndex++];
+        if(entry.buffer == Gfx::InvalidID || entry.capacity < size){
+            if(entry.buffer != Gfx::InvalidID) device.DestroyBuffer(entry.buffer);
+            entry.buffer = device.CreateBuffer(size, usage, Gfx::BufferMemory::CPUToGPU);
+            Graphics::TrackMemoryUsage(GraphicsMemoryCategory::Buffer, entry.capacity, size);
+            entry.capacity = size;
+            Assert(entry.buffer != Gfx::InvalidID);
+        }
+        device.UpdatedBuffer(entry.buffer, data, size);
+        return entry.buffer;
+    }
+};
+
+VertexIndexBufferPool textVertexBufferPool;
+VertexIndexBufferPool textIndexBufferPool;
+UniformBufferPool textMaterialBufferPool;
+
 struct InstancingBufferPool{
     std::vector<Gfx::Buffer> buffers;
     uint32_t curIndex = 0;
@@ -213,6 +254,7 @@ struct InstancingBufferPool{
             // and submit an explicit upload for every instanced draw.
             auto buffer = device.CreateBuffer(sizeof(Matrix4) * MaxInstancesPerDraw, Gfx::BufferUsage::Vertex, Gfx::BufferMemory::CPUToGPU);
             Assert(buffer != Gfx::InvalidID);
+            Graphics::TrackMemoryUsage(GraphicsMemoryCategory::Buffer, 0, sizeof(Matrix4) * MaxInstancesPerDraw);
             buffers.push_back(buffer);
         }
 
@@ -248,8 +290,8 @@ GraphicsDevice* Graphics::GetGraphicsDevice(){
 
 void Graphics::SelectGraphicsDevice(){
     #ifdef TestNewGPU_API
-    graphicsDevice = new Gfx::VulkanGPUDevice(Gfx::VulkanPresentMode::Immediate);
-    //graphicsDevice = new Gfx::OpenglGPUDevice();
+    //graphicsDevice = new Gfx::VulkanGPUDevice(Gfx::VulkanPresentMode::Immediate);
+    graphicsDevice = new Gfx::OpenglGPUDevice();
     gfxDevice = dynamic_cast<Gfx::Device*>(graphicsDevice);
     return;
     #endif
@@ -285,12 +327,15 @@ void Graphics::Initialize(){
     Matrix4 identity = Matrix4Identity;
 
     camBuffer = gfxDevice->CreateBuffer(sizeof(CameraData), Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
+    Graphics::TrackMemoryUsage(GraphicsMemoryCategory::Buffer, 0, sizeof(CameraData));
     gfxDevice->UpdatedBuffer(camBuffer, &camData, sizeof(CameraData));
 
     emptyModelBuffer = gfxDevice->CreateBuffer(sizeof(Matrix4), Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
+    Graphics::TrackMemoryUsage(GraphicsMemoryCategory::Buffer, 0, sizeof(Matrix4));
     gfxDevice->UpdatedBuffer(emptyModelBuffer, &identity, sizeof(Matrix4));
 
     emptyInstacingVbo = gfxDevice->CreateBuffer(sizeof(Matrix4), Gfx::BufferUsage::Vertex, Gfx::BufferMemory::GPUOnly);
+    Graphics::TrackMemoryUsage(GraphicsMemoryCategory::Buffer, 0, sizeof(Matrix4));
     gfxDevice->UpdatedBuffer(emptyInstacingVbo, &Matrix4Identity, sizeof(Matrix4));
 
     Gfx::BindGroupLayoutInfo bindGroupLayoutInfo = {};
@@ -344,6 +389,7 @@ void Graphics::Initialize(){
     camDataPool.layout = camGroupLayout;
 
     defaultBuffer = gfxDevice->CreateBuffer(1024, Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
+    Graphics::TrackMemoryUsage(GraphicsMemoryCategory::Buffer, 0, 1024);
     Assert(defaultBuffer != Gfx::InvalidID);
     std::vector<uint8_t> bufferData(1024, 0);
     gfxDevice->UpdatedBuffer(defaultBuffer, bufferData.data(), bufferData.size());
@@ -489,7 +535,11 @@ void Graphics::CreateLuaBind(sol::state& lua){
 }
 
 GraphicsStats& Graphics::GetStats(){ 
+#ifdef TestNewGPU_API
+    return gfxGraphicsStats;
+#else
     return graphicsDevice->GetStats(); 
+#endif
 }
 
 GraphicsDebug& Graphics::GetGraphicsDebug(){
@@ -497,7 +547,30 @@ GraphicsDebug& Graphics::GetGraphicsDebug(){
 }
 
 GPUMemoryStats& Graphics::GetMemoryStats(){
+#ifdef TestNewGPU_API
+    return gfxMemoryStats;
+#else
     return graphicsDevice->GetMemoryStats();
+#endif
+}
+
+void Graphics::TrackMemoryUsage(GraphicsMemoryCategory category, size_t oldBytes, size_t newBytes){
+#ifdef TestNewGPU_API
+    size_t* counter = nullptr;
+    switch(category){
+        case GraphicsMemoryCategory::Texture: counter = &gfxMemoryStats.texturesBytes; break;
+        case GraphicsMemoryCategory::Mesh: counter = &gfxMemoryStats.meshBytes; break;
+        case GraphicsMemoryCategory::Framebuffer: counter = &gfxMemoryStats.framebuffersBytes; break;
+        case GraphicsMemoryCategory::Buffer: counter = &gfxMemoryStats.buffersBytes; break;
+    }
+    if(counter == nullptr) return;
+    *counter = *counter >= oldBytes ? *counter - oldBytes : 0;
+    *counter += newBytes;
+#else
+    (void)category;
+    (void)oldBytes;
+    (void)newBytes;
+#endif
 }
 
 void Graphics::Begin(){ 
@@ -510,10 +583,17 @@ void Graphics::End(){
 
 void Graphics::_Begin(){
     graphicsDevice->_Begin(); 
+#ifdef TestNewGPU_API
+    gfxGraphicsStats = {};
+#endif
+    ++graphicsFrameIndex;
 
     drawMeshPool.curIndex = 0;
     drawMeshSkinnedPool.curIndex = 0;
     drawMeshInstancingPool.curIndex = 0;
+    textVertexBufferPool.curIndex = 0;
+    textIndexBufferPool.curIndex = 0;
+    textMaterialBufferPool.curIndex = 0;
 
     curFramebufferRenderPassIndex = -1;
 
@@ -540,6 +620,9 @@ void Graphics::SetCamera(Camera& camera){
     }*/
 
     gfxDevice->UpdatedBuffer(camBuffer, &data, sizeof(CameraData));
+#ifdef TestNewGPU_API
+    ++gfxGraphicsStats.uniformBufferUpdates;
+#endif
     curCameraBindGroup = camDataPool.GetBindGroup(*gfxDevice, &data, sizeof(CameraData));
     #else
     graphicsDevice->SetCamera(camera); 
@@ -591,6 +674,7 @@ void Graphics::CleanDepthOnly(){
 
 void Graphics::SetViewport(unsigned int x, unsigned int y, unsigned int w, unsigned int h){ 
     #ifdef TestNewGPU_API
+    curViewport = {x, y, w, h};
     gfxDevice->GetCommandBuffer()->Viewport(x, y, w, h);
     #else
     graphicsDevice->SetViewport(x, y, w, h); 
@@ -602,18 +686,32 @@ void Graphics::GetViewport(unsigned int*x, unsigned int* y, unsigned int* w, uns
 }
 
 void Graphics::EnableScissor(){
+    #ifdef TestNewGPU_API
+    #else
     graphicsDevice->EnableScissor();
+    #endif
 }
 
 void Graphics::DisableScissor(){
+    #ifdef TestNewGPU_API
+    gfxDevice->GetCommandBuffer()->Scissor(curViewport.x, curViewport.y, curViewport.z, curViewport.w);
+    #else
     graphicsDevice->DisableScissor();
+    #endif
 }
 
 void Graphics::Scissor(unsigned int x, unsigned int y, int w, int h){
+#ifdef TestNewGPU_API
+    gfxDevice->GetCommandBuffer()->Scissor(x, y, w, h);
+#else
     graphicsDevice->Scissor(x, y, w, h); 
+#endif
 }
 
-Gfx::BindGroup Graphics::BindMaterial(Material& mat){
+Gfx::BindGroup Graphics::BindMaterial(Material& mat, Gfx::Texture2D textureOverride, bool useFrameLocalBuffer){
+#ifdef TestNewGPU_API
+    ++gfxGraphicsStats.materialSubmitDatas;
+#endif
     static std::vector<Gfx::BindingEntry> bindGroupEntries(200);
 
     if(mat.shader->materialBindGroupLayout == emptyLayout){
@@ -697,9 +795,45 @@ Gfx::BindGroup Graphics::BindMaterial(Material& mat){
             Assert(false && "Type Not Supported in A UnifomBuffer");
         }
     }
-    gfxDevice->UpdatedBuffer(mat.materialBuffer, mat.materialBufferData, mat.materialBufferSize);
+    Gfx::Buffer materialBuffer = mat.materialBuffer;
+#ifdef MaterialBindTest
+    if(mat.materialBufferPoolFrame != graphicsFrameIndex){
+        mat.materialBufferPoolFrame = graphicsFrameIndex;
+        mat.materialBufferPoolIndex = 0;
+    }
 
-    Assert(curMat->shader->materialBindGroupLayout == mat.shader->materialBindGroupLayout);
+    if(mat.materialBufferPool.size() <= mat.materialBufferPoolIndex)
+        mat.materialBufferPool.emplace_back();
+
+    auto& poolEntry = mat.materialBufferPool[mat.materialBufferPoolIndex++];
+    if(poolEntry.buffer == Gfx::InvalidID || poolEntry.capacity < mat.materialBufferSize){
+        if(poolEntry.buffer != Gfx::InvalidID){
+            mat.retiredMaterialBuffers.push_back(poolEntry);
+        }
+        poolEntry.buffer = gfxDevice->CreateBuffer(
+            mat.materialBufferSize, Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly
+        );
+        Graphics::TrackMemoryUsage(GraphicsMemoryCategory::Buffer, 0, mat.materialBufferSize);
+        poolEntry.capacity = mat.materialBufferSize;
+        Assert(poolEntry.buffer != Gfx::InvalidID);
+    }
+    materialBuffer = poolEntry.buffer;
+    gfxDevice->UpdatedBuffer(materialBuffer, mat.materialBufferData, mat.materialBufferSize);
+#ifdef TestNewGPU_API
+    ++gfxGraphicsStats.uniformBufferUpdates;
+#endif
+#else
+    if(useFrameLocalBuffer){
+        materialBuffer = textMaterialBufferPool.GetBuffer(*gfxDevice, mat.materialBufferData, mat.materialBufferSize);
+    } else {
+        gfxDevice->UpdatedBuffer(materialBuffer, mat.materialBufferData, mat.materialBufferSize);
+#ifdef TestNewGPU_API
+        ++gfxGraphicsStats.uniformBufferUpdates;
+#endif
+    }
+#endif
+
+    Assert(mat.shader->materialBindGroupLayout != Gfx::InvalidID);
 
     Gfx::BindGroupInfo bindGroupInfo = {};
     bindGroupInfo.layout = mat.shader->materialBindGroupLayout;
@@ -708,10 +842,10 @@ Gfx::BindGroup Graphics::BindMaterial(Material& mat){
 
         if(i.type == Gfx::BindingType::UniformBuffer){
             if(i.blockName == "Main"){
-                Assert(mat.materialBuffer != Gfx::InvalidID);
+                Assert(materialBuffer != Gfx::InvalidID);
                 bindGroupEntries[bindGroupInfo.entriesCount] = {};
                 bindGroupEntries[bindGroupInfo.entriesCount].binding = i.binding;
-                bindGroupEntries[bindGroupInfo.entriesCount].buffer = mat.materialBuffer;
+                bindGroupEntries[bindGroupInfo.entriesCount].buffer = materialBuffer;
                 bindGroupEntries[bindGroupInfo.entriesCount].size = i.size;
                 bindGroupInfo.entriesCount += 1;
             }  else if(mat.maps.count(i.blockName)){
@@ -741,6 +875,13 @@ Gfx::BindGroup Graphics::BindMaterial(Material& mat){
         }
 
         if(i.type == Gfx::BindingType::Texture2D){
+            if(textureOverride != Gfx::InvalidID && i.name == "mainTex"){
+                bindGroupEntries[bindGroupInfo.entriesCount] = {};
+                bindGroupEntries[bindGroupInfo.entriesCount].binding = i.binding;
+                bindGroupEntries[bindGroupInfo.entriesCount].texture = textureOverride;
+                bindGroupInfo.entriesCount += 1;
+                continue;
+            }
             if(mat.maps.count(i.name)){
                 auto& m = mat.maps[i.name];
 
@@ -964,9 +1105,14 @@ void Graphics::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawD
 
     if(mesh.indiceCount == 0){ //mesh.ebo == INVALID_ID){
         cmd->Draw(mesh.vertexCount);
+        ++gfxGraphicsStats.drawCalls;
+        gfxGraphicsStats.vertices += static_cast<int>(mesh.vertexCount);
     } else {
         SetIndexBufferCached(cmd, mesh.ebo);
         cmd->DrawIndexed(mesh.indiceCount);
+        ++gfxGraphicsStats.drawCalls;
+        gfxGraphicsStats.vertices += static_cast<int>(mesh.indiceCount);
+        gfxGraphicsStats.tris += static_cast<int>(mesh.indiceCount / 3);
     }
     #else
     graphicsDevice->DrawMesh(mesh, mat, modelMatrix, perDrawData); 
@@ -1024,9 +1170,14 @@ void Graphics::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, Matrix4
 
     if(mesh.indiceCount == 0){
         cmd->Draw(mesh.vertexCount);
+        ++gfxGraphicsStats.drawCalls;
+        gfxGraphicsStats.vertices += static_cast<int>(mesh.vertexCount);
     } else {
         SetIndexBufferCached(cmd, mesh.ebo);
         cmd->DrawIndexed(mesh.indiceCount);
+        ++gfxGraphicsStats.drawCalls;
+        gfxGraphicsStats.vertices += static_cast<int>(mesh.indiceCount);
+        gfxGraphicsStats.tris += static_cast<int>(mesh.indiceCount / 3);
     }
     #else
     graphicsDevice->DrawMeshSkinned(mesh, mat, model, animMatrix, count, perDrawData); 
@@ -1081,9 +1232,14 @@ void Graphics::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, Uniform
 
     if(mesh.indiceCount == 0){
         cmd->Draw(mesh.vertexCount);
+        ++gfxGraphicsStats.drawCalls;
+        gfxGraphicsStats.vertices += static_cast<int>(mesh.vertexCount);
     } else {
         SetIndexBufferCached(cmd, mesh.ebo);
         cmd->DrawIndexed(mesh.indiceCount);
+        ++gfxGraphicsStats.drawCalls;
+        gfxGraphicsStats.vertices += static_cast<int>(mesh.indiceCount);
+        gfxGraphicsStats.tris += static_cast<int>(mesh.indiceCount / 3);
     }
     #else
     graphicsDevice->DrawMeshSkinned(mesh, mat, model, data, count, perDrawData); 
@@ -1124,9 +1280,14 @@ void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* animMatrix
 
         if(mesh.ebo == INVALID_ID){
             cmd->DrawInstanced(mesh.vertexCount, count);
+            ++gfxGraphicsStats.drawCalls;
+            gfxGraphicsStats.vertices += static_cast<int>(mesh.vertexCount * count);
         } else {
             SetIndexBufferCached(cmd, mesh.ebo);
             cmd->DrawIndexedInstanced(mesh.indiceCount, count);
+            ++gfxGraphicsStats.drawCalls;
+            gfxGraphicsStats.vertices += static_cast<int>(mesh.indiceCount * count);
+            gfxGraphicsStats.tris += static_cast<int>((mesh.indiceCount / 3) * count);
         }
     };
 
@@ -1180,9 +1341,14 @@ void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, InstancingBuffer& b
 
     if(mesh.ebo == INVALID_ID){
         cmd->DrawInstanced(mesh.vertexCount, count);
+        ++gfxGraphicsStats.drawCalls;
+        gfxGraphicsStats.vertices += static_cast<int>(mesh.vertexCount * count);
     } else {
         SetIndexBufferCached(cmd, mesh.ebo);
         cmd->DrawIndexedInstanced(mesh.indiceCount, count);
+        ++gfxGraphicsStats.drawCalls;
+        gfxGraphicsStats.vertices += static_cast<int>(mesh.indiceCount * count);
+        gfxGraphicsStats.tris += static_cast<int>((mesh.indiceCount / 3) * count);
     }
     #else
     graphicsDevice->DrawMeshInstancing(mesh, mat, buffer, count);
@@ -1224,7 +1390,178 @@ void Graphics::DrawWireCube(Matrix4 modelMatrix, Vector3 color, int lineWidth){
 }
 
 void Graphics::DrawText(Font& f, Material& s, std::string text, Matrix4 model, bool alignWithTop, const TextParams& params){
+    #ifdef TestNewGPU_API
+    if(text.empty() || f.data == nullptr || f.fontAtlas == nullptr || f.fontAtlas->tex == Gfx::InvalidID) return;
+
+    const auto& fontGeometry = f.data->fontGeometry;
+    const auto& metrics = fontGeometry.getMetrics();
+    const auto& fontAtlas = f.fontAtlas;
+    const double metricHeight = metrics.ascenderY - metrics.descenderY;
+    if(metricHeight == 0.0 || fontAtlas->Width() == 0 || fontAtlas->Height() == 0) return;
+
+    const double fsScale = 1.0 / metricHeight;
+    double x = 0.0;
+    double y = alignWithTop ? -(fsScale * metrics.ascenderY) : 0.0;
+    const auto decodeUTF8 = [](const char* s, int& advance) -> uint32_t{
+        const unsigned char c = (unsigned char)s[0];
+        if(c < 0x80){ advance = 1; return c; }
+        if((c >> 5) == 0x6){
+            advance = 2;
+            return ((c & 0x1F) << 6) | ((unsigned char)s[1] & 0x3F);
+        }
+        if((c >> 4) == 0xE){
+            advance = 3;
+            return ((c & 0x0F) << 12) | (((unsigned char)s[1] & 0x3F) << 6) | ((unsigned char)s[2] & 0x3F);
+        }
+        if((c >> 3) == 0x1E){
+            advance = 4;
+            return ((c & 0x07) << 18) | (((unsigned char)s[1] & 0x3F) << 12) |
+                (((unsigned char)s[2] & 0x3F) << 6) | ((unsigned char)s[3] & 0x3F);
+        }
+        advance = 1;
+        return '?';
+    };
+    const auto* spaceGlyph = fontGeometry.getGlyph(' ');
+    if(spaceGlyph == nullptr) return;
+    const double spaceGlyphAdvance = spaceGlyph->getAdvance();
+    const float texelWidth = 1.0f / fontAtlas->Width();
+    const float texelHeight = 1.0f / fontAtlas->Height();
+
+    std::vector<Vector3> vertices;
+    std::vector<Vector3> uvs;
+    std::vector<unsigned int> indices;
+
+    for(size_t i = 0; i < text.size();){
+        int advanceBytes = 0;
+        uint32_t codepoint = decodeUTF8(&text[i], advanceBytes);
+
+        if(codepoint == '\r'){
+            i += advanceBytes;
+            continue;
+        }
+
+        if(codepoint == '\n'){
+            x = 0.0;
+            y -= fsScale * metrics.lineHeight + params.lineSpacing;
+            i += advanceBytes;
+            continue;
+        }
+
+        if(codepoint == ' '){
+            double advance = spaceGlyphAdvance;
+            if(i + advanceBytes < text.size()){
+                int nextAdvance = 0;
+                const uint32_t nextCodepoint = decodeUTF8(&text[i + advanceBytes], nextAdvance);
+                fontGeometry.getAdvance(advance, codepoint, nextCodepoint);
+            }
+            x += fsScale * advance + params.kerning;
+            i += advanceBytes;
+            continue;
+        }
+
+        if(codepoint == '\t'){
+            x += 4.0 * (fsScale * spaceGlyphAdvance + params.kerning);
+            i += advanceBytes;
+            continue;
+        }
+
+        auto* glyph = fontGeometry.getGlyph(codepoint);
+        if(glyph == nullptr) glyph = fontGeometry.getGlyph('?');
+        if(glyph == nullptr) return;
+
+        double al, ab, ar, at;
+        glyph->getQuadAtlasBounds(al, ab, ar, at);
+        glm::vec2 texCoordMin((float)al, (float)ab);
+        glm::vec2 texCoordMax((float)ar, (float)at);
+
+        double pl, pb, pr, pt;
+        glyph->getQuadPlaneBounds(pl, pb, pr, pt);
+        glm::vec2 quadMin((float)pl, (float)pb);
+        glm::vec2 quadMax((float)pr, (float)pt);
+
+        quadMin *= (float)fsScale;
+        quadMax *= (float)fsScale;
+        quadMin += glm::vec2((float)x, (float)y);
+        quadMax += glm::vec2((float)x, (float)y);
+        texCoordMin *= glm::vec2(texelWidth, texelHeight);
+        texCoordMax *= glm::vec2(texelWidth, texelHeight);
+
+        const unsigned int baseVertex = (unsigned int)vertices.size();
+        vertices.emplace_back(quadMin.x, quadMin.y, 0.0f);
+        vertices.emplace_back(quadMin.x, quadMax.y, 0.0f);
+        vertices.emplace_back(quadMax.x, quadMin.y, 0.0f);
+        vertices.emplace_back(quadMax.x, quadMax.y, 0.0f);
+        uvs.emplace_back(texCoordMin.x, texCoordMin.y, 0.0f);
+        uvs.emplace_back(texCoordMin.x, texCoordMax.y, 0.0f);
+        uvs.emplace_back(texCoordMax.x, texCoordMin.y, 0.0f);
+        uvs.emplace_back(texCoordMax.x, texCoordMax.y, 0.0f);
+
+        // Match the OpenGL triangle-strip vertex order and winding.
+        indices.insert(indices.end(), {
+            baseVertex, baseVertex + 1, baseVertex + 2,
+            baseVertex + 2, baseVertex + 1, baseVertex + 3
+        });
+
+        if(i + advanceBytes < text.size()){
+            int nextAdvance = 0;
+            const uint32_t nextCodepoint = decodeUTF8(&text[i + advanceBytes], nextAdvance);
+            double advance = glyph->getAdvance();
+            fontGeometry.getAdvance(advance, codepoint, nextCodepoint);
+            x += fsScale * advance;
+        }
+
+        i += advanceBytes;
+    }
+
+    if(vertices.empty()) return;
+
+    if(curFramebufferRenderPassIndex < 0 || curFramebufferRenderPassIndex >= MAX_FRAMEBUFFER_RENDER_PASSES) return;
+    auto* subShader = s.currentShader[s.currentPass].drawTypes[(int)Shader::DrawType::DefaultDraw].get();
+    if(subShader == nullptr) return;
+    const Gfx::Pipeline pipeline = subShader->_pipelines[curFramebufferRenderPassIndex];
+    if(pipeline == Gfx::InvalidID) return;
+
+    const Gfx::Buffer vertexBuffer = textVertexBufferPool.GetBuffer(
+        *gfxDevice, vertices.data(), vertices.size() * sizeof(Vector3), Gfx::BufferUsage::Vertex
+    );
+    const Gfx::Buffer uvBuffer = textVertexBufferPool.GetBuffer(
+        *gfxDevice, uvs.data(), uvs.size() * sizeof(Vector3), Gfx::BufferUsage::Vertex
+    );
+    std::vector<Vector4> unusedVertexAttributes(vertices.size(), Vector4(0.0f));
+    const Gfx::Buffer unusedVertexBuffer = textVertexBufferPool.GetBuffer(
+        *gfxDevice, unusedVertexAttributes.data(), unusedVertexAttributes.size() * sizeof(Vector4), Gfx::BufferUsage::Vertex
+    );
+    const Gfx::Buffer indexBuffer = textIndexBufferPool.GetBuffer(
+        *gfxDevice, indices.data(), indices.size() * sizeof(unsigned int), Gfx::BufferUsage::Index
+    );
+    const Gfx::BindGroup materialBindGroup = BindMaterial(s, fontAtlas->tex, true);
+    const Gfx::BindGroup modelBindGroup = drawMeshPool.GetBindGroup(*gfxDevice, &model, sizeof(Matrix4));
+
+    auto* cmd = gfxDevice->GetCommandBuffer();
+    ResetBindingCache();
+    cmd->SetPipeline(pipeline);
+    cmd->SetBindGroup(0, materialBindGroup);
+    cmd->SetBindGroup(1, modelBindGroup);
+    cmd->SetBindGroup(2, curCameraBindGroup);
+    cmd->SetVertexBuffer(0, vertexBuffer);
+    cmd->SetVertexBuffer(1, uvBuffer);
+    cmd->SetVertexBuffer(2, unusedVertexBuffer);
+    cmd->SetVertexBuffer(3, unusedVertexBuffer);
+    cmd->SetVertexBuffer(4, unusedVertexBuffer);
+    cmd->SetVertexBuffer(5, unusedVertexBuffer);
+    cmd->SetVertexBuffer(6, unusedVertexBuffer);
+    cmd->SetVertexBuffer(7, emptyInstacingVbo);
+    cmd->SetIndexBuffer(indexBuffer);
+    cmd->DrawIndexed((uint32_t)indices.size());
+    ++gfxGraphicsStats.shaderBinds;
+    gfxGraphicsStats.uniformSet += 3;
+    ++gfxGraphicsStats.drawCalls;
+    gfxGraphicsStats.vertices += static_cast<int>(indices.size());
+    gfxGraphicsStats.tris += static_cast<int>(indices.size() / 3);
+    ResetBindingCache();
+    #else
     graphicsDevice->DrawText(f, s, text, model, alignWithTop, params); 
+    #endif
 }
 
 void Graphics::DrawFullScreenQuad(Material& mat, Matrix4 modelMatrix){

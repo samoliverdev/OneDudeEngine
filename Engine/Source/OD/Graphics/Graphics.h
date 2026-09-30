@@ -102,6 +102,8 @@ struct GPUMemoryStats{
     size_t framebuffersBytes = 0;
     size_t buffersBytes = 0;
 };
+
+enum class GraphicsMemoryCategory : uint8_t { Texture, Mesh, Framebuffer, Buffer };
   
 enum class OD_API_IMPORT RenderMode{SHADED, WIREFRAME};
 
@@ -147,6 +149,7 @@ class OD_API Graphics {
 public:
     static GraphicsStats& GetStats();
     static GPUMemoryStats& GetMemoryStats();
+    static void TrackMemoryUsage(GraphicsMemoryCategory category, size_t oldBytes, size_t newBytes);
     static GraphicsDebug& GetGraphicsDebug();
     static void Begin();
     static void End();
@@ -212,7 +215,11 @@ private:
     static void _Begin();
     static void _End();
 
-    static Gfx::BindGroup BindMaterial(Material& mat);
+    static Gfx::BindGroup BindMaterial(
+        Material& mat,
+        Gfx::Texture2D textureOverride = Gfx::InvalidID,
+        bool useFrameLocalBuffer = false
+    );
 };
 
 void GraphicsModuleInit();

@@ -2912,6 +2912,20 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                 break;
             }
 
+            case CommandBuffer::Type::Scissor:{
+                VkRect2D customScissor{};
+                customScissor.offset = {
+                    static_cast<int32_t>(renderCmd.scissor.x),
+                    static_cast<int32_t>(renderCmd.scissor.y)
+                };
+                customScissor.extent = {
+                    static_cast<uint32_t>(std::max(0, renderCmd.scissor.w)),
+                    static_cast<uint32_t>(std::max(0, renderCmd.scissor.h))
+                };
+                vkCmdSetScissor(cmd, 0, 1, &customScissor);
+                break;
+            }
+
             case CommandBuffer::Type::SetPipeline:{
                 const auto& pipeData = pipelinePool.Get(renderCmd.setPipeline.id);
                 vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeData.pipeline);
