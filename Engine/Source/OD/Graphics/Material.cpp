@@ -6,7 +6,7 @@
 #include "Texture.h"
 #include "Texture.h"
 #include "OD/Platform/Platform.h"
-#include "OD/Serialization/SerializationFull.h"
+#include "OD/Serialization/SerializationExtra.h"
 #include "OD/Core/Resource.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Core/Lua.h"

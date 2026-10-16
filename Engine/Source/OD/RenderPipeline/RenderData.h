@@ -1,7 +1,6 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Core/AlignedAllocator.h"
-#include "OD/Graphics/Graphics.h"
 #include "OD/Graphics/Culling.h"
 #include "OD/Core/Resource.h"
 #include <vector>

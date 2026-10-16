@@ -4,6 +4,7 @@
 #include <random>
 #include <limits>
 #include <vector>
+#include <array>
 #include <string>
 #include <sstream>
 #include <bitset>
@@ -23,12 +24,20 @@
 #include <chrono>
 #include <numeric>
 #include <thread>
+
+#include <type_traits>
+#include <stdexcept>
+#include <iosfwd>
+#include <cstdint>
+
 #include <spdlog/spdlog.h>
 #include <taskflow/taskflow.hpp>
 #include <sol/sol.hpp>
-//#include "Core/Math.h"
-//#include "Serialization/Serialization.h"
-//#include "Scene/ECS.h"
+
+#include "Core/Math.h"
+#include "Serialization/Serialization.h"
+//#include "Serialization/SerializationFull.h"
+#include "Scene/ECS.h"
 
 //#include "Defines.h"
 #endif

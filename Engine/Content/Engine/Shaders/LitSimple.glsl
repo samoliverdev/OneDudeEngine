@@ -12,6 +12,7 @@
     DrawType _ SKINNED INSTANCING INSTANCINGMATRIX43
     MultiCompile Opaque Blend
     MultiCompile Forward Deferred
+    RenderPass Forward Deferred DeferredCopy
 
     CullFace BACK
     DepthTest LESS

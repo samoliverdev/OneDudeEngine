@@ -1,18 +1,19 @@
 #pragma once
 #include "OD/Core/Resource.h"
 #include "OD/Core/Transform.h"
-#include "OD/Serialization/SerializationFull.h" //TODO: Remove this to optimization
+#include "OD/Serialization/Serialization.h" //TODO: Remove this to optimization
+///#include "OD/Serialization/SerializationFull.h" //TODO: Remove this to optimization
 #include "OD/Graphics/Camera.h"
 #include <unordered_map>
 #include <string>
 #include <functional>
 #include <algorithm>
 #include "ECS.h"
-#include <taskflow/taskflow.hpp>
 
 namespace sol{ class state; }
+namespace tf{ class Taskflow; }
 
-namespace OD {
+namespace OD{
 
 /*using Entity = entt::entity;
 using Registry = entt::registry;
@@ -46,7 +47,7 @@ constexpr int AllLayers = Layer0 | Layer1 | Layer2 | Layer3 | Layer4 | Layer5 | 
 constexpr uint32_t AllLayersMask = (1u << LayerCount) - 1;
 constexpr uint32_t NoneLayersMask = 0;
 
-inline constexpr uint32_t LayerToMask(int layerIndex) {
+inline constexpr uint32_t LayerToMask(int layerIndex){
     return (1u << layerIndex);
 }
 
@@ -293,7 +294,7 @@ protected:
     std::string name;
 };
 
-class OD_API Scene: public Resource {
+class OD_API Scene: public Resource{
 public:
     friend struct EntityHandle;
     friend struct Prefab;
@@ -417,7 +418,8 @@ private:
     entt::registry registry;
 
     //tf::Executor executor;
-    tf::Taskflow taskflow; //TODO: Maybe change this to Ref to use forward declaration
+    //tf::Taskflow taskflow; //TODO: Maybe change this to Ref to use forward declaration
+    Scope<tf::Taskflow> taskflow = CreateScope<tf::Taskflow>();
 
     bool transIsDirty = true;
     float fixedUpdateAccumulator = 0;

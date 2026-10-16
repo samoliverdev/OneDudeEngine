@@ -17,7 +17,7 @@
 #include "OD/Graphics/Graphics.h"
 #include "OD/Graphics/GraphicsDevice.h"
 #include "OD/CoreModulesStartup.h"
-#include "OD/Serialization/SerializationFull.h"
+#include "OD/Serialization/SerializationExtra.h"
 
 #include "OD/Gfx/Gfx.h"
 

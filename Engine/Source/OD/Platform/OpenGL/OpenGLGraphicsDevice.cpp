@@ -19,7 +19,7 @@
 #include "OD/Graphics/ComputeBuffer.h"
 #include "OD/Graphics/ComputeShader.h"
 #include "OD/Serialization/Serialization.h"
-#include "OD/Serialization/SerializationFull.h"
+#include "OD/Serialization/SerializationExtra.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Core/Log.h"

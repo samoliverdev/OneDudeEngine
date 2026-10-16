@@ -1,5 +1,6 @@
 #include "OD/pch.h"
 #include "Scene.h"
+#include "SceneTaskflow.h"
 #include "SceneMeta.h"
 #include "Prefab.h"
 #include "EntityHandle.h"
@@ -10,7 +11,7 @@
 #include "OD/Core/Time.h"
 #include "OD/Core/Instrumentor.h"
 #include "OD/Core/ResourceStream.h"
-//#include "OD/Serialization/SerializationFull.h"
+#include "OD/Serialization/SerializationExtra.h"
 #include "OD/Serialization/CerealImGui.h"
 #include "OD/Graphics/Graphics.h"
 #include "OD/RenderPipeline/CameraComponent.h"
@@ -18,6 +19,8 @@
 #include "OD/RenderPipeline/ModelRendererComponent.h"
 #include "OD/LuaScripting/LuaMetaUltis.h"
 #include "OD/Core/GlobalSettings.h"
+
+#include <taskflow/taskflow.hpp>
 
 namespace OD{
 
@@ -624,9 +627,9 @@ Scene::~Scene(){
     if(isPrefab) return;
 
     //TODO: Maybe mov
-    if(taskflow.empty() == false){
+    if(taskflow->empty() == false){
         executor->wait_for_all();
-        taskflow.clear();
+        taskflow->clear();
     }
 
     registry.clear();//INFO: Maybe this order fix same crashs
@@ -1021,8 +1024,8 @@ void Scene::Update(){
     }
     {
         OD_PROFILE_SCOPE("Scene::Update::Sync");
-        executor->run(taskflow).wait();
-        taskflow.clear();
+        executor->run(*taskflow).wait();
+        taskflow->clear();
     }
 
     //--------Animation--------
@@ -1039,8 +1042,8 @@ void Scene::Update(){
     }
     {
         OD_PROFILE_SCOPE("Scene::AnimationUpdate::Sync");
-        executor->run(taskflow).wait(); 
-        taskflow.clear();
+        executor->run(*taskflow).wait(); 
+        taskflow->clear();
     }
 
     //--------Pre Physic---------
@@ -1051,8 +1054,8 @@ void Scene::Update(){
     }
     {
         OD_PROFILE_SCOPE("Scene::PrePhysicsUpdate::Sync");
-        executor->run(taskflow).wait(); 
-        taskflow.clear();
+        executor->run(*taskflow).wait(); 
+        taskflow->clear();
     }
 
     //--------Fixed Physic---------
@@ -1073,8 +1076,8 @@ void Scene::Update(){
             for(auto s: fixedPhysicsSystems) s->FixedPhysicsUpdate(*this);
             {
                 //OD_PROFILE_SCOPE("Scene::FixedPhysicsUpdate::Sync");
-                executor->run(taskflow).wait(); 
-                taskflow.clear();
+                executor->run(*taskflow).wait(); 
+                taskflow->clear();
             }
 
             fixedUpdateAccumulator -= _fixedStep;
@@ -1114,8 +1117,8 @@ void Scene::Update(){
     }
     {
         OD_PROFILE_SCOPE("Scene::PostPhysicsUpdate::Sync");
-        executor->run(taskflow).wait(); 
-        taskflow.clear();
+        executor->run(*taskflow).wait(); 
+        taskflow->clear();
     }
     
     //--------Late---------
@@ -1132,8 +1135,8 @@ void Scene::Update(){
     }
     {
         OD_PROFILE_SCOPE("Scene::LateUpdate::Sync");
-        executor->run(taskflow).wait();
-        taskflow.clear();
+        executor->run(*taskflow).wait();
+        taskflow->clear();
     }
     
     //TransformComponent::UpdateAllTransformMatrix(*this);
@@ -1610,12 +1613,12 @@ void EntityHandle::CreateLuaBind(sol::state& lua){
 }*/
 
 tf::Taskflow& Scene::GetTaskflow(){ 
-    return taskflow; 
+    return *taskflow; 
 }
 
 void Scene::RunAllTaskAndSync(){
-    executor->run(taskflow).wait();
-    taskflow.clear();
+    executor->run(*taskflow).wait();
+    taskflow->clear();
 }
 
 #pragma endregion

@@ -10,7 +10,7 @@
 #include "OD/Loader/GltfLoader2.h"
 #include "OD/Loader/ObjLoader.h"
 #include "OD/Core/ImGui.h"
-#include "OD/Serialization/SerializationFull.h"
+#include "OD/Serialization/SerializationExtra.h"
 #include "OD/Physics/PhysicsSystem.h"
 #include "OD/Core/Application.h"
 #include <stb/stb_image.h>

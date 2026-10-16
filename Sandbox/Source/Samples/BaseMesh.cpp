@@ -12,9 +12,139 @@
 #include <OD/Core/ImGui.h>
 #include <OD/RenderPipeline/MeshRendererComponent.h>
 
+#include <OD/Serializer/Serializer.h>
+#include <magic_enum/magic_enum.hpp>
+
 using namespace OD;
 
+enum class MovementType{
+    Idle,
+    Walking,
+    Running
+};
+
+inline std::string save_minimal(const Serializer&, const MovementType& value){ return std::string(magic_enum::enum_name(value)); } 
+inline void load_minimal(const Serializer&, MovementType& value, const std::string& text){ value = magic_enum::enum_cast<MovementType>(text).value(); } 
+
+namespace glm{
+    void serialize(Serializer& s, glm::vec3& v){
+        s.Field("x", v.x);
+        s.Field("y", v.y);
+        s.Field("z", v.z);
+    }
+
+    void serialize(Serializer& s, glm::vec4& v){
+        s.Field("x", v.x);
+        s.Field("y", v.y);
+        s.Field("z", v.z);
+        s.Field("w", v.w);
+    }
+
+    void serialize(Serializer& s, glm::quat& q){
+        s.Field("x", q.x);
+        s.Field("y", q.y);
+        s.Field("z", q.z);
+        s.Field("w", q.w);
+    }
+
+    inline void serialize(Serializer& s, glm::mat4& m){
+        glm::vec4 col0 = m[0];
+        glm::vec4 col1 = m[1];
+        glm::vec4 col2 = m[2];
+        glm::vec4 col3 = m[3];
+
+        s.Field("col0", col0);
+        s.Field("col1", col1);
+        s.Field("col2", col2);
+        s.Field("col3", col3);
+
+        if(s.IsReading()){
+            m[0] = col0;
+            m[1] = col1;
+            m[2] = col2;
+            m[3] = col3;
+        }
+    }
+}
+
+struct _Transform{
+    glm::vec3 position{0.0f};
+    glm::quat rotation{1, 0, 0, 0};
+    glm::vec3 scale{1.0f};
+    glm::mat4 matrix{1.0f};
+
+    MovementType movement = MovementType::Idle;
+    std::vector<glm::vec3> waypoints;
+
+    void Serialize(Serializer& s){
+        s.Field("position", position);
+        s.Field("rotation", rotation);
+        s.Field("scale", scale);
+        s.Field("matrix", matrix);
+        s.Field("movement", movement);
+        s.Field("waypoints", waypoints);
+    }
+};
+
+struct Actor {
+    int health = 100;
+    std::string name = "Player";
+    _Transform transform = {};
+
+    void Serialize(Serializer& s) {
+        ArchiveDump2(s, health);
+        ArchiveDumpNVP2(s, name);
+        ArchiveDumpNamed2(s, "Transform", transform);
+    }
+};
+
+struct Transform2{
+    glm::vec3 position;
+    glm::quat rotation;
+
+    void Serialize(Serializer& s) {
+        s.Field("position", position);
+        s.Field("rotation", rotation);
+    }
+};
+
 void BaseMeshSample::OnInit(){
+    Actor actorIn = {};
+    Actor actorOut = {};
+
+    actorOut.name = "Test";
+    actorOut.transform.position = glm::vec3(1, 2, 3);
+    actorOut.transform.scale = glm::vec3(5, 5, 5);
+
+    Serializer writer(Mode::Write);
+    writer.Field("actor", actorOut);
+
+    std::ofstream fileOut("actor.json");
+    writer.Save(fileOut, Format::Json);
+    fileOut.close();
+
+    std::ifstream fileIn("actor.json");
+    Serializer reader(Mode::Read);
+    reader.Load(fileIn, Format::Json);
+    reader.Field("actor", actorIn);
+
+    Assert(actorIn.name == "Test");
+    Assert(actorIn.transform.position == glm::vec3(1, 2, 3));
+
+    Transform2 trans2;
+
+    Serializer writer2(Mode::Write);
+    writer2.Field("transform", trans2);
+    std::ofstream out("transform.bin", std::ios::binary);
+    writer2.Save(out, Format::Binary);
+    out.close();
+
+    Serializer writer3(Mode::Write);
+    writer3.Field("transform", trans2);
+    std::ofstream out2("transform.json");
+    writer3.Save(out2, Format::Json);
+    out2.close();
+
     using CharacterType = OD::GroupOfComps<OD::TransformComponent, OD::MeshRendererComponent>;
 
     Registry gg;
@@ -29,7 +159,6 @@ void BaseMeshSample::OnInit(){
 
         }
     );
-
 
     struct Position { float x, y; };
     struct Velocity { float dx, dy; };

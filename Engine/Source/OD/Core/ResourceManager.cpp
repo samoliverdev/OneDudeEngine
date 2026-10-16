@@ -2,6 +2,7 @@
 #include "ResourceManager.h"
 #include <execution>
 #include <filesystem>
+#include <efsw/efsw.hpp>
 
 namespace OD{
 

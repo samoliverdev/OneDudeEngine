@@ -1,6 +1,6 @@
 #include "OD/pch.h"
 #include "Heightmap.h"
-#include "OD/Serialization/SerializationFull.h"
+#include "OD/Serialization/SerializationExtra.h"
 
 namespace OD{
 

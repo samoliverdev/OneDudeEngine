@@ -4,6 +4,8 @@
 namespace OD{
 
 //-----------TransformComponent---------
+
+/*
 template<typename... Components, typename Func>
 void TransformComponent::ForEachWithTransformTaskflow(Scene& scene, Func&& func){
     #ifdef ExperimentalTransformOptimzation
@@ -47,6 +49,7 @@ void TransformComponent::ForEachWithTransformTaskflow(Scene& scene, Func&& func)
 
 #endif
 }
+*/
 
 template <class Archive>
 void TransformComponent::serialize(Archive & ar){

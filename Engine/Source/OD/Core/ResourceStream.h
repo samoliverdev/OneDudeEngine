@@ -2,6 +2,7 @@
 #include <fstream>
 #include <memory>
 #include "Resource.h"
+#include "OD/Serialization/SerializationExtra.h"
 
 namespace OD{
 

@@ -9,6 +9,7 @@
 #include "OD/Core/Instrumentor.h"
 #include "OD/Graphics/Graphics.h"
 #include "OD/Graphics/Texture.h"
+#include "OD/Graphics/Mesh.h"
 
 namespace OD{
 

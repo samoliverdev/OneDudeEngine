@@ -6,7 +6,7 @@
 #include "OD/Core/Package.h"
 #include "Graphics.h"
 #include "GraphicsDevice.h"
-#include "OD/Serialization/SerializationFull.h"
+#include "OD/Serialization/SerializationExtra.h"
 #include <stb/stb_image.h>
 #include <stb/stb_image_write.h>
 

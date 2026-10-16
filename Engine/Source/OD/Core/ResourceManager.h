@@ -9,7 +9,11 @@
 //#include <entt/entt.hpp>
 #include <filesystem>
 #include <mutex>
-#include <efsw/efsw.hpp>
+//#include <efsw/efsw.hpp>
+
+namespace efsw{
+    class FileWatcher;
+}
 
 namespace OD{
 

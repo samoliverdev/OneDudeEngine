@@ -1,6 +1,6 @@
 #pragma once
 #include "OD/Defines.h"
-#include "OD/Serialization/SerializationFull.h"
+#include "OD/Serialization/SerializationExtra.h"
 #include <unordered_map>
 #include <string>
 #include <functional>

@@ -1,6 +1,6 @@
 #pragma once
 #include "OD/Defines.h"
-#include "OD/Serialization/SerializationFull.h"
+#include "OD/Serialization/SerializationExtra.h"
 #include "RenderData.h"
 #include "ChunkedVector.h"
 #include <string>

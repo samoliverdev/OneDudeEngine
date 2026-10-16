@@ -5,7 +5,7 @@
 #include "OD/Gfx/GfxReflection.h"
 #include "OD/Core/Hash.h"
 #include "OD/Core/ResourceManager.h"
-#include "OD/Serialization/SerializationFull.h"
+#include "OD/Serialization/SerializationExtra.h"
 #include <numeric>
 #include <fstream>
 

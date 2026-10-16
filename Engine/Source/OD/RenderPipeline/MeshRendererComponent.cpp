@@ -2,6 +2,8 @@
 #include "MeshRendererComponent.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Scene/Scene.h"
+#include "OD/Graphics/Mesh.h"
+#include "OD/Graphics/Material.h"
 
 namespace OD{
 
