@@ -102,6 +102,14 @@ void StandRenderPipelineModuleInit(){
     FramebufferRenderPass::RegisterRenderPass("Forward", renderPassInfo);
 
     renderPassInfo = {};
+    renderPassInfo.colorAttachments = { {FramebufferTextureFormat::RGBA16F} };
+    renderPassInfo.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT32};
+    renderPassInfo.type = FramebufferAttachmentType::CUBEMAP; 
+    renderPassInfo.sample = 1;
+    renderPassInfo.createDepth = true;
+    FramebufferRenderPass::RegisterRenderPass("ForwardCubemap", renderPassInfo);
+
+    renderPassInfo = {};
     renderPassInfo.colorAttachments = { 
         {FramebufferTextureFormat::RGB16F},
         {FramebufferTextureFormat::RGBA16F},
@@ -2050,7 +2058,8 @@ void StandRenderPipeline::RenderNew(Scene& scene){
             framebufferSpecification.depthAttachment = {FramebufferTextureFormat::DEPTH_COMPONENT16}; //renderContext->GetFinalColor()->Specification().depthAttachment;
             framebufferSpecification.type = FramebufferAttachmentType::CUBEMAP; //TEXTURE_2D_MULTISAMPLE
             framebufferSpecification.sample = 1;
-            probe.framebuffer = ResourceManager::Get().Create<Framebuffer>(framebufferSpecification);
+            //probe.framebuffer = ResourceManager::Get().Create<Framebuffer>(framebufferSpecification);
+            probe.framebuffer = ResourceManager::Get().Create<Framebuffer>("ForwardCubemap", probe.resolution, probe.resolution, 1, CalculateMipCount(probe.resolution, probe.resolution));
             probe.framebuffer->name = "Probe";
         }
 

@@ -1086,6 +1086,10 @@ void Graphics::DrawMesh(Mesh& mesh, Material& mat, Matrix4 modelMatrix, PerDrawD
         curBindGroup = BindMaterial(*curMat);
     }
 
+    if(mat.currentShader[mat.currentPass].drawTypes[(int)Shader::DrawType::DefaultDraw]->_pipelines[curFramebufferRenderPassIndex] == Gfx::InvalidID){
+        LogError("Shader: {} dont have RenderPass: {}", mat.shader->Path(), curFramebufferRenderPassName);
+        return;
+    }
     Assert(mat.currentShader[mat.currentPass].drawTypes[(int)Shader::DrawType::DefaultDraw]->_pipelines[curFramebufferRenderPassIndex] != Gfx::InvalidID);
 
     auto* cmd = gfxDevice->GetCommandBuffer();
@@ -1151,6 +1155,10 @@ void Graphics::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, Matrix4
         curBindGroup = BindMaterial(*curMat);
     }
 
+    if(mat.currentShader[mat.currentPass].drawTypes[(int)Shader::DrawType::SkinnedDraw]->_pipelines[curFramebufferRenderPassIndex] == Gfx::InvalidID){
+        LogError("Shader: {} dont have RenderPass: {}", mat.shader->Path(), curFramebufferRenderPassName);
+        return;
+    }
     Assert(mat.currentShader[mat.currentPass].drawTypes[(int)Shader::DrawType::SkinnedDraw]->_pipelines[curFramebufferRenderPassIndex] != Gfx::InvalidID);
 
     auto* cmd = gfxDevice->GetCommandBuffer();
@@ -1261,6 +1269,10 @@ void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, Matrix4* animMatrix
             curBindGroup = BindMaterial(*curMat);
         }
 
+        if(mat.currentShader[mat.currentPass].drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipelines[curFramebufferRenderPassIndex] == Gfx::InvalidID){
+            LogError("Shader: {} dont have RenderPass: {}", mat.shader->Path(), curFramebufferRenderPassName);
+            return;
+        }
         Assert(mat.currentShader[mat.currentPass].drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipelines[curFramebufferRenderPassIndex] != Gfx::InvalidID);
 
         auto* cmd = gfxDevice->GetCommandBuffer();
@@ -1322,6 +1334,10 @@ void Graphics::DrawMeshInstancing(Mesh& mesh, Material& mat, InstancingBuffer& b
         curBindGroup = BindMaterial(*curMat);
     }
 
+    if(mat.currentShader[mat.currentPass].drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipelines[curFramebufferRenderPassIndex] == Gfx::InvalidID){
+        LogError("Shader: {} dont have RenderPass: {}", mat.shader->Path(), curFramebufferRenderPassName);
+        return;
+    }
     Assert(mat.currentShader[mat.currentPass].drawTypes[(int)Shader::DrawType::InstancingDraw]->_pipelines[curFramebufferRenderPassIndex] != Gfx::InvalidID);
 
     auto* cmd = gfxDevice->GetCommandBuffer();

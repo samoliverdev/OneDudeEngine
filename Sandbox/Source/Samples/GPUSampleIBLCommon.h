@@ -125,10 +125,9 @@ inline OD::Gfx::Framebuffer CreateCubemapFramebuffer(OD::Gfx::Device* device, ui
     info.height = size;
     info.layout.type = OD::Gfx::FramebufferAttachmentType::CUBEMAP;
     info.layout.colorAttachments[0].format = OD::Gfx::FramebufferTextureFormat::RGBA16F;
-    info.layout.colorAttachments[0].mipLevels = static_cast<uint8_t>(mipLevels);
+    info.mipLevels = mipLevels;
     info.layout.colorAttachmentsCount = 1;
     info.layout.depthAttachment.format = OD::Gfx::FramebufferDepthTextureFormat::DEPTH_COMPONENT16;
-    info.layout.depthAttachment.mipLevels = static_cast<uint8_t>(mipLevels);
     return device->CreateFramebuffer(info);
 }
 

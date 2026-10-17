@@ -62,14 +62,12 @@ Gfx::Buffer IblCreateCube(Gfx::Device* device){
     return buffer;
 }
 
-Gfx::FrameBufferLayout IblFramebufferLayout(uint32_t mipLevels){
+Gfx::FrameBufferLayout IblFramebufferLayout(){
     Gfx::FrameBufferLayout layout{};
     layout.type = Gfx::FramebufferAttachmentType::CUBEMAP;
     layout.colorAttachments[0].format = Gfx::FramebufferTextureFormat::RGBA16F;
-    layout.colorAttachments[0].mipLevels = static_cast<uint8_t>(mipLevels);
     layout.colorAttachmentsCount = 1;
     layout.depthAttachment.format = Gfx::FramebufferDepthTextureFormat::DEPTH_COMPONENT16;
-    layout.depthAttachment.mipLevels = static_cast<uint8_t>(mipLevels);
     return layout;
 }
 
@@ -77,7 +75,8 @@ Gfx::Framebuffer IblCreateFramebuffer(Gfx::Device* device, uint32_t size, uint32
     Gfx::FrameBufferCreateInfo info{};
     info.width = size;
     info.height = size;
-    info.layout = IblFramebufferLayout(mipLevels);
+    info.layout = IblFramebufferLayout();
+    info.mipLevels = mipLevels;
     return device->CreateFramebuffer(info);
 }
 
@@ -258,7 +257,7 @@ Ref<Cubemap> Cubemap::CreateFromFileHDR(const char* hdri){
     const auto layout = IblCreateLayout(gfxDevice, Gfx::BindingType::Texture2D, sizeof(IblEnvironmentUniform));
     const auto source = IblLoadShader("Engine/Shaders/EquirectangularToCubemap.glsl");
     if(source.empty()) return nullptr;
-    const auto pipeline = IblCreatePipeline(gfxDevice, source, layout, IblFramebufferLayout(mipLevels));
+    const auto pipeline = IblCreatePipeline(gfxDevice, source, layout, IblFramebufferLayout());
     const auto projection = IblCaptureProjection();
     const auto views = IblCaptureViews();
     auto* commands = gfxDevice->GetCommandBuffer();
@@ -317,7 +316,7 @@ Ref<Cubemap> Cubemap::CreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap
     const auto layout = IblCreateLayout(gfxDevice, Gfx::BindingType::TextureCube, sizeof(IblCaptureUniform));
     const auto source = IblLoadShader("Engine/Shaders/IrradianceConvolution.glsl");
     if(source.empty()) return nullptr;
-    const auto pipeline = IblCreatePipeline(gfxDevice, source, layout, IblFramebufferLayout(mipLevels));
+    const auto pipeline = IblCreatePipeline(gfxDevice, source, layout, IblFramebufferLayout());
     const auto projection = IblCaptureProjection();
     const auto views = IblCaptureViews();
     auto* commands = gfxDevice->GetCommandBuffer();
@@ -373,7 +372,7 @@ Ref<Cubemap> Cubemap::CreatePrefilterMapFromCubeMap(const Ref<Cubemap>& cubemap)
     const auto layout = IblCreateLayout(gfxDevice, Gfx::BindingType::TextureCube, sizeof(IblCaptureUniform));
     const auto source = IblLoadShader("Engine/Shaders/Prefilter.glsl");
     if(source.empty()) return nullptr;
-    const auto pipeline = IblCreatePipeline(gfxDevice, source, layout, IblFramebufferLayout(mipLevels));
+    const auto pipeline = IblCreatePipeline(gfxDevice, source, layout, IblFramebufferLayout());
     const auto projection = IblCaptureProjection();
     const auto views = IblCaptureViews();
     auto* commands = gfxDevice->GetCommandBuffer();

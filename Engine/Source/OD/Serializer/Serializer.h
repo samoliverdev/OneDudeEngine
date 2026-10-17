@@ -41,6 +41,7 @@ template<class T, class = void> struct has_load_minimal : std::false_type {};
 template<class T> struct has_load_minimal<T, std::void_t<decltype(load_minimal(std::declval<const Serializer&>(), std::declval<T&>(), std::declval<const std::string&>()))>> : std::true_type {};
 } // namespace detail
 
+//TODO: Maybe change to IArchive
 class OD_API Serializer{
 public:
     explicit Serializer(Mode mode);
@@ -54,6 +55,8 @@ public:
     void Save(std::ostream& stream, Format format) const;
     void Load(std::istream& stream, Format format);
 
+    //TODO: Maybe change to "void operator(const char* name, T& value);"
+    //And maybe change to "virtual void operator(const char* name, T& value);" too
     void Field(const char* name, bool& value);
     void Field(const char* name, std::string& value);
     void Field(const char* name, float& value);

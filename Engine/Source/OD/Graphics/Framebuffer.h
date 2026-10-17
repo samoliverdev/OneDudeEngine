@@ -76,7 +76,7 @@ class OD_API Framebuffer: public Resource{
 public:
     Framebuffer(FramebufferType type, int width, int height, int layers = 1);
     Framebuffer(FrameBufferSpecification specification);
-    Framebuffer(const std::string& name, int width, int height, int layers = 1);
+    Framebuffer(const std::string& name, int width, int height, int layers = 1, int mipLevels = 1);
     ~Framebuffer();
     
     Framebuffer& operator=(const Framebuffer& other) = delete;

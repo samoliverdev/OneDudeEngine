@@ -4,7 +4,7 @@ EndProperties
 
 BeginPass
     #pragma Name MainPass
-    #pragma RenderPass DefaultWindows PostProssing Editor
+    #pragma RenderPass DefaultWindows PostProssing Editor Forward ForwardCubemap
     #pragma CullFace NONE
 
     #include Engine/ShaderLibrary/Base.glsl

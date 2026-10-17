@@ -23,8 +23,8 @@ void GPUSample7::OnInit(){
     framebuffer.width = 512;
     framebuffer.height = 512;
     framebuffer.layout.colorAttachmentsCount = 1;
-    framebuffer.layout.colorAttachments[0] = {Gfx::FramebufferTextureFormat::RGBA8, 1};
-    framebuffer.layout.depthAttachment = {Gfx::FramebufferDepthTextureFormat::DEPTH_COMPONENT16, 1};
+    framebuffer.layout.colorAttachments[0] = {Gfx::FramebufferTextureFormat::RGBA8};
+    framebuffer.layout.depthAttachment = {Gfx::FramebufferDepthTextureFormat::DEPTH_COMPONENT16};
     framebuffer.layout.type = Gfx::FramebufferAttachmentType::TEXTURE_2D;
     source2D = device->CreateFramebuffer(framebuffer);
     framebuffer.layout.type = Gfx::FramebufferAttachmentType::CUBEMAP;

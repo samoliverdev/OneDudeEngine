@@ -13,6 +13,8 @@
     DepthTest LESS
     Blend SRC_ALPHA ONE_MINUS_SRC_ALPHA
     DepthMask False
+
+    RenderPass DefaultWindows Forward ForwardCubemap
 #pragma EndPassDef
 
 #include Engine/ShaderLibrary/Base.glsl

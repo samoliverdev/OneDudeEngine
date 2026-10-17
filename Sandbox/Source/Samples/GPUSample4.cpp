@@ -59,7 +59,7 @@ void GPUSample4::OnInit(){
     Gfx::FrameBufferCreateInfo cubeInfo = arrayInfo;
     cubeInfo.layout.type = Gfx::FramebufferAttachmentType::CUBEMAP;
     cubeInfo.layout.layers = 1;
-    cubeInfo.layout.colorAttachments[0].mipLevels = 2;
+    cubeInfo.mipLevels = 2;
     cubeFramebuffer = device->CreateFramebuffer(cubeInfo);
 
     arrayPipeline = CreatePipeline(device, arrayInfo.layout);

@@ -1,9 +1,47 @@
 #include <gtest/gtest.h>
 #include <OD/Gfx/GfxReflection.h>
 #include <OD/Gfx/Gfx.h>
+#include <OD/Gfx/FramebufferUtils.h>
 #include <array>
 
 using namespace OD;
+
+TEST(GfxFramebuffer, ValidatesSharedMipCountAgainstExtentAndSamples)
+{
+    Gfx::FrameBufferCreateInfo info{};
+    EXPECT_EQ(info.mipLevels, 1u);
+    EXPECT_TRUE(Gfx::IsValidFramebufferCreateInfo(info));
+    info.width = 8;
+    info.height = 3;
+    info.mipLevels = 4;
+    EXPECT_TRUE(Gfx::IsValidFramebufferCreateInfo(info));
+    info.mipLevels = 5;
+    EXPECT_FALSE(Gfx::IsValidFramebufferCreateInfo(info));
+    info.mipLevels = 0;
+    EXPECT_FALSE(Gfx::IsValidFramebufferCreateInfo(info));
+    info.mipLevels = 2;
+    info.layout.samples = 4;
+    EXPECT_FALSE(Gfx::IsValidFramebufferCreateInfo(info));
+    info.mipLevels = 1;
+    EXPECT_TRUE(Gfx::IsValidFramebufferCreateInfo(info));
+    info.width = 0;
+    EXPECT_FALSE(Gfx::IsValidFramebufferCreateInfo(info));
+    info.width = 8;
+    info.height = 0;
+    EXPECT_FALSE(Gfx::IsValidFramebufferCreateInfo(info));
+}
+
+TEST(GfxFramebuffer, ResourceCommandsPreserveSharedMipCount)
+{
+    Gfx::FrameBufferCreateInfo info{};
+    info.width = info.height = 16;
+    info.mipLevels = 5;
+    Gfx::ResourceCommands commands;
+    commands.CreateFramebuffer(7, info);
+    info.mipLevels = 1;
+    ASSERT_EQ(commands.commands.size(), 1u);
+    EXPECT_EQ(commands.commands.front().createFramebuffer.info.mipLevels, 5u);
+}
 
 TEST(GfxImGui, RecordsSnapshotOwnershipInRenderFrame)
 {

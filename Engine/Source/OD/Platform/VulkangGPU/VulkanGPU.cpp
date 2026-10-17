@@ -1,4 +1,5 @@
 #include "VulkanGPU.h"
+#include "OD/Gfx/FramebufferUtils.h"
 #include "OD/Graphics/Graphics.h"
 #include "OD/Core/Application.h"
 #include "OD/Platform/Platform.h"
@@ -1644,12 +1645,10 @@ uint64_t GetFramebufferLayoutHash(const FrameBufferLayout& layout){
     for(uint32_t i = 0; i < layout.colorAttachmentsCount; ++i){
         const FramebufferAttachment& attachment = layout.colorAttachments[i];
         hash = HashCombineByte(hash, static_cast<uint8_t>(attachment.format));
-        hash = HashCombineByte(hash, attachment.mipLevels);
     }
 
     // Depth attachment
     hash = HashCombineByte(hash, static_cast<uint8_t>(layout.depthAttachment.format));
-    hash = HashCombineByte(hash, layout.depthAttachment.mipLevels);
     hash = HashCombineByte(hash, layout.samples);
 
     hash = HashCombineByte(hash, static_cast<uint8_t>(layout.layers));
@@ -1678,6 +1677,7 @@ VkRenderPass VulkanGPUDevice::GetOrCreate(const FrameBufferLayout& layout, bool 
 
 bool VulkanGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBufferCreateInfo& info){
     #undef max
+    if(!IsValidFramebufferCreateInfo(info)) return false;
     //VulkanFramebuffer result{};
 
     data.width = info.width;
@@ -1715,7 +1715,7 @@ bool VulkanGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
         imageInfo.extent.width = info.width;
         imageInfo.extent.height = info.height;
         imageInfo.extent.depth = 1;
-        imageInfo.mipLevels = attachment.mipLevels;
+        imageInfo.mipLevels = info.mipLevels;
         imageInfo.arrayLayers = layerCount;
         if(layout.type == FramebufferAttachmentType::CUBEMAP)
             imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
@@ -1742,13 +1742,14 @@ bool VulkanGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
         viewInfo.format = format;
         viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         viewInfo.subresourceRange.baseMipLevel = 0;
-        viewInfo.subresourceRange.levelCount = attachment.mipLevels;
+        viewInfo.subresourceRange.levelCount = info.mipLevels;
 
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = layerCount;
         VK_CHECK(vkCreateImageView(_device, &viewInfo, nullptr, &vkAttachment.imageView));
 
         VkSamplerCreateInfo samplerInfo = CreateTextureSampler(info.filter, info.wrapping);
+        samplerInfo.maxLod = static_cast<float>(info.mipLevels - 1);
         VK_CHECK(vkCreateSampler(_device, &samplerInfo, nullptr, &vkAttachment.sampler));
     }
 
@@ -1768,7 +1769,7 @@ bool VulkanGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
         imageInfo.extent.width = info.width;
         imageInfo.extent.height = info.height;
         imageInfo.extent.depth = 1;
-        imageInfo.mipLevels = attachment.mipLevels;
+        imageInfo.mipLevels = info.mipLevels;
         imageInfo.arrayLayers = layerCount;
         if(layout.type == FramebufferAttachmentType::CUBEMAP)
             imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
@@ -1792,12 +1793,13 @@ bool VulkanGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
         viewInfo.format = format;
         viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
         viewInfo.subresourceRange.baseMipLevel = 0;
-        viewInfo.subresourceRange.levelCount = attachment.mipLevels;
+        viewInfo.subresourceRange.levelCount = info.mipLevels;
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = layerCount;
         VK_CHECK(vkCreateImageView(_device, &viewInfo, nullptr, &data.depthAttachment.imageView));
 
         VkSamplerCreateInfo samplerInfo = CreateTextureSampler(info.filter, info.wrapping);
+        samplerInfo.maxLod = static_cast<float>(info.mipLevels - 1);
         VK_CHECK(vkCreateSampler(_device, &samplerInfo, nullptr, &data.depthAttachment.sampler));
     }
 
@@ -1805,13 +1807,7 @@ bool VulkanGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
     // VkFramebuffer
     // ------------------------------------------------------------
 
-    const uint32_t mipCount = [&](){
-        uint32_t count = 1;
-        for(uint32_t i = 0; i < layout.colorAttachmentsCount; ++i)
-            count = std::max(count, static_cast<uint32_t>(layout.colorAttachments[i].mipLevels));
-        count = std::max(count, static_cast<uint32_t>(layout.depthAttachment.mipLevels));
-        return count;
-    }();
+    const uint32_t mipCount = info.mipLevels;
     data.subresourceMipCount = mipCount;
     data.subresourceLayerCount = layerCount;
 
@@ -1826,7 +1822,7 @@ bool VulkanGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
                 viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
                 viewInfo.format = ToVkColorFormat(layout.colorAttachments[attachmentIndex].format);
                 viewInfo.subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT,
-                    std::min(mip, static_cast<uint32_t>(layout.colorAttachments[attachmentIndex].mipLevels - 1)), 1, layer, 1};
+                    mip, 1, layer, 1};
                 VkImageView view = VK_NULL_HANDLE;
                 VK_CHECK(vkCreateImageView(_device, &viewInfo, nullptr, &view));
                 data.subresourceViews.push_back(view);
@@ -1839,7 +1835,7 @@ bool VulkanGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
                 viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
                 viewInfo.format = ToVkDepthFormat(layout.depthAttachment.format);
                 viewInfo.subresourceRange = {VK_IMAGE_ASPECT_DEPTH_BIT,
-                    std::min(mip, static_cast<uint32_t>(layout.depthAttachment.mipLevels - 1)), 1, layer, 1};
+                    mip, 1, layer, 1};
                 VkImageView view = VK_NULL_HANDLE;
                 VK_CHECK(vkCreateImageView(_device, &viewInfo, nullptr, &view));
                 data.subresourceViews.push_back(view);
@@ -2856,6 +2852,7 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
     bool hasWindowRenderPass = false;
 
     for(const CommandBuffer::Command& renderCmd : frame.renderCommands.commands){
+        if(skipNextEndFramebuffer && renderCmd.type != CommandBuffer::Type::EndFramebuffer) continue;
         switch(renderCmd.type){
             case CommandBuffer::Type::Clear:{
                 std::vector<VkClearAttachment> clearAttachments;
@@ -3022,10 +3019,11 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                 Assert(layer < layerCount);
                 Assert(mip < data.subresourceMipCount);
                 const size_t framebufferIndex = static_cast<size_t>(mip) * layerCount + layer;
-                if(framebufferIndex >= data.subresourceFramebuffers.size()){
+                if(layer >= layerCount || mip >= data.subresourceMipCount || framebufferIndex >= data.subresourceFramebuffers.size()){
                     LogError("Vulkan framebuffer subresource index out of range: mip={}, layer={}, mipCount={}, layerCount={}, framebufferCount={}",
                         mip, layer, data.subresourceMipCount, layerCount, data.subresourceFramebuffers.size());
                     Assert(false);
+                    skipNextEndFramebuffer = true;
                     break;
                 }
                 if(!clean && !data.contentsInitialized){
@@ -3065,9 +3063,9 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                         barriers.push_back(barrier);
                     };
                     for(uint32_t i = 0; i < layout.colorAttachmentsCount; ++i)
-                        addInitialBarrier(data.colorAttachments[i], VK_IMAGE_ASPECT_COLOR_BIT, layout.colorAttachments[i].mipLevels);
+                        addInitialBarrier(data.colorAttachments[i], VK_IMAGE_ASPECT_COLOR_BIT, data.subresourceMipCount);
                     if(layout.depthAttachment.format != FramebufferDepthTextureFormat::None)
-                        addInitialBarrier(data.depthAttachment, VK_IMAGE_ASPECT_DEPTH_BIT, layout.depthAttachment.mipLevels);
+                        addInitialBarrier(data.depthAttachment, VK_IMAGE_ASPECT_DEPTH_BIT, data.subresourceMipCount);
                 }
 
                 // Color attachments (the first pass already transitioned all
@@ -3092,7 +3090,7 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                     barrier.image = attachment.image;
                     barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                    barrier.subresourceRange.baseMipLevel = std::min(mip, static_cast<uint32_t>(layout.colorAttachments[i].mipLevels - 1));
+                    barrier.subresourceRange.baseMipLevel = mip;
                     barrier.subresourceRange.levelCount = 1;
                     barrier.subresourceRange.baseArrayLayer = layer;
                     barrier.subresourceRange.layerCount = 1;
@@ -3118,7 +3116,7 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                     barrier.image = attachment.image;
                     barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                    barrier.subresourceRange.baseMipLevel = std::min(mip, static_cast<uint32_t>(layout.depthAttachment.mipLevels - 1));
+                    barrier.subresourceRange.baseMipLevel = mip;
                     barrier.subresourceRange.levelCount = 1;
                     barrier.subresourceRange.baseArrayLayer = layer;
                     barrier.subresourceRange.layerCount = 1;
@@ -3211,6 +3209,11 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
 
             case CommandBuffer::Type::BlitFramebuffer:{
                 const auto& blit = renderCmd.blitFramebuffer;
+                if(!framebufferPool.IsValid(blit.src)){
+                    LogWarning("Ignoring BlitFramebuffer for a destroyed framebuffer (id={})", blit.src);
+                    skipNextEndFramebuffer = true;
+                    break;
+                }
                 Assert(framebufferPool.IsValid(blit.src));
                 auto& sourceFramebuffer = framebufferPool.Get(blit.src);
                 const bool depth = blit.srcPass < 0;
@@ -3330,7 +3333,7 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                 }
                 Assert(attachment < 0 || static_cast<uint32_t>(attachment) < sourceFramebuffer.layout.colorAttachmentsCount);
                 VulkanFramebufferAttachment* source = attachment < 0 ? &sourceFramebuffer.depthAttachment : &sourceFramebuffer.colorAttachments[attachment];
-                const uint32_t sourceMipLevels = attachment < 0 ? sourceFramebuffer.layout.depthAttachment.mipLevels : sourceFramebuffer.layout.colorAttachments[attachment].mipLevels;
+                const uint32_t sourceMipLevels = sourceFramebuffer.subresourceMipCount;
                 Assert(sourceFramebuffer.width == destinationWidth && sourceFramebuffer.height == destinationHeight);
                 Assert(sourceMipLevels == destinationMipLevels);
                 ImageFormat sourceFormat = ImageFormat::R8_UNORM;
@@ -3444,8 +3447,8 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                     barrier.image = attachment.image;
                     barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                    barrier.subresourceRange.baseMipLevel = framebuffer.contentsInitialized ? std::min(framebuffer.activeMip, static_cast<uint32_t>(layout.colorAttachments[i].mipLevels - 1)) : 0;
-                    barrier.subresourceRange.levelCount = framebuffer.contentsInitialized ? 1 : layout.colorAttachments[i].mipLevels;
+                    barrier.subresourceRange.baseMipLevel = framebuffer.contentsInitialized ? framebuffer.activeMip : 0;
+                    barrier.subresourceRange.levelCount = framebuffer.contentsInitialized ? 1 : framebuffer.subresourceMipCount;
                     barrier.subresourceRange.baseArrayLayer = framebuffer.contentsInitialized ? framebuffer.activeLayer : 0;
                     barrier.subresourceRange.layerCount = framebuffer.contentsInitialized ? 1 : (layout.type == FramebufferAttachmentType::CUBEMAP ? 6u : layout.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY ? math::max<uint8_t>(1u, layout.layers) : 1u);
                     barriers.push_back(barrier);
@@ -3472,8 +3475,8 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                     barrier.image = attachment.image;
                     barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                    barrier.subresourceRange.baseMipLevel = framebuffer.contentsInitialized ? std::min(framebuffer.activeMip, static_cast<uint32_t>(layout.depthAttachment.mipLevels - 1)) : 0;
-                    barrier.subresourceRange.levelCount = framebuffer.contentsInitialized ? 1 : layout.depthAttachment.mipLevels;
+                    barrier.subresourceRange.baseMipLevel = framebuffer.contentsInitialized ? framebuffer.activeMip : 0;
+                    barrier.subresourceRange.levelCount = framebuffer.contentsInitialized ? 1 : framebuffer.subresourceMipCount;
                     barrier.subresourceRange.baseArrayLayer = framebuffer.contentsInitialized ? framebuffer.activeLayer : 0;
                     barrier.subresourceRange.layerCount = framebuffer.contentsInitialized ? 1 : (layout.type == FramebufferAttachmentType::CUBEMAP ? 6u : layout.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY ? math::max<uint8_t>(1u, layout.layers) : 1u);
                     barriers.push_back(barrier);
@@ -3771,7 +3774,8 @@ BindGroup VulkanGPUDevice::CreateFrameBindGroup(BindGroupInfo& info){
     return id;
 }
 
-Framebuffer VulkanGPUDevice::CreateFramebuffer(FrameBufferCreateInfo& info){ 
+Framebuffer VulkanGPUDevice::CreateFramebuffer(FrameBufferCreateInfo& info){
+    if(!IsValidFramebufferCreateInfo(info)) return InvalidID;
     #ifdef DONT_DEFERRED_RESOURCE_CREATION
 
     FramebufferData data;

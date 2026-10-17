@@ -76,12 +76,10 @@ enum class OD_API_IMPORT FramebufferAttachmentType: uint8_t{
 
 struct OD_API FramebufferAttachment{
     FramebufferTextureFormat format;
-    uint8_t mipLevels = 1;
 };
 
 struct OD_API FramebufferDepthAttachment{
     FramebufferDepthTextureFormat format;
-    uint8_t mipLevels = 1;
 };
 
 struct OD_API FrameBufferLayout{
@@ -98,9 +96,9 @@ struct OD_API FrameBufferCreateInfo{
     FrameBufferLayout layout;
     uint32_t width = 1;
     uint32_t height = 1;
+    uint32_t mipLevels = 1; // Allocated count for all attachments, including level 0.
     TextureFilter filter = TextureFilter::Linear;
     TextureWrapping wrapping = TextureWrapping::Repeat;
-    //bool mipmap = true;
 };
 
 //////////////////////////////////////

@@ -14,7 +14,7 @@ extern GraphicsDevice* graphicsDevice;
 extern Gfx::Device* gfxDevice;
 
 #ifdef TestNewGPU_API
-static size_t EstimateFramebufferBytes(const Gfx::FrameBufferLayout& layout, int width, int height){
+static size_t EstimateFramebufferBytes(const Gfx::FrameBufferLayout& layout, int width, int height, uint32_t mipLevels){
     auto colorBytes = [](Gfx::FramebufferTextureFormat format) -> size_t {
         switch(format){
             case Gfx::FramebufferTextureFormat::RED_INTEGER: return 4;
@@ -44,16 +44,15 @@ static size_t EstimateFramebufferBytes(const Gfx::FrameBufferLayout& layout, int
         bytesPerPixel += colorBytes(layout.colorAttachments[i].format);
     const size_t layers = layout.type == Gfx::FramebufferAttachmentType::CUBEMAP ? 6 :
         layout.type == Gfx::FramebufferAttachmentType::TEXTURE_2D_ARRAY ? std::max(1, static_cast<int>(layout.layers)) : 1;
-    return static_cast<size_t>(std::max(0, width)) * std::max(0, height) * bytesPerPixel * layers * std::max(1, static_cast<int>(layout.samples));
+    size_t pixels = 0;
+    for(uint32_t mip = 0; mip < mipLevels; ++mip)
+        pixels += static_cast<size_t>(std::max(1, width >> mip)) * std::max(1, height >> mip);
+    return pixels * bytesPerPixel * layers * std::max(1, static_cast<int>(layout.samples));
 }
 
-static void InitializeGfxFramebuffer(Gfx::Framebuffer framebuffer, const Gfx::FrameBufferLayout& layout){
+static void InitializeGfxFramebuffer(Gfx::Framebuffer framebuffer, const Gfx::FrameBufferLayout& layout, uint32_t mipCount){
     const uint32_t layerCount = layout.type == Gfx::FramebufferAttachmentType::CUBEMAP ? 6u :
         layout.type == Gfx::FramebufferAttachmentType::TEXTURE_2D_ARRAY ? std::max(1u, static_cast<uint32_t>(layout.layers)) : 1u;
-
-    uint32_t mipCount = std::max(1u, static_cast<uint32_t>(layout.depthAttachment.mipLevels));
-    for(uint32_t i = 0; i < layout.colorAttachmentsCount; ++i)
-        mipCount = std::max(mipCount, static_cast<uint32_t>(layout.colorAttachments[i].mipLevels));
 
     auto* commands = gfxDevice->GetCommandBuffer();
     // Keep the command order identical to Vulkan's subresource framebuffer
@@ -138,10 +137,8 @@ bool FramebufferRenderPass::RegisterRenderPass(const std::string& name, RenderPa
         layout.colorAttachmentsCount = info.colorAttachments.size();
         for(int i = 0; i  < info.colorAttachments.size(); i++){
             layout.colorAttachments[i].format = GetColorFormat(info.colorAttachments[i].colorFormat);
-            layout.colorAttachments[i].mipLevels = info.colorAttachments[i].mipLevels;
         }
         layout.depthAttachment.format = info.createDepth == false ? Gfx::FramebufferDepthTextureFormat::None : GetDepthFormat(info.depthAttachment.colorFormat);
-        layout.depthAttachment.mipLevels = info.depthAttachment.mipLevels;
 
         renderPassDatas[curRenderPass].layout = layout;
     }
@@ -189,7 +186,7 @@ Framebuffer::Framebuffer(FrameBufferSpecification inSpecification){
     #endif
 }
 
-Framebuffer::Framebuffer(const std::string& name, int width, int height, int layers){
+Framebuffer::Framebuffer(const std::string& name, int width, int height, int layers, int mipLevels){
     FramebufferRenderPassData* data = nullptr;
 
     for(int i = 0; i < (curRenderPass + 1); i++){
@@ -218,13 +215,19 @@ Framebuffer::Framebuffer(const std::string& name, int width, int height, int lay
     info.layout = data->layout;
     info.width = width;
     info.height = height;
+    info.mipLevels = mipLevels;
+    for(const auto& attachment : data->info.colorAttachments)
+        info.mipLevels = std::max(info.mipLevels, static_cast<uint32_t>(std::max(1, attachment.mipLevels)));
+    if(data->info.createDepth)
+        info.mipLevels = std::max(info.mipLevels, static_cast<uint32_t>(std::max(1, data->info.depthAttachment.mipLevels)));
     info.filter = Gfx::TextureFilter::Nearest;
     info.wrapping = Gfx::TextureWrapping::ClampToBorder;
     framebuffer = gfxDevice->CreateFramebuffer(info);
     Assert(framebuffer != Gfx::InvalidID);
-    vramUsage = EstimateFramebufferBytes(data->layout, width, height);
+
+    vramUsage = EstimateFramebufferBytes(data->layout, width, height, info.mipLevels);
     Graphics::TrackMemoryUsage(GraphicsMemoryCategory::Framebuffer, 0, vramUsage);
-    InitializeGfxFramebuffer(framebuffer, data->layout);
+    InitializeGfxFramebuffer(framebuffer, data->layout, info.mipLevels);
     #else
     graphicsDevice->FramebufferCreate(*this);
     #endif 
@@ -267,14 +270,19 @@ void Framebuffer::Resize(int width, int height){
     info.layout = data->layout;
     info.width = width;
     info.height = height;
+    info.mipLevels = 1;
+    for(const auto& attachment : data->info.colorAttachments)
+        info.mipLevels = std::max(info.mipLevels, static_cast<uint32_t>(std::max(1, attachment.mipLevels)));
+    if(data->info.createDepth)
+        info.mipLevels = std::max(info.mipLevels, static_cast<uint32_t>(std::max(1, data->info.depthAttachment.mipLevels)));
     info.filter = Gfx::TextureFilter::Nearest;
     info.wrapping = Gfx::TextureWrapping::ClampToBorder;
     framebuffer = gfxDevice->CreateFramebuffer(info);
     Assert(framebuffer != Gfx::InvalidID);
     const size_t oldVramUsage = vramUsage;
-    vramUsage = EstimateFramebufferBytes(data->layout, width, height);
+    vramUsage = EstimateFramebufferBytes(data->layout, width, height, info.mipLevels);
     Graphics::TrackMemoryUsage(GraphicsMemoryCategory::Framebuffer, oldVramUsage, vramUsage);
-    InitializeGfxFramebuffer(framebuffer, data->layout);
+    InitializeGfxFramebuffer(framebuffer, data->layout, info.mipLevels);
     #else
     if(width == 0 || height == 0) return; // avoid crash
 
