@@ -2,6 +2,7 @@
 #include "OD/Defines.h"
 #include "OD/Base.h"
 #include "OD/Core/Math.h"
+#include "OD/Gfx/ImGuiImages.h"
 #include <thread>
 #include <mutex>
 
@@ -1249,6 +1250,7 @@ struct OD_API RenderFrame{
     ResourceCommands resourceCommands = {};
     CommandBuffer renderCommands = {};
     std::vector<ImGuiSnapshot> imguiSnapshots;
+    ImGuiImages imguiImages;
 
     inline void RecordImGuiDrawData(void* data, ImGuiDrawDataDestroyFunction destroy){
         const uint32_t snapshotIndex = static_cast<uint32_t>(imguiSnapshots.size());
@@ -1257,14 +1259,20 @@ struct OD_API RenderFrame{
         auto insertAt = renderCommands.commands.end();
         for(auto it = renderCommands.commands.end(); it != renderCommands.commands.begin();){
             --it;
-            if(it->type == CommandBuffer::Type::EndFramebuffer){
-                insertAt = it;
+            if(it->type == CommandBuffer::Type::BeginWindowFramebuffer){
+                auto end = it + 1;
+                while(end != renderCommands.commands.end() && end->type != CommandBuffer::Type::EndFramebuffer) ++end;
+                insertAt = end;
                 break;
             }
         }
 
         if(insertAt == renderCommands.commands.end()){
+            // An editor may render only to offscreen targets. ImGui needs a
+            // window pass, after those targets have become shader-readable.
+            renderCommands.BeginWindowFramebuffer();
             renderCommands.RenderImGui(snapshotIndex);
+            renderCommands.EndFramebuffer();
             return;
         }
 
@@ -1280,6 +1288,7 @@ struct OD_API RenderFrame{
                 snapshot.destroy(snapshot.data);
         }
         imguiSnapshots.clear();
+        imguiImages.Clear();
         resourceCommands.Clear();
         renderCommands.ClearCmds();
     }
@@ -1307,6 +1316,9 @@ public:
     virtual void ImGuiNewFrame(){}
     virtual void SubmitImGuiDrawData(void* data, ImGuiDrawDataDestroyFunction destroy){}
     virtual void ImGuiShutdown(){}
+    // Frame-local ImTextureID. Obtain again each UI frame; never dereference it.
+    virtual void* ImGuiFramebufferColorAttachment(Framebuffer framebuffer, uint32_t attachment){ return nullptr; }
+    virtual bool ImGuiFramebufferNeedsVerticalFlip() const { return true; }
 
     virtual ResourceStats GetBufferStats(Buffer id){ return {}; }
 

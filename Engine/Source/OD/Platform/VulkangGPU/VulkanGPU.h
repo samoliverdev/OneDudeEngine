@@ -36,6 +36,8 @@ public:
     virtual void ImGuiNewFrame() override;
     virtual void SubmitImGuiDrawData(void* data, ImGuiDrawDataDestroyFunction destroy) override;
     virtual void ImGuiShutdown() override;
+    virtual void* ImGuiFramebufferColorAttachment(Framebuffer framebuffer, uint32_t attachment) override;
+    virtual bool ImGuiFramebufferNeedsVerticalFlip() const override;
 
     virtual CommandBuffer* GetCommandBuffer() override;
     virtual FrameBufferLayout GetWindowFrameBufferLayout() override;
@@ -139,6 +141,7 @@ private:
         VmaAllocation allocation = VK_NULL_HANDLE;
         VkSampler sampler = VK_NULL_HANDLE;
         bool initialized = false;
+        VkDescriptorSet imguiDescriptor = VK_NULL_HANDLE;
     };
 
     struct FramebufferData{

@@ -5,6 +5,7 @@
 #include "OD/Platform/BaseGpu/ResourcePool.h"
 #include "OD/Core/Instrumentor.h"
 #include "VulkanSwapchainUtils.h"
+#include "OD/Platform/BaseGpu/ImGuiImageResolver.h"
 
 #include <vulkan/vulkan.h>
 #include <vk-bootstrap/VkBootstrap.h>
@@ -1886,6 +1887,10 @@ void VulkanGPUDevice::_DestroyFramebuffer(FramebufferData& data){
     // -----------------------------------------
 
     for(auto& attachment : data.colorAttachments){
+        if(attachment.imguiDescriptor != VK_NULL_HANDLE){
+            ImGui_ImplVulkan_RemoveTexture(attachment.imguiDescriptor);
+            attachment.imguiDescriptor = VK_NULL_HANDLE;
+        }
         if(attachment.sampler != VK_NULL_HANDLE){
             vkDestroySampler(_device, attachment.sampler, nullptr);
             attachment.sampler = VK_NULL_HANDLE;
@@ -2419,10 +2424,32 @@ void VulkanGPUDevice::SubmitImGuiDrawData(void* data, ImGuiDrawDataDestroyFuncti
     frame.RecordImGuiDrawData(data, destroy);
 }
 
+void* VulkanGPUDevice::ImGuiFramebufferColorAttachment(Framebuffer framebuffer, uint32_t attachment){
+    return multithreadRendererContext.simulationFrame->imguiImages.ColorAttachment(framebuffer, attachment);
+}
+
+bool VulkanGPUDevice::ImGuiFramebufferNeedsVerticalFlip() const {
+#ifdef TestDrawInverted
+    return false;
+#else
+    // The engine uploads the same projection as OpenGL. With a positive
+    // Vulkan viewport, scene +Y lands at V=1 in the attachment.
+    return true;
+#endif
+}
+
 void VulkanGPUDevice::ImGuiShutdown(){
     if(!imguiInitialized)
         return;
 
+    // Release cached sets while the ImGui descriptor pool/backend still exists.
+    framebufferPool.ForEach([&](uint32_t, FramebufferData& data){
+        for(auto& attachment : data.colorAttachments){
+            if(attachment.imguiDescriptor != VK_NULL_HANDLE)
+                ImGui_ImplVulkan_RemoveTexture(attachment.imguiDescriptor);
+            attachment.imguiDescriptor = VK_NULL_HANDLE;
+        }
+    });
     ImGui_ImplVulkan_Shutdown();
     imguiInitialized = false;
 }
@@ -3359,6 +3386,20 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                     break;
 
                 ImGuiNewFrame();
+                ResolveImGuiImages(*static_cast<ImDrawData*>(snapshot.data), frame.imguiImages,
+                    [&](uint32_t framebuffer, uint32_t index) -> void* {
+                        if(!framebufferPool.IsValid(framebuffer)) return nullptr;
+                        auto& data = framebufferPool.Get(framebuffer);
+                        if(data.layout.type != FramebufferAttachmentType::TEXTURE_2D || data.layout.samples != 1 ||
+                           !data.contentsInitialized || index >= data.colorAttachments.size() ||
+                           data.layout.colorAttachments[index].format == FramebufferTextureFormat::RED_INTEGER) return nullptr;
+                        auto& attachment = data.colorAttachments[index];
+                        if(attachment.imageView == VK_NULL_HANDLE || attachment.sampler == VK_NULL_HANDLE) return nullptr;
+                        if(attachment.imguiDescriptor == VK_NULL_HANDLE)
+                            attachment.imguiDescriptor = ImGui_ImplVulkan_AddTexture(
+                                attachment.sampler, attachment.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                        return (ImTextureID)attachment.imguiDescriptor;
+                    });
                 ImGui_ImplVulkan_RenderDrawData(
                     static_cast<ImDrawData*>(snapshot.data),
                     cmd

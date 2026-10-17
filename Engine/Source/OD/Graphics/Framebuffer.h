@@ -90,6 +90,8 @@ public:
     int ReadPixel(int attachmentIndex, int x, int y);
 
     bool IsValid();
+    // Under TestNewGPU_API this is an opaque, frame-local ImGui image ID.
+    // Request it again each UI frame; it is not a native GPU texture handle.
     void* ColorAttachmentId(int index);
     void* DepthAttachmentId();
     

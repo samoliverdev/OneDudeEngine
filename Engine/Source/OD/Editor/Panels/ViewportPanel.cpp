@@ -4,8 +4,11 @@
 #include "OD/Editor/Editor.h"
 #include "OD/RenderPipeline/StandRenderPipeline.h"
 #include "OD/RenderPipeline/ModelRendererComponent.h"
+#include "OD/Gfx/Gfx.h"
 
 namespace OD{
+
+extern Gfx::Device* gfxDevice;
 
 ViewportPanel::ViewportPanel(){
     name = "ViewportPanel";
@@ -21,6 +24,12 @@ void ViewportPanel::OnGui(){
     bool sceneRunning = SceneManager::Get().GetActiveScene()->Running();
 
     void* textureId = editor->framebuffer->ColorAttachmentId(0);
+    bool flipImage = true;
+#ifdef TestNewGPU_API
+    if(gfxDevice != nullptr) flipImage = gfxDevice->ImGuiFramebufferNeedsVerticalFlip();
+#endif
+    const ImVec2 uv0(0, flipImage ? 1.0f : 0.0f);
+    const ImVec2 uv1(1, flipImage ? 0.0f : 1.0f);
     
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0,0));
     ImGui::SetNextWindowSize(ImVec2(576, 680));
@@ -135,6 +144,8 @@ void ViewportPanel::OnGui(){
     BaseRenderPipeline* renderPipeline = SceneManager::Get().GetActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
     Assert(renderPipeline != nullptr);
 
+    // The Gfx path does not implement integer framebuffer readback yet.
+#ifndef TestNewGPU_API
     if(Input::IsMouseButtonDown(MouseButton::Left) && editor->gizmoInteractionState.isOver == false && sceneRunning == false && ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows)){
         int entityId = renderPipeline->ReadEntityId(mouseX, mouseY) - 1;
     
@@ -160,6 +171,7 @@ void ViewportPanel::OnGui(){
         }
     }
 
+#endif
     //LogInfo("screen_pos x: %d y: %d", mouseX, mouseY);
     
     if(renderPipeline->FinalColor()->IsValid()){
@@ -174,7 +186,7 @@ void ViewportPanel::OnGui(){
     ImVec2 imagePos = ImGui::GetCursorPos();
     
     if(useCustomResolution == false){
-        ImGui::Image(textureId, ImVec2(viewportPanelSize.x, viewportPanelSize.y), ImVec2(0, 1), ImVec2(1, 0));
+        ImGui::Image(textureId, ImVec2(viewportPanelSize.x, viewportPanelSize.y), uv0, uv1);
         //ImGui::Image((void*)(uint64_t)textureId, ImVec2(viewportPanelSize.x, viewportPanelSize.y), ImVec2(0, 1), ImVec2(1, 0));
     } else {
         ImVec2 avail = ImGui::GetContentRegionAvail();
@@ -188,7 +200,7 @@ void ViewportPanel::OnGui(){
             cursor.x + (avail.x - size.x) * 0.5f,
             cursor.y + (avail.y - size.y) * 0.5f
         ));
-        ImGui::Image((ImTextureID)textureId, size, ImVec2(0, 1), ImVec2(1, 0));
+        ImGui::Image(textureId, size, uv0, uv1);
     }
 
     if(ImGui::BeginDragDropTarget()){

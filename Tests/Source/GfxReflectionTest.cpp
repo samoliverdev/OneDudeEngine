@@ -12,12 +12,14 @@ TEST(GfxImGui, RecordsSnapshotOwnershipInRenderFrame)
 
     frame.RecordImGuiDrawData(snapshot, nullptr);
 
-    ASSERT_EQ(frame.renderCommands.commands.size(), 1u);
+    ASSERT_EQ(frame.renderCommands.commands.size(), 3u);
     EXPECT_EQ(
         frame.renderCommands.commands.front().type,
-        Gfx::CommandBuffer::Type::RenderImGui
+        Gfx::CommandBuffer::Type::BeginWindowFramebuffer
     );
-    EXPECT_EQ(frame.renderCommands.commands.front().renderImGui.snapshotIndex, 0u);
+    EXPECT_EQ(frame.renderCommands.commands[1].type, Gfx::CommandBuffer::Type::RenderImGui);
+    EXPECT_EQ(frame.renderCommands.commands[1].renderImGui.snapshotIndex, 0u);
+    EXPECT_EQ(frame.renderCommands.commands.back().type, Gfx::CommandBuffer::Type::EndFramebuffer);
     EXPECT_EQ(frame.imguiSnapshots.size(), 1u);
     EXPECT_EQ(frame.imguiSnapshots.front().data, snapshot);
 }

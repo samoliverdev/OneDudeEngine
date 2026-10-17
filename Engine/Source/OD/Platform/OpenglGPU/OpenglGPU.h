@@ -35,6 +35,7 @@ public:
     virtual void ImGuiNewFrame() override;
     virtual void SubmitImGuiDrawData(void* data, ImGuiDrawDataDestroyFunction destroy) override;
     virtual void ImGuiShutdown() override;
+    virtual void* ImGuiFramebufferColorAttachment(Framebuffer framebuffer, uint32_t attachment) override;
     
     virtual CommandBuffer* GetCommandBuffer() override;
 

@@ -1,5 +1,6 @@
 #include "OpenglGPU.h"
 #include "OD/Gfx/GfxReflection.h"
+#include "OD/Platform/BaseGpu/ImGuiImageResolver.h"
 #include "OD/Graphics/Graphics.h"
 #include "OD/Core/Application.h"
 #include "OD/Platform/BaseGpu/MultithreadRendererContext.h"
@@ -1108,6 +1109,10 @@ void OpenglGPUDevice::SubmitImGuiDrawData(void* data, ImGuiDrawDataDestroyFuncti
     frame.RecordImGuiDrawData(data, destroy);
 }
 
+void* OpenglGPUDevice::ImGuiFramebufferColorAttachment(Framebuffer framebuffer, uint32_t attachment){
+    return multithreadRendererContext.simulationFrame->imguiImages.ColorAttachment(framebuffer, attachment);
+}
+
 void OpenglGPUDevice::ImGuiShutdown(){
     if(ImGuiSupported() == false) return;
 
@@ -2034,6 +2039,15 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glViewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
             ImGuiNewFrame();
+            ResolveImGuiImages(*static_cast<ImDrawData*>(snapshot.data), frame.imguiImages,
+                [&](uint32_t framebuffer, uint32_t attachment) -> void* {
+                    if(!framebufferPool.IsValid(framebuffer)) return nullptr;
+                    const auto& data = framebufferPool.Get(framebuffer);
+                    if(data.layout.type != FramebufferAttachmentType::TEXTURE_2D || data.layout.samples != 1 ||
+                       attachment >= data.colorAttachments.size() ||
+                       data.layout.colorAttachments[attachment].format == FramebufferTextureFormat::RED_INTEGER) return nullptr;
+                    return reinterpret_cast<void*>(static_cast<uintptr_t>(data.colorAttachments[attachment]));
+                });
             ImGui_ImplOpenGL3_RenderDrawData(static_cast<ImDrawData*>(snapshot.data));
             break;
         }
