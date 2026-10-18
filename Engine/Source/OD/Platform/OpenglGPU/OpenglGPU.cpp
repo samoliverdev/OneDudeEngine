@@ -1410,19 +1410,6 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
             break;
         }
 
-        case ResourceCommands::Type::DestroyBuffer:{
-            if(!bufferPool.IsValid(cmd.destroyBuffer.id)){
-                LogError("DestroyBuffer: Invalid id!");
-                break;
-            }
-
-            Assert(bufferPool.IsValid(cmd.destroyBuffer.id));
-            auto& data = bufferPool.Get(cmd.destroyBuffer.id);
-            _DestroyBuffer(data);
-            bufferPool.AddDestroyedId(cmd.destroyBuffer.id);
-            break;
-        }
-
         case ResourceCommands::Type::CreateTexture2D:{
             Assert(texture2DPool.IsValid(cmd.createTexture2D.id));
             auto& data = texture2DPool.Get(cmd.createTexture2D.id);
@@ -1439,14 +1426,6 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
             break;
         }
 
-        case ResourceCommands::Type::DestroyTexture2D:{
-            Assert(texture2DPool.IsValid(cmd.destroyTexture2D.id));
-            auto& data = texture2DPool.Get(cmd.destroyTexture2D.id);
-            _DestroyTexture2D(data);
-            texture2DPool.AddDestroyedId(cmd.destroyTexture2D.id);
-            break;
-        }
-
         case ResourceCommands::Type::CreateTexture2DArray:{
             Assert(texture2DArrayPool.IsValid(cmd.createTexture2DArray.id));
             auto& data = texture2DArrayPool.Get(cmd.createTexture2DArray.id);
@@ -1458,12 +1437,6 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
             auto& data = texture2DArrayPool.Get(cmd.uploadTexture2DArray.id);
             _UploadTexture2DArray(data, cmd.uploadTexture2DArray.data, cmd.uploadTexture2DArray.size,
                 cmd.uploadTexture2DArray.arrayElement, cmd.uploadTexture2DArray.mipLevel);
-            break;
-        }
-        case ResourceCommands::Type::DestroyTexture2DArray:{
-            Assert(texture2DArrayPool.IsValid(cmd.destroyTexture2DArray.id));
-            _DestroyTexture2DArray(texture2DArrayPool.Get(cmd.destroyTexture2DArray.id));
-            texture2DArrayPool.AddDestroyedId(cmd.destroyTexture2DArray.id);
             break;
         }
 
@@ -1484,13 +1457,7 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                 cmd.uploadCubemapFace.size, cmd.uploadCubemapFace.face, cmd.uploadCubemapFace.mipLevel);
             break;
         }
-        case ResourceCommands::Type::DestroyCubemap:{
-            Assert(cubemapPool.IsValid(cmd.destroyCubemap.id));
-            _DestroyCubemap(cubemapPool.Get(cmd.destroyCubemap.id));
-            cubemapPool.AddDestroyedId(cmd.destroyCubemap.id);
-            break;
-        }
-
+ 
         case ResourceCommands::Type::CreatePipeline:{
             Assert(pipelinePool.IsValid(cmd.createPipeline.id));
             auto& data = pipelinePool.Get(cmd.createPipeline.id);
@@ -1500,28 +1467,12 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
             break;
         }
 
-        case ResourceCommands::Type::DestroyPipeline:{
-            Assert(pipelinePool.IsValid(cmd.destroyPipeline.id));
-            auto& data = pipelinePool.Get(cmd.destroyPipeline.id);
-            _DestroyPipeline(data);
-            pipelinePool.AddDestroyedId(cmd.destroyPipeline.id);
-            break;
-        }
-        
         case ResourceCommands::Type::CreateBindGroupLayout:{
             Assert(bindGroupLayoutPool.IsValid(cmd.createBindGroupLayout.id));
             BindGroupLayoutData& data = bindGroupLayoutPool.Get(cmd.createBindGroupLayout.id);
             if(!_CreateBindGroupLayout(data, *cmd.createBindGroupLayout.info)){
                 bindGroupLayoutPool.AddDestroyedId(cmd.createBindGroupLayout.id);
             }
-            break;
-        }
-
-        case ResourceCommands::Type::DestroyBindGroupLayout:{
-            Assert(bindGroupLayoutPool.IsValid(cmd.destroyBindGroupLayout.id));
-            BindGroupLayoutData& data = bindGroupLayoutPool.Get(cmd.destroyBindGroupLayout.id);
-            _DestroyBindGroupLayout(data);
-            bindGroupLayoutPool.AddDestroyedId(cmd.destroyBindGroupLayout.id);
             break;
         }
 
@@ -1549,14 +1500,7 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
             break;
         }
 
-        case ResourceCommands::Type::DestroyFramebuffer:{
-            Assert(framebufferPool.IsValid(cmd.destroyFramebuffer.id));
-            auto& data = framebufferPool.Get(cmd.destroyFramebuffer.id);
-            _DestroyFramebuffer(data);
-            framebufferPool.AddDestroyedId(cmd.destroyFramebuffer.id);
-            break;
-        }
-
+        default: Assert(false);
         }
     }
 
@@ -2040,6 +1984,71 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
     }
     frameBindGroups.clear();
 
+    for(const ResourceCommands::Command& cmd: frame.resourcePostCommands.commands){
+        switch(cmd.type){
+        case ResourceCommands::Type::DestroyBuffer:{
+            if(!bufferPool.IsValid(cmd.destroyBuffer.id)){
+                LogError("DestroyBuffer: Invalid id!");
+                break;
+            }
+
+            Assert(bufferPool.IsValid(cmd.destroyBuffer.id));
+            auto& data = bufferPool.Get(cmd.destroyBuffer.id);
+            _DestroyBuffer(data);
+            bufferPool.AddDestroyedId(cmd.destroyBuffer.id);
+            break;
+        }
+
+        case ResourceCommands::Type::DestroyTexture2D:{
+            Assert(texture2DPool.IsValid(cmd.destroyTexture2D.id));
+            auto& data = texture2DPool.Get(cmd.destroyTexture2D.id);
+            _DestroyTexture2D(data);
+            texture2DPool.AddDestroyedId(cmd.destroyTexture2D.id);
+            break;
+        }
+
+        case ResourceCommands::Type::DestroyTexture2DArray:{
+            Assert(texture2DArrayPool.IsValid(cmd.destroyTexture2DArray.id));
+            _DestroyTexture2DArray(texture2DArrayPool.Get(cmd.destroyTexture2DArray.id));
+            texture2DArrayPool.AddDestroyedId(cmd.destroyTexture2DArray.id);
+            break;
+        }
+
+        case ResourceCommands::Type::DestroyCubemap:{
+            Assert(cubemapPool.IsValid(cmd.destroyCubemap.id));
+            _DestroyCubemap(cubemapPool.Get(cmd.destroyCubemap.id));
+            cubemapPool.AddDestroyedId(cmd.destroyCubemap.id);
+            break;
+        }
+
+        case ResourceCommands::Type::DestroyPipeline:{
+            Assert(pipelinePool.IsValid(cmd.destroyPipeline.id));
+            auto& data = pipelinePool.Get(cmd.destroyPipeline.id);
+            _DestroyPipeline(data);
+            pipelinePool.AddDestroyedId(cmd.destroyPipeline.id);
+            break;
+        }
+        
+        case ResourceCommands::Type::DestroyBindGroupLayout:{
+            Assert(bindGroupLayoutPool.IsValid(cmd.destroyBindGroupLayout.id));
+            BindGroupLayoutData& data = bindGroupLayoutPool.Get(cmd.destroyBindGroupLayout.id);
+            _DestroyBindGroupLayout(data);
+            bindGroupLayoutPool.AddDestroyedId(cmd.destroyBindGroupLayout.id);
+            break;
+        }
+
+        case ResourceCommands::Type::DestroyFramebuffer:{
+            Assert(framebufferPool.IsValid(cmd.destroyFramebuffer.id));
+            auto& data = framebufferPool.Get(cmd.destroyFramebuffer.id);
+            _DestroyFramebuffer(data);
+            framebufferPool.AddDestroyedId(cmd.destroyFramebuffer.id);
+            break;
+        }
+
+        default: Assert(false);
+        }
+    }
+
 }
 
 void OpenglGPUDevice::SyncSingleThreadData(){
@@ -2076,7 +2085,7 @@ Pipeline OpenglGPUDevice::CreatePipeline(const char* source, PipelineInfo info){
 }
 
 void OpenglGPUDevice::DestroyPipeline(Pipeline id){
-    multithreadRendererContext.simulationFrame->resourceCommands.DestroyPipeline(id);
+    multithreadRendererContext.simulationFrame->resourcePostCommands.DestroyPipeline(id);
 }
 
 Buffer OpenglGPUDevice::CreateBuffer(size_t size, BufferUsage usage, BufferMemory memory){
@@ -2102,7 +2111,7 @@ void OpenglGPUDevice::UpdatedBuffer(Buffer buffer, const void* data, size_t size
 }
 
 void OpenglGPUDevice::DestroyBuffer(Buffer id){
-    multithreadRendererContext.simulationFrame->resourceCommands.DestroyBuffer(id);
+    multithreadRendererContext.simulationFrame->resourcePostCommands.DestroyBuffer(id);
 }
 
 Texture2D OpenglGPUDevice::CreateTexture2D(Texture2DInfo& info){
@@ -2128,7 +2137,7 @@ void OpenglGPUDevice::UploadTexture2D(Texture2D texture, const void* data, size_
 }
 
 void OpenglGPUDevice::DestroyTexture2D(Texture2D tex){
-    multithreadRendererContext.simulationFrame->resourceCommands.DestroyTexture2D(tex);
+    multithreadRendererContext.simulationFrame->resourcePostCommands.DestroyTexture2D(tex);
 }
 
 Texture2DArray OpenglGPUDevice::CreateTexture2DArray(Texture2DArrayInfo& info){
@@ -2150,7 +2159,7 @@ void OpenglGPUDevice::UploadTexture2DArray(Texture2DArray texture, const void* d
 }
 
 void OpenglGPUDevice::DestroyTexture2DArray(Texture2DArray tex){
-    multithreadRendererContext.simulationFrame->resourceCommands.DestroyTexture2DArray(tex);
+    multithreadRendererContext.simulationFrame->resourcePostCommands.DestroyTexture2DArray(tex);
 }
 
 Cubemap OpenglGPUDevice::CreateCubemap(CubemapInfo& info){
@@ -2180,7 +2189,7 @@ void OpenglGPUDevice::UploadCubemap(Cubemap cubemap, const void* data, size_t si
 }
 
 void OpenglGPUDevice::DestroyCubemap(Cubemap cubemap){
-    multithreadRendererContext.simulationFrame->resourceCommands.DestroyCubemap(cubemap);
+    multithreadRendererContext.simulationFrame->resourcePostCommands.DestroyCubemap(cubemap);
 }
 
 BindGroupLayout OpenglGPUDevice::CreateBindGroupLayout(BindGroupLayoutInfo& info){
@@ -2202,7 +2211,7 @@ BindGroupLayout OpenglGPUDevice::CreateBindGroupLayout(BindGroupLayoutInfo& info
 }
 
 void OpenglGPUDevice::DestroyBindGroupLayout(BindGroupLayout layout){
-    multithreadRendererContext.simulationFrame->resourceCommands.DestroyBindGroupLayout(layout);
+    multithreadRendererContext.simulationFrame->resourcePostCommands.DestroyBindGroupLayout(layout);
 }
 
 BindGroup OpenglGPUDevice::CreateBindGroup(BindGroupInfo& info){
@@ -2225,7 +2234,7 @@ Framebuffer OpenglGPUDevice::CreateFramebuffer(FrameBufferCreateInfo& info){
 }
 
 void OpenglGPUDevice::DestroyFramebuffer(Framebuffer framebuffer){
-    multithreadRendererContext.simulationFrame->resourceCommands.DestroyFramebuffer(framebuffer);
+    multithreadRendererContext.simulationFrame->resourcePostCommands.DestroyFramebuffer(framebuffer);
 }
 
 ResourceStats OpenglGPUDevice::GetBufferStats(Buffer id){ 

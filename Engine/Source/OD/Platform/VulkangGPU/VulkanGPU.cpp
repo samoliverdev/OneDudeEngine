@@ -1932,7 +1932,7 @@ void VulkanGPUDevice::_DestroyFramebuffer(FramebufferData& data){
 #pragma endregion
 
 #pragma region Device
-VulkanGPUDevice::VulkanGPUDevice(VulkanPresentMode mode) : presentMode(mode) {
+VulkanGPUDevice::VulkanGPUDevice(VulkanPresentMode mode): presentMode(mode){
     vkInfo.apiName = "Vulkan";
     vkInfo.version = 1;
     vkInfo.supportUniformBuffer = true;
@@ -2541,6 +2541,8 @@ FrameBufferLayout VulkanGPUDevice::GetWindowFrameBufferLayout(){
 void VulkanGPUDevice::RunRender(RenderFrame& frame){
     #undef max
 
+    //framebufferDeleteQueue.clear();
+
     Pipeline currentPipeline = INVALID_ID;
     bool skipNextEndFramebuffer = false;
 
@@ -2593,19 +2595,6 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                 break;
             }
 
-            case ResourceCommands::Type::DestroyBuffer:{
-                if(!bufferPool.IsValid(cmd.destroyBuffer.id)){
-                    LogError("DestroyBuffer: Invalid id!");
-                    break;
-                }
-
-                Assert(bufferPool.IsValid(cmd.destroyBuffer.id));
-                auto& data = bufferPool.Get(cmd.destroyBuffer.id);
-                _DestroyBuffer(data);
-                bufferPool.AddDestroyedId(cmd.destroyBuffer.id);
-                break;
-            }
-
             case ResourceCommands::Type::CreateTexture2D:{
                 Assert(texture2DPool.IsValid(cmd.createTexture2D.id));
                 auto& data = texture2DPool.Get(cmd.createTexture2D.id);
@@ -2628,14 +2617,6 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                 } else {
                     _UploadTexture2D(data, cmd.uploadTexture2D.data, cmd.uploadTexture2D.size, cmd.uploadTexture2D.mipLevel);
                 }
-                break;
-            }
-
-            case ResourceCommands::Type::DestroyTexture2D:{
-                Assert(texture2DPool.IsValid(cmd.destroyTexture2D.id));
-                auto& data = texture2DPool.Get(cmd.destroyTexture2D.id);
-                _DestroyTexture2D(data);
-                texture2DPool.AddDestroyedId(cmd.destroyTexture2D.id);
                 break;
             }
 
@@ -2714,13 +2695,7 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                 }
                 break;
             }
-            case ResourceCommands::Type::DestroyCubemap:{
-                Assert(cubemapPool.IsValid(cmd.destroyCubemap.id));
-                _DestroyCubemap(cubemapPool.Get(cmd.destroyCubemap.id));
-                cubemapPool.AddDestroyedId(cmd.destroyCubemap.id);
-                break;
-            }
-
+      
             case ResourceCommands::Type::CreatePipeline:{
                 Assert(pipelinePool.IsValid(cmd.createPipeline.id));
                 auto& data = pipelinePool.Get(cmd.createPipeline.id);
@@ -2730,28 +2705,12 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                 break;
             }
 
-            case ResourceCommands::Type::DestroyPipeline:{
-                Assert(pipelinePool.IsValid(cmd.destroyPipeline.id));
-                auto& data = pipelinePool.Get(cmd.destroyPipeline.id);
-                _DestroyPipeline(data);
-                pipelinePool.AddDestroyedId(cmd.destroyPipeline.id);
-                break;
-            }
-            
             case ResourceCommands::Type::CreateBindGroupLayout:{
                 Assert(bindGroupLayoutPool.IsValid(cmd.createBindGroupLayout.id));
                 BindGroupLayoutData& data = bindGroupLayoutPool.Get(cmd.createBindGroupLayout.id);
                 if(!_CreateBindGroupLayout(data, *cmd.createBindGroupLayout.info)){
                     bindGroupLayoutPool.AddDestroyedId(cmd.createBindGroupLayout.id);
                 }
-                break;
-            }
-
-            case ResourceCommands::Type::DestroyBindGroupLayout:{
-                Assert(bindGroupLayoutPool.IsValid(cmd.destroyBindGroupLayout.id));
-                BindGroupLayoutData& data = bindGroupLayoutPool.Get(cmd.destroyBindGroupLayout.id);
-                _DestroyBindGroupLayout(data);
-                bindGroupLayoutPool.AddDestroyedId(cmd.destroyBindGroupLayout.id);
                 break;
             }
 
@@ -2779,15 +2738,10 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                 break;
             }
 
-            case ResourceCommands::Type::DestroyFramebuffer:{
-                Assert(framebufferPool.IsValid(cmd.destroyFramebuffer.id));
-                auto& data = framebufferPool.Get(cmd.destroyFramebuffer.id);
-                _DestroyFramebuffer(data);
-                framebufferPool.AddDestroyedId(cmd.destroyFramebuffer.id);
-                break;
-            }
+            default: Assert(false);
         }
     }
+
     resourceTimer.Stop();
 
     {
@@ -3508,6 +3462,77 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
         }
     }
 
+    for(const ResourceCommands::Command& cmd : frame.resourcePostCommands.commands){
+        switch(cmd.type){
+            case ResourceCommands::Type::DestroyBuffer:{
+                if(!bufferPool.IsValid(cmd.destroyBuffer.id)){
+                    LogError("DestroyBuffer: Invalid id!");
+                    break;
+                }
+
+                Assert(bufferPool.IsValid(cmd.destroyBuffer.id));
+                auto& data = bufferPool.Get(cmd.destroyBuffer.id);
+                _DestroyBuffer(data);
+                bufferPool.AddDestroyedId(cmd.destroyBuffer.id);
+                break;
+            }
+
+            case ResourceCommands::Type::DestroyTexture2D:{
+                Assert(texture2DPool.IsValid(cmd.destroyTexture2D.id));
+                auto& data = texture2DPool.Get(cmd.destroyTexture2D.id);
+                _DestroyTexture2D(data);
+                texture2DPool.AddDestroyedId(cmd.destroyTexture2D.id);
+                break;
+            }
+
+            case ResourceCommands::Type::DestroyTexture2DArray:{
+                Assert(texture2DArrayPool.IsValid(cmd.destroyTexture2DArray.id));
+                _DestroyTexture2DArray(texture2DArrayPool.Get(cmd.destroyTexture2DArray.id));
+                texture2DArrayPool.AddDestroyedId(cmd.destroyTexture2DArray.id);
+                break;
+            }
+
+            case ResourceCommands::Type::DestroyCubemap:{
+                Assert(cubemapPool.IsValid(cmd.destroyCubemap.id));
+                _DestroyCubemap(cubemapPool.Get(cmd.destroyCubemap.id));
+                cubemapPool.AddDestroyedId(cmd.destroyCubemap.id);
+                break;
+            }
+
+            case ResourceCommands::Type::DestroyPipeline:{
+                Assert(pipelinePool.IsValid(cmd.destroyPipeline.id));
+                auto& data = pipelinePool.Get(cmd.destroyPipeline.id);
+                _DestroyPipeline(data);
+                pipelinePool.AddDestroyedId(cmd.destroyPipeline.id);
+                break;
+            }
+            
+            case ResourceCommands::Type::DestroyBindGroupLayout:{
+                Assert(bindGroupLayoutPool.IsValid(cmd.destroyBindGroupLayout.id));
+                BindGroupLayoutData& data = bindGroupLayoutPool.Get(cmd.destroyBindGroupLayout.id);
+                _DestroyBindGroupLayout(data);
+                bindGroupLayoutPool.AddDestroyedId(cmd.destroyBindGroupLayout.id);
+                break;
+            }
+
+            case ResourceCommands::Type::DestroyFramebuffer:{
+                Assert(framebufferPool.IsValid(cmd.destroyFramebuffer.id));
+                auto& data = framebufferPool.Get(cmd.destroyFramebuffer.id);
+                _DestroyFramebuffer(data);
+                framebufferPool.AddDestroyedId(cmd.destroyFramebuffer.id);
+                break;
+            }
+            
+            default: Assert(false);
+        }
+    }
+
+    /*for(auto& i: framebufferDeleteQueue){
+        auto& data = framebufferPool.Get(i);
+        _DestroyFramebuffer(data);
+        framebufferPool.AddDestroyedId(i);
+    }*/
+
     if(hasWindowRenderPass == false){
         VkClearValue clearValues[2]{};
         clearValues[0].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
@@ -3619,7 +3644,7 @@ Pipeline VulkanGPUDevice::CreatePipeline(const char* source, PipelineInfo info){
 }
 
 void VulkanGPUDevice::DestroyPipeline(Pipeline id){
-    multithreadRendererContext.simulationFrame->resourceCommands.DestroyPipeline(id);
+    multithreadRendererContext.simulationFrame->resourcePostCommands.DestroyPipeline(id);
 }
 
 Buffer VulkanGPUDevice::CreateBuffer(size_t size, BufferUsage usage, BufferMemory memory){
@@ -3647,7 +3672,7 @@ void VulkanGPUDevice::UpdatedBuffer(Buffer buffer, const void* data, size_t size
 }
 
 void VulkanGPUDevice::DestroyBuffer(Buffer id){
-    multithreadRendererContext.simulationFrame->resourceCommands.DestroyBuffer(id);
+    multithreadRendererContext.simulationFrame->resourcePostCommands.DestroyBuffer(id);
 }
 
 Texture2D VulkanGPUDevice::CreateTexture2D(Texture2DInfo& info){
@@ -3673,7 +3698,7 @@ void VulkanGPUDevice::UploadTexture2D(Texture2D texture, const void* data, size_
 }
 
 void VulkanGPUDevice::DestroyTexture2D(Texture2D tex){
-    multithreadRendererContext.simulationFrame->resourceCommands.DestroyTexture2D(tex);
+    multithreadRendererContext.simulationFrame->resourcePostCommands.DestroyTexture2D(tex);
 }
 
 Texture2DArray VulkanGPUDevice::CreateTexture2DArray(Texture2DArrayInfo& info){
@@ -3695,7 +3720,7 @@ void VulkanGPUDevice::UploadTexture2DArray(Texture2DArray texture, const void* d
 }
 
 void VulkanGPUDevice::DestroyTexture2DArray(Texture2DArray tex){
-    multithreadRendererContext.simulationFrame->resourceCommands.DestroyTexture2DArray(tex);
+    multithreadRendererContext.simulationFrame->resourcePostCommands.DestroyTexture2DArray(tex);
 }
 
 Cubemap VulkanGPUDevice::CreateCubemap(CubemapInfo& info){
@@ -3725,7 +3750,7 @@ void VulkanGPUDevice::UploadCubemap(Cubemap cubemap, const void* data, size_t si
 }
 
 void VulkanGPUDevice::DestroyCubemap(Cubemap cubemap){
-    multithreadRendererContext.simulationFrame->resourceCommands.DestroyCubemap(cubemap);
+    multithreadRendererContext.simulationFrame->resourcePostCommands.DestroyCubemap(cubemap);
 }
 
 BindGroupLayout VulkanGPUDevice::CreateBindGroupLayout(BindGroupLayoutInfo& info){
@@ -3747,7 +3772,7 @@ BindGroupLayout VulkanGPUDevice::CreateBindGroupLayout(BindGroupLayoutInfo& info
 }
 
 void VulkanGPUDevice::DestroyBindGroupLayout(BindGroupLayout layout){
-    multithreadRendererContext.simulationFrame->resourceCommands.DestroyBindGroupLayout(layout);
+    multithreadRendererContext.simulationFrame->resourcePostCommands.DestroyBindGroupLayout(layout);
 }
 
 BindGroup VulkanGPUDevice::CreateBindGroup(BindGroupInfo& info){
@@ -3794,7 +3819,7 @@ Framebuffer VulkanGPUDevice::CreateFramebuffer(FrameBufferCreateInfo& info){
 }
 
 void VulkanGPUDevice::DestroyFramebuffer(Framebuffer framebuffer){
-    multithreadRendererContext.simulationFrame->resourceCommands.DestroyFramebuffer(framebuffer);
+    multithreadRendererContext.simulationFrame->resourcePostCommands.DestroyFramebuffer(framebuffer);
 }
 
 std::vector<Device::Profile> VulkanGPUDevice::GetProfiles(){

@@ -1246,6 +1246,7 @@ struct OD_API RenderFrame{
     };
 
     ResourceCommands resourceCommands = {};
+    ResourceCommands resourcePostCommands = {};
     CommandBuffer renderCommands = {};
     std::vector<ImGuiSnapshot> imguiSnapshots;
     ImGuiImages imguiImages;
@@ -1288,6 +1289,7 @@ struct OD_API RenderFrame{
         imguiSnapshots.clear();
         imguiImages.Clear();
         resourceCommands.Clear();
+        resourcePostCommands.Clear();
         renderCommands.ClearCmds();
     }
 };

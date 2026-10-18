@@ -119,7 +119,7 @@ int main(int argc, char *argv[]){
     };
     //#endif
 
-    if(!OD::Application::Create(CreateMainModule(), GetStartAppConfig(), argc > 1 ? argv[1] : RESOURCES_PATH "", callbacks, CreateCustomProject())){
+    if(!OD::Application::Create(CreateMainModule(), GetStartAppConfig(), /*argc > 1 ? argv[1] :*/ RESOURCES_PATH "", callbacks, CreateCustomProject())){
         printf("Application failed to create!");
         return 1;
     }
