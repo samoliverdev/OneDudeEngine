@@ -48,7 +48,7 @@ struct OD_API alignas(16) RenderData{
         FromCluster          = 1 << 10,
     };
 
-    Matrix4 targetMatrix;
+    Matrix4 targetMatrix = Matrix4(1.0f);
     //TODO: Depreaced, remove later 
     //PerDrawData perDrawData; 
     AABB aabb;
@@ -58,7 +58,7 @@ struct OD_API alignas(16) RenderData{
     uint32_t customShadowPass = INVALID_RESOURCE_ID;
     uint32_t instancingBuffer = INVALID_RESOURCE_ID;
     uint32_t targetMesh = INVALID_RESOURCE_ID;
-    float distance;
+    float distance = 0;
     uint32_t flags = Flag::RenderShadow | Flag::IsValid;//  0;//INFO: This very simple otimization give 2x more performace!!!!!!!!!!!!!!!!!!
     int layer = 0;
 

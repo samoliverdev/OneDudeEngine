@@ -38,7 +38,11 @@ int main(int argc, char** argv){
 
     // IMPORTANT: skip engine boot when CMake is discovering tests
     if(::testing::GTEST_FLAG(list_tests) ||
-        ::testing::GTEST_FLAG(filter).find("RenderDataCullingTest.") != std::string::npos){
+        ::testing::GTEST_FLAG(filter).find("RenderDataCullingTest.") != std::string::npos ||
+        ::testing::GTEST_FLAG(filter).find("StandingRagdollTest.") != std::string::npos ||
+        ::testing::GTEST_FLAG(filter).find("StandingRagdollStrengthTest.") != std::string::npos ||
+        ::testing::GTEST_FLAG(filter).find("RagdollPoseBlendTest.") != std::string::npos ||
+        ::testing::GTEST_FLAG(filter).find("RagdollInPlacePoseTest.") != std::string::npos){
         return RUN_ALL_TESTS();
     }
 

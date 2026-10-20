@@ -366,12 +366,21 @@ struct OD_API RagdollComponent{
     bool isDirty = true;
     std::vector<Part> parts;
     
+    float poseWeight = 1.0f; // Rendered pose only: 0 animation, 1 physics. Simulation stays active.
     bool syncWithFinalPose = false;
     bool syncFromTheHips = true;
     bool useTorqueControl = false;
     float gain = 10;
     float damping = 1;
     float stiffness = 10; 
+
+    //INFO: Experimental Hips only Motor
+    // Hips-only motor; independent of the limb MotorType and rendered pose weight.
+    enum class HipsMotorType { None, AnimationAnchor };
+    HipsMotorType hipsMotorType = HipsMotorType::None;
+    float anchorAttach = 1.0f;
+    float anchorStrength = 1.0f; // Hips-only spring multiplier; does not affect limb motors.
+    bool lockAnchorRotation = true;
 
     Vector3 overrideStartVelocity = Vector3Zero;
 
@@ -423,6 +432,11 @@ struct OD_API RagdollComponent{
         ArchiveDumpNVP(ar, interpolate);
         ArchiveDumpNVP(ar, parts);
 
+        ArchiveDumpNVP(ar, hipsMotorType);
+        ArchiveDumpNVP(ar, poseWeight);
+        ArchiveDumpNVP(ar, anchorAttach);
+        ArchiveDumpNVP(ar, anchorStrength);
+        ArchiveDumpNVP(ar, lockAnchorRotation);
         ArchiveDumpNVP(ar, syncWithFinalPose);
         ArchiveDumpNVP(ar, syncFromTheHips);
         ArchiveDumpNVP(ar, useTorqueControl);
@@ -865,6 +879,7 @@ struct OD_API PhysicsSystem: public System{
     virtual void OnDrawGizmos(Scene& scene, Camera& cam) override;
 
     void _PostPhysicsUpdate(bool onlyPostSync, bool canInterpolate);
+    void UpdateHipsMotor(RagdollComponent& ragdoll, SkinnedModelRendererComponent& skinned, TransformComponent& trans, JPH::BodyInterface& bodyInterface);
 
     void ShowDebugGizmos();
 

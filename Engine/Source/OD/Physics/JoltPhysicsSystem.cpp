@@ -57,7 +57,87 @@
 #include <Jolt/Renderer/DebugRenderer.h>
 #include <Jolt/Renderer/DebugRendererSimple.h>
 
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+
 namespace OD{
+
+#pragma region RagdollMotorMath
+// A critically damped discrete spring: both response poles stay between zero and one.
+// This gives a tight force-driven correction in a single normal Jolt step.
+OD_API Vector3 ComputeRagdollAnchorAcceleration(Vector3 positionError, Vector3 velocityError, float attach, float dt, float strength = 1.0f){
+    if(!std::isfinite(dt) || dt <= 0 || !std::isfinite(attach) || attach <= 0 || !std::isfinite(strength) || strength <= 0) return Vector3(0);
+    float power = std::clamp(attach, 0.0f, 1.0f);
+    power = power * power * power;
+    float frequency = 3.0f * std::sqrt(std::min(strength, 64.0f) * (0.05f + 0.85f * power));
+    float pole = std::exp(-frequency);
+    float spring = (1.0f - pole) * (1.0f - pole);
+    float damping = 1.0f - pole * pole;
+    return (spring * positionError + damping * dt * velocityError) / (dt * dt);
+}
+OD_API Quaternion RagdollAnchorLockedRotation(Quaternion current, Quaternion target, float dt){
+    return math::slerp(current, target, std::clamp(dt * 60.0f, 0.0f, 1.0f));
+}
+
+OD_API Vector3 RagdollAnchorAngularVelocity(Quaternion current, Quaternion target, float attach, float dt){
+    if(dt <= 0) return Vector3(0);
+    float cosine = std::clamp(std::abs(math::dot(current, target)), 0.0f, 1.0f);
+    float angle = 2.0f * std::acos(cosine);
+    Vector3 axis = math::cross(current * Vector3(0,0,1), target * Vector3(0,0,1))
+                 + math::cross(current * Vector3(0,1,0), target * Vector3(0,1,0));
+    float length = math::length(axis);
+    if(length <= 0.000001f) return Vector3(0);
+    float power = std::clamp(attach, 0.0f, 1.0f);
+    power = 1.0f - (1.0f - power) * (1.0f - power);
+    return axis * (angle * power / (length * dt));
+}
+// Keep ragdoll self-collision; ignore only the owner's separate movement body.
+OD_API bool IsRagdollOwnerContact(uint32_t ownerA, int partA, uint32_t ownerB, int partB){
+    return ownerA == ownerB && ((partA == -1 && partB >= 0) || (partB == -1 && partA >= 0));
+}
+#pragma endregion
+
+#pragma region RagdollPoseBlending
+struct RagdollPoseTransform {
+    Vector3 position;
+    Quaternion rotation;
+    Vector3 scale;
+};
+
+OD_API float ClampRagdollPoseWeight(float weight){
+    return std::isfinite(weight) ? std::clamp(weight,0.0f,1.0f) : 1.0f;
+}
+
+// Blend local transforms after assembling the complete physical skeleton.
+OD_API RagdollPoseTransform BlendRagdollPoseTransform(const RagdollPoseTransform& animation,const RagdollPoseTransform& physical,float weight){
+    weight=ClampRagdollPoseWeight(weight);
+    if(weight<=0) return animation;
+    if(weight>=1) return physical;
+    return {
+        math::mix(animation.position,physical.position,weight),
+        math::slerp(animation.rotation,physical.rotation,weight),
+        math::mix(animation.scale,physical.scale,weight)
+    };
+}
+
+OD_API void BlendRagdollLocalPoseInPlace(Pose& current, Pose& physical, float weight){
+    weight = ClampRagdollPoseWeight(weight);
+    if(weight <= 0 || current.Size() != physical.Size()) return;
+    if(weight >= 1){
+        current = physical;
+        return;
+    }
+    for(unsigned int bone = 0; bone < current.Size(); ++bone){
+        auto a = current.GetLocalTransform(bone);
+        auto p = physical.GetLocalTransform(bone);
+        auto blended = BlendRagdollPoseTransform(
+            {a.Position(), a.Rotation(), a.Scale()},
+            {p.Position(), p.Rotation(), p.Scale()}, weight);
+        current.SetLocalTransform(bone, Transform(blended.position, blended.rotation, blended.scale));
+    }
+}
+#pragma endregion
 
 //constexpr float fixedTimeStep = 1.0f / 60.0f; // 60 Hz physics update
 constexpr int maxSubSteps = 5;
@@ -819,8 +899,14 @@ public:
 	virtual ValidateResult	OnContactValidate(const Body &inBody1, const Body &inBody2, RVec3Arg inBaseOffset, const CollideShapeResult &inCollisionResult) override{
 		//cout << "Contact validate callback" << endl;
 
-		// Allows you to ignore a contact before it is created (using layers to not make objects collide is cheaper!)
-		return ValidateResult::AcceptAllContactsForThisBodyPair;
+		//INFO: need this for the new Experimental Hips only Motor on RagdollComponet
+        uint32_t ownerA, ownerB;
+        int32_t partA, partB;
+        DecodeUserData(inBody1.GetUserData(), ownerA, partA);
+        DecodeUserData(inBody2.GetUserData(), ownerB, partB);
+        if(IsRagdollOwnerContact(ownerA, partA, ownerB, partB)) return ValidateResult::RejectAllContactsForThisBodyPair;
+
+        return ValidateResult::AcceptAllContactsForThisBodyPair;
 	}
 
 	virtual void OnContactAdded(const Body &inBody1, const Body &inBody2, const ContactManifold &inManifold, ContactSettings &ioSettings) override{
@@ -948,8 +1034,15 @@ public:
 };
 
 struct RagdollObject{
-	JPH::Ref<Ragdoll> ragdoll;
-	PhysicsWorld* world = nullptr;
+    JPH::Ref<Ragdoll> ragdoll;
+    PhysicsWorld* world = nullptr;
+
+	JPH::Ref<SixDOFConstraint> hipsMotor;
+    Vector3 previousHipPosition = Vector3(0);
+    Vector3 hipPositionDelta = Vector3(0);
+    bool capturedAnchor = false;
+    bool rotationLocked = false;
+    EAllowedDOFs savedDOFs = EAllowedDOFs::All;
 };
 
 class SelectedBodyDrawFilter: public JPH::BodyDrawFilter{
@@ -1001,6 +1094,11 @@ void RagdollComponent::OnGui(Entity& e, Scene& scene){
 	ImGui::Checkbox("SyncWithFinalPose", &ragdoll.syncWithFinalPose);
 	ImGui::Checkbox("SyncFromTheHips", &ragdoll.syncFromTheHips);
 	ImGui::Checkbox("UseTorqueControl", &ragdoll.useTorqueControl);
+    ImGui::DrawEnumCombo<RagdollComponent::HipsMotorType>("Hips Motor", &ragdoll.hipsMotorType);
+    ImGui::SliderFloat("Pose Weight", &ragdoll.poseWeight, 0.0f, 1.0f);
+    ImGui::SliderFloat("Anchor Attach", &ragdoll.anchorAttach, 0.0f, 1.0f);
+    ImGui::DragFloat("Anchor Strength", &ragdoll.anchorStrength, 0.25f, 0.0f, 64.0f);
+    ImGui::Checkbox("Lock Anchor Rotation", &ragdoll.lockAnchorRotation);
 
 	ImGui::DragFloat("GlobalMass", &ragdoll.globalMass);
 	ImGui::DragFloat("LinearDamping", &ragdoll.linearDamping);
@@ -1566,9 +1664,9 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 		if(ragdoll.type == RagdollComponent::Type::Static) part.mMotionType = EMotionType::Static; 
 		//if(ragdoll.type == RagdollComponent::Type::Dynamic && p == 0) part.mMotionType = EMotionType::Kinematic;
 		if(ragdoll.parts[p].overrideType != RagdollComponent::Part::OverrideType::None){
-			if(ragdoll.parts[p].overrideType != RagdollComponent::Part::OverrideType::Dynamic) part.mMotionType = EMotionType::Dynamic;
-			if(ragdoll.parts[p].overrideType != RagdollComponent::Part::OverrideType::Kinematic) part.mMotionType = EMotionType::Kinematic;
-			if(ragdoll.parts[p].overrideType != RagdollComponent::Part::OverrideType::Static) part.mMotionType = EMotionType::Static;
+			if(ragdoll.parts[p].overrideType == RagdollComponent::Part::OverrideType::Dynamic) part.mMotionType = EMotionType::Dynamic;
+			if(ragdoll.parts[p].overrideType == RagdollComponent::Part::OverrideType::Kinematic) part.mMotionType = EMotionType::Kinematic;
+			if(ragdoll.parts[p].overrideType == RagdollComponent::Part::OverrideType::Static) part.mMotionType = EMotionType::Static;
 		} else {
 			part.mIsSensor = ragdoll.type == RagdollComponent::Type::Trigger;
 		}
@@ -1587,7 +1685,9 @@ RagdollSettings* CreateRagdollSettings(InfoComponent& info, TransformComponent& 
 			part.mAllowedDOFs = EAllowedDOFs::RotationY | EAllowedDOFs::TranslationX | EAllowedDOFs::TranslationY | EAllowedDOFs::TranslationZ; 
 		}*/
 
-		part.mAllowedDOFs = static_cast<EAllowedDOFs>(ragdoll.parts[p].constraints);
+        // Standing's anchor must stay dynamic, even if the asset overrides its type.
+        if(ragdoll.hipsMotorType == RagdollComponent::HipsMotorType::AnimationAnchor && ragdoll.parts[p].isHips) part.mMotionType = EMotionType::Dynamic;
+        part.mAllowedDOFs = static_cast<EAllowedDOFs>(ragdoll.parts[p].constraints);
 		
 		part.mFriction = 1;
 
@@ -1700,6 +1800,7 @@ void PhysicsSystem::RemoveRagdoll(Entity entity, RagdollComponent& ragdoll){
 
 	SetJointsAsDirtyIfBodyIsDirty(entity);
 
+	if(ragdoll.data->hipsMotor) physicsWorld->physicsSystem.RemoveConstraint(ragdoll.data->hipsMotor);
 	ragdoll.data->ragdoll->RemoveFromPhysicsSystem();
 	//ragdoll.data->ragdoll = nullptr;
 	delete ragdoll.data;
@@ -4043,6 +4144,86 @@ void PhysicsSystem::PrePhysicsUpdate(Scene& inscene){
     }
 }
 
+// Standing attachment is independent of limb motors and never makes hips kinematic.
+void PhysicsSystem::UpdateHipsMotor(RagdollComponent& ragdoll, SkinnedModelRendererComponent& skinned, TransformComponent& trans, BodyInterface& bi){
+    if(!ragdoll.data) return;
+	
+    auto& runtime = *ragdoll.data;
+    if(runtime.hipsMotor) runtime.hipsMotor->SetEnabled(false);
+    if(ragdoll.isDirty || ragdoll.type != RagdollComponent::Type::Dynamic) return;
+    int hips = ragdoll.TryFindHipIndex();
+    if(hips < 0) return;
+
+    BodyID hipBody = runtime.ragdoll->GetBodyID(hips);
+    bool attached = ragdoll.hipsMotorType == RagdollComponent::HipsMotorType::AnimationAnchor && ragdoll.anchorAttach > 0 && std::isfinite(ragdoll.anchorStrength) && ragdoll.anchorStrength > 0;
+    bool lockRotation = attached && ragdoll.lockAnchorRotation;
+    Vector3 comOffset;
+    {
+        BodyLockWrite lock(physicsWorld->physicsSystem.GetBodyLockInterfaceNoLock(), hipBody);
+        if(!lock.Succeeded() || !lock.GetBody().IsDynamic()) return;
+        auto* motion = lock.GetBody().GetMotionProperties();
+        if(motion->GetInverseMass() <= 0) return;
+        auto* shape = lock.GetBody().GetShape();
+        comOffset = FromJolt(shape->GetCenterOfMass());
+        // A world-space velocity motor lets the solver enforce the position servo
+        // together with limb joints, without another body or another physics step.
+        if(attached && !runtime.hipsMotor){
+            SixDOFConstraintSettings settings;
+            settings.mEnabled = false;
+            settings.mPosition1 = settings.mPosition2 = lock.GetBody().GetCenterOfMassPosition();
+            settings.mNumVelocityStepsOverride = 32;
+            runtime.hipsMotor = static_cast<SixDOFConstraint*>(settings.Create(Body::sFixedToWorld, lock.GetBody()));
+            for(int axis = 0; axis < 3; ++axis)
+                runtime.hipsMotor->SetMotorState(SixDOFConstraint::EAxis(axis), EMotorState::Velocity);
+            physicsWorld->physicsSystem.AddConstraint(runtime.hipsMotor);
+        }
+        // Unity exposes freezeRotation; Jolt changes angular DOFs through mass properties.
+        if(lockRotation != runtime.rotationLocked){
+            if(lockRotation) runtime.savedDOFs = motion->GetAllowedDOFs();
+            auto dofs = lockRotation
+                ? EAllowedDOFs(uint8(runtime.savedDOFs) & uint8(EAllowedDOFs::TranslationX | EAllowedDOFs::TranslationY | EAllowedDOFs::TranslationZ))
+                : runtime.savedDOFs;
+            auto properties = shape->GetMassProperties();
+            properties.ScaleToMass(1.0f / motion->GetInverseMass());
+            motion->SetMassProperties(dofs, properties);
+            runtime.rotationLocked = lockRotation;
+        }
+    }
+    if(!attached){
+        runtime.capturedAnchor = false;
+        return;
+    }
+    float dt = Time::FixedDelta();
+    int bone = ragdoll.parts[hips].skinnedSkeletonIndex;
+    if(dt <= 0 || bone < 0 || bone >= int(skinned.finalPose.Size())) return;
+
+    Vector3 position = FromJolt(bi.GetPosition(hipBody));
+    if(!runtime.capturedAnchor){
+        runtime.hipPositionDelta = Vector3(0);
+        runtime.capturedAnchor = true;
+    } else if(position != runtime.previousHipPosition){
+        runtime.hipPositionDelta = position - runtime.previousHipPosition;
+    }
+    runtime.previousHipPosition = position;
+
+    Transform target = Transform::Combine(trans.ToTransform(), skinned.finalPose.GetGlobalTransform(bone));
+    Vector3 targetCOM = target.Position() + target.Rotation() * comOffset;
+    Vector3 error = targetCOM - FromJolt(bi.GetCenterOfMassPosition(hipBody));
+    Vector3 velocity = FromJolt(bi.GetLinearVelocity(hipBody));
+    Vector3 velocityError = runtime.hipPositionDelta - velocity;
+    Vector3 acceleration = ComputeRagdollAnchorAcceleration(error, velocityError, ragdoll.anchorAttach, dt, ragdoll.anchorStrength);
+    runtime.hipsMotor->SetTargetVelocityCS(ToJolt(velocity + acceleration * dt));
+    runtime.hipsMotor->SetEnabled(true);
+    bi.ActivateBody(hipBody);
+
+    Quaternion current = FromJolt(bi.GetRotation(hipBody));
+    if(lockRotation){
+        bi.SetRotation(hipBody, ToJolt(RagdollAnchorLockedRotation(current, target.Rotation(), dt)), EActivation::Activate);
+        bi.SetAngularVelocity(hipBody, Vec3::sZero());
+    } else {
+        bi.SetAngularVelocity(hipBody, ToJolt(RagdollAnchorAngularVelocity(current, target.Rotation(), ragdoll.anchorAttach, dt)));
+    }
+}
 void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 				
 	//OD_PROFILE_SCOPE("PhysicsSystem::FixedPhysicsUpdate");
@@ -4143,26 +4324,33 @@ void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 	for(auto [entity, skinned, ragdoll, trans, info]: ragdollModelView.each()){
 		scene->GetTaskflow().emplace([entity, &skinned, &ragdoll, &trans, &info, &bodyInterface, this](){
 
-		if(ragdoll.data != nullptr && scene->Running() == true && ragdoll.type == RagdollComponent::Type::Dynamic && ragdoll.syncWithFinalPose){
+        UpdateHipsMotor(ragdoll, skinned, trans, bodyInterface);
+        Pose& targetPose = skinned.finalPose;
+		if(ragdoll.data != nullptr && scene->Running() == true && ragdoll.type == RagdollComponent::Type::Dynamic){
 			float gain = ragdoll.gain;
 			float damping = ragdoll.damping;     // Novo: adicionar na struct
-			float stiffness = ragdoll.stiffness;
+            float stiffness = ragdoll.stiffness;
 
-			if(ragdoll.type == RagdollComponent::Type::Dynamic && skinned.finalPose.Size() > 0 && ragdoll.isDirty == false){ //TODO: this "ragdoll.isDirty == false" look fix a ragdoll sometime strecht bug, check if other place needs this check
-				int hipIndex = -1;
+            // Passive dynamic ragdolls need motor cleanup, not animation/hips validation.
+            // This must run even if there is no animation pose or no marked hips bone.
+            if(!ragdoll.syncWithFinalPose){
+                for(size_t i=0;i<ragdoll.data->ragdoll->GetConstraintCount();++i){
+                    auto* motor=static_cast<SwingTwistConstraint*>(ragdoll.data->ragdoll->GetConstraint(int(i)));
+                    motor->SetSwingMotorState(EMotorState::Off);
+                    motor->SetTwistMotorState(EMotorState::Off);
+                }
+                return;
+            }
 
-				for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
-					if(ragdoll.parts[p].isHips){
-						hipIndex = p; 
-						break;
-					}
-				}
-				Assert(hipIndex == 0);
+			if(ragdoll.type == RagdollComponent::Type::Dynamic && targetPose.Size() > 0 && ragdoll.isDirty == false){ //TODO: this "ragdoll.isDirty == false" look fix a ragdoll sometime strecht bug, check if other place needs this check
+                int hipIndex = ragdoll.TryFindHipIndex();
 				Assert(ragdoll.parts.size() == ragdoll.data->ragdoll->GetBodyIDs().size());
-				Assert(ragdoll.startPose.Size() == skinned.finalPose.Size());
+				Assert(ragdoll.startPose.Size() == targetPose.Size());
 
-				for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
-					//TODO: Fix the instability and Freeze pose
+                for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
+                    if(ragdoll.hipsMotorType == RagdollComponent::HipsMotorType::AnimationAnchor && ragdoll.parts[p].isHips) continue;
+
+                    //TODO: Fix the instability and Freeze pose
 
 					if(ragdoll.motorType != RagdollComponent::MotorType::Jolt){
 						if(ragdoll.parts[p].parent >= 0){
@@ -4178,9 +4366,11 @@ void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 							//c->SetSwingMotorState(EMotorState::Off); //INFO: Call this every frame bug
 							//c->SetTwistMotorState(EMotorState::Off);
 
-							if(ragdoll.parts[p].disableSync) continue;
-							if(ragdoll.syncWithFinalPose == false) continue;
-							if(ragdoll.stiffness <= 1) continue;
+                            if(ragdoll.parts[p].disableSync || ragdoll.stiffness <= 1 || ragdoll.parts[p].stiffnessMult <= 0){
+                                c->SetSwingMotorState(EMotorState::Off);
+                                c->SetTwistMotorState(EMotorState::Off);
+                                continue;
+                            }
 
 							//float breakVelocityThreshold = (stiffness * ragdoll.parts[p].stiffnessMult);
 							//Vec3 vel = bodyInterface.GetLinearVelocity(ragdoll.data->ragdoll->GetBodyIDs()[p]);
@@ -4207,8 +4397,8 @@ void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 
 							int parentIndex = ragdoll.parts[ragdoll.parts[p].parent].skinnedSkeletonIndex;
 							int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
-							Transform animParentGlobal = Transform::Combine(trans.ToTransform(), skinned.finalPose.GetGlobalTransform(parentIndex));
-							Transform animGlobal = Transform::Combine(trans.ToTransform(), skinned.finalPose.GetGlobalTransform(boneIndex));
+							Transform animParentGlobal = Transform::Combine(trans.ToTransform(), targetPose.GetGlobalTransform(parentIndex));
+							Transform animGlobal = Transform::Combine(trans.ToTransform(), targetPose.GetGlobalTransform(boneIndex));
 							
 							Quaternion boneTargetLocal = math::conjugate(animParentGlobal.Rotation()) * animGlobal.Rotation();
 							//auto boneTargetLocal = math::conjugate(math::normalize(animParentGlobal.Rotation())) * math::normalize(animGlobal.Rotation());
@@ -4232,7 +4422,7 @@ void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 							int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
 							if(boneIndex < 0) continue;
 
-							Transform targetTransform = skinned.finalPose.GetGlobalTransform(boneIndex);
+							Transform targetTransform = targetPose.GetGlobalTransform(boneIndex);
 							Quat targetRot = ToJolt(targetTransform.Rotation());
 
 							Quat currentRot;
@@ -4258,7 +4448,7 @@ void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 							int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
 							if(boneIndex < 0) continue;
 
-							Transform targetTransform = Transform(trans.GlobalModelMatrix() * skinned.finalPose.GetGlobalMatrix(boneIndex));
+							Transform targetTransform = Transform(trans.GlobalModelMatrix() * targetPose.GetGlobalMatrix(boneIndex));
 							Quat targetRot = ToJolt(targetTransform.Rotation());
 						
 							Quat currentRot;
@@ -4294,7 +4484,6 @@ void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 					if(ragdoll.motorType == RagdollComponent::MotorType::TargetRot){
 						if(ragdoll.syncFromTheHips && hipIndex != -1 && ragdoll.parts[p].isHips == false){ //&& ragdoll.parts[p].isHips == false
 							if(ragdoll.parts[p].disableSync) continue;
-							Assert(hipIndex == 0);
 							BodyID bodyID = ragdoll.data->ragdoll->GetBodyIDs()[p];
 							int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
 							if (boneIndex <= 0) continue;
@@ -4304,7 +4493,7 @@ void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 							int hipBoneIndex = ragdoll.parts[hipPartIndex].skinnedSkeletonIndex;
 
 							// 1. Get local rotation from animation (relative to animated hip)
-							Transform boneAnimGlobal = skinned.finalPose.GetGlobalTransform(boneIndex);
+							Transform boneAnimGlobal = targetPose.GetGlobalTransform(boneIndex);
 
 							// 2. Get current hip transform from physics
 							Quat hipRot;
@@ -4346,8 +4535,8 @@ void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 							//if (boneIndex <= 0) continue;
 							if(boneIndex < 0) continue;
 
-							//Transform targetTransform = skinned.finalPose.GetGlobalTransform(boneIndex);
-							Transform targetTransform = Transform(trans.GlobalModelMatrix() * skinned.finalPose.GetGlobalMatrix(boneIndex));
+							//Transform targetTransform = targetPose.GetGlobalTransform(boneIndex);
+							Transform targetTransform = Transform(trans.GlobalModelMatrix() * targetPose.GetGlobalMatrix(boneIndex));
 							Quat targetRot = ToJolt(targetTransform.Rotation());
 							//Quat targetRot = ToJolt(targetTransform.LocalRotation()) * ToJolt(ragdoll.parts[p].initedRot);
 							//Quat targetRot = ToJolt(targetTransform.LocalRotation()) * ToJolt(ragdoll.startPose.GetGlobalTransform(boneIndex).LocalRotation());
@@ -4404,7 +4593,7 @@ void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 							bodyInterface.GetPositionAndRotation(hipBodyID, hipPhysPos, hipPhysRot);
 
 							Transform hipPhys = Transform(FromJolt(hipPhysPos), FromJolt(hipPhysRot), Vector3One);
-							Transform animBone = skinned.finalPose.GetGlobalTransform(boneIndex);
+							Transform animBone = targetPose.GetGlobalTransform(boneIndex);
 
 							Transform boneTargetWorld = Transform::Combine(hipPhys, animBone);
 							targetRot = ToJolt(boneTargetWorld.Rotation());
@@ -4412,7 +4601,7 @@ void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 							if(ragdoll.parts[p].disableSync) continue;
 
 							// World-space target (simple case)
-							Transform t = Transform(trans.GlobalModelMatrix() * skinned.finalPose.GetGlobalMatrix(boneIndex));
+							Transform t = Transform(trans.GlobalModelMatrix() * targetPose.GetGlobalMatrix(boneIndex));
 							targetRot = ToJolt(t.Rotation());
 						}
 
@@ -4479,11 +4668,11 @@ void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 						// -------------------------
 						Transform animParentGlobal = 
 							Transform::Combine(trans.ToTransform(),
-											skinned.finalPose.GetGlobalTransform(parentIndex));
+											targetPose.GetGlobalTransform(parentIndex));
 
 						Transform animBoneGlobal = 
 							Transform::Combine(trans.ToTransform(),
-											skinned.finalPose.GetGlobalTransform(boneIndex));
+											targetPose.GetGlobalTransform(boneIndex));
 
 						// local target = inverse(parentAnim) * boneAnim
 						Quaternion targetLocal = math::conjugate(animParentGlobal.Rotation()) * animBoneGlobal.Rotation();
@@ -4541,7 +4730,7 @@ void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 						Quaternion tRot;
 						Vector3 tPos;
 						math::extractPosRot(
-							math::simdMul(trans.GlobalModelMatrix(), skinned.finalPose[boneIndex].GetModelMatrix()),
+							math::simdMul(trans.GlobalModelMatrix(), targetPose[boneIndex].GetModelMatrix()),
 							tPos, 
 							tRot
 						);
@@ -4561,12 +4750,12 @@ void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 	if(scene->Running() == true){
 		if(EnableInterpolation) PreInterpolate();
 
-		physicsWorld->physicsSystem.Update(
-			Time::FixedDelta(),
-			cCollisionSteps,
-			physicsWorld->tempAllocator,
-			&physicsWorld->jobSystem
-		);
+        physicsWorld->physicsSystem.Update(
+            Time::FixedDelta(),
+            cCollisionSteps,
+            physicsWorld->tempAllocator,
+            &physicsWorld->jobSystem
+        );
 
 		Collision collision;
 		while(onContactAddedData.try_dequeue(collision)){
@@ -4612,84 +4801,43 @@ void PhysicsSystem::PostPhysicsUpdate(Scene& inScene){
 
 //INFO: Just a test
 void PhysicsSystem::_SyncRagdollToPose(Scene& scene, SkinnedModelRendererComponent& skinned, RagdollComponent& ragdoll, TransformComponent& trans, InfoComponent& info, BodyInterface& bodyInterface, bool canInterpolate){
-	if(ragdoll.isDirty == true) return;
+    if(ragdoll.isDirty || !ragdoll.data || !skinned.GetModel()) return;
+    // Apply the visible blend once per frame, after all fixed physics steps.
+    if constexpr(EnableFixedPostPhysicUpdate){
+        if(!canInterpolate) return;
+    }
+    if(skinned.finalPose.Size() == 0) return;
+    float weight = ClampRagdollPoseWeight(ragdoll.poseWeight);
+    if(weight <= 0){
+        skinned.finalPose.GetMatrixPalette(skinned.posePalette,skinned.GetModel()->skeleton.GetInvBindPose());
+        return;
+    }
 
-	//if(skinned.finalPose.Size() <= 0) return;
-	skinned.posePalette.resize(skinned.GetModel()->skeleton.GetRestPose().Size());
-	if constexpr(resetFinalPoseWithRestPose) skinned.finalPose = skinned.GetModel()->skeleton.GetRestPose();
-
-	auto& pose = skinned.finalPose;
-
-	for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
-		BodyID i = ragdoll.data->ragdoll->GetBodyIDs()[p];
-		RVec3 pos;
-		Quat rot;
-		bodyInterface.GetPositionAndRotation(i, pos, rot);
-
-		if(ragdoll.interpolate && EnableInterpolation && canInterpolate){
-			float alpha = Time::TimeScale() <= 0 ? 1 : scene.FixedUpdateAccumulator() / Time::FixedDelta();
-			Vector3 interpolatedPos = math::mix(ragdoll.parts[p].previousPosition, FromJolt(pos), alpha);
-			Quaternion interpolatedRot = math::slerp(ragdoll.parts[p].previousRotation, FromJolt(rot), alpha);
-
-			int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
-			pose.SetGlobalTransform(boneIndex, Transform(
-				trans.InverseTransformPoint(interpolatedPos), 
-				math::inverse(math::quat_cast(trans.GetLocalModelMatrix())) * interpolatedRot, //math::inverse(trans.Rotation()) * FromJolt(rot), 
-				Vector3One
-			));
-		} else{
-		
-			int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
-			pose.SetGlobalTransform(boneIndex, Transform(
-				trans.InverseTransformPoint(FromJolt(pos)), 
-				math::inverse(math::quat_cast(trans.GetLocalModelMatrix())) * FromJolt(rot), 
-				//math::inverse(trans.Rotation()) * FromJolt(rot), 
-				Vector3One
-			));
-		}
-	}	
-	pose.GetMatrixPalette(skinned.posePalette, skinned.GetModel()->skeleton.GetInvBindPose());
-};
+    // Build the full physical pose first: blended parents must never affect child conversion.
+    Pose physical = skinned.finalPose;
+    Quaternion inverseRootRotation = math::inverse(trans.Rotation());
+    for(size_t p=0;p<ragdoll.data->ragdoll->GetBodyIDs().size();++p){
+        int bone=ragdoll.parts[p].skinnedSkeletonIndex;
+        if(bone<0 || bone>=int(physical.Size())) continue;
+        RVec3 position; Quat rotation;
+        bodyInterface.GetPositionAndRotation(ragdoll.data->ragdoll->GetBodyIDs()[p],position,rotation);
+        Vector3 worldPosition=FromJolt(position);
+        Quaternion worldRotation=FromJolt(rotation);
+        if(ragdoll.interpolate && EnableInterpolation && canInterpolate){
+            float alpha=Time::TimeScale()<=0 ? 1.0f : scene.FixedUpdateAccumulator()/Time::FixedDelta();
+            alpha=math::clamp(alpha,0.0f,1.0f);
+            worldPosition=math::mix(ragdoll.parts[p].previousPosition,worldPosition,alpha);
+            worldRotation=math::slerp(ragdoll.parts[p].previousRotation,worldRotation,alpha);
+        }
+        physical.SetGlobalTransform(bone,Transform(trans.InverseTransformPoint(worldPosition),inverseRootRotation*worldRotation,Vector3One));
+    }
+    BlendRagdollLocalPoseInPlace(skinned.finalPose, physical, weight);
+    skinned.finalPose.GetMatrixPalette(skinned.posePalette,skinned.GetModel()->skeleton.GetInvBindPose());
+}
 
 //INFO: Just a test
 void PhysicsSystem::_SyncRagdollToPose2::operator()(){
-	if(ragdoll.isDirty == true) return;
-
-	//if(skinned.finalPose.Size() <= 0) return;
-	skinned.posePalette.resize(skinned.GetModel()->skeleton.GetRestPose().Size());
-	if constexpr(resetFinalPoseWithRestPose) skinned.finalPose = skinned.GetModel()->skeleton.GetRestPose();
-
-	auto& pose = skinned.finalPose;
-
-	for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
-		BodyID i = ragdoll.data->ragdoll->GetBodyIDs()[p];
-		RVec3 pos;
-		Quat rot;
-		bodyInterface.GetPositionAndRotation(i, pos, rot);
-
-		if(ragdoll.interpolate && EnableInterpolation && canInterpolate){
-			float alpha = Time::TimeScale() <= 0 ? 1 : scene.FixedUpdateAccumulator() / Time::FixedDelta();
-			Vector3 interpolatedPos = math::mix(ragdoll.parts[p].previousPosition, FromJolt(pos), alpha);
-			Quaternion interpolatedRot = math::slerp(ragdoll.parts[p].previousRotation, FromJolt(rot), alpha);
-
-			int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
-			pose.SetGlobalTransform(boneIndex, Transform(
-				trans.InverseTransformPoint(interpolatedPos), 
-				math::inverse(math::quat_cast(trans.GetLocalModelMatrix())) * interpolatedRot, //math::inverse(trans.Rotation()) * FromJolt(rot), 
-				Vector3One
-			));
-		} else{
-		
-			int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
-			pose.SetGlobalTransform(boneIndex, Transform(
-				trans.InverseTransformPoint(FromJolt(pos)), 
-				math::inverse(math::quat_cast(trans.GetLocalModelMatrix())) * FromJolt(rot), 
-				//math::inverse(trans.Rotation()) * FromJolt(rot), 
-				Vector3One
-			));
-		}
-	}	
-	pose.GetMatrixPalette(skinned.posePalette, skinned.GetModel()->skeleton.GetInvBindPose());
+    PhysicsSystem::_SyncRagdollToPose(scene,skinned,ragdoll,trans,info,bodyInterface,canInterpolate);
 }
 
 //INFO: I think this can be a litter performace impruvment instead of using lambda
@@ -4719,45 +4867,9 @@ void PhysicsSystem::_PostPhysicsUpdate(bool onlyPostSync, bool canInterpolate){
 
 	BodyInterface& bodyInterface = physicsWorld->physicsSystem.GetBodyInterfaceNoLock();
 
-	auto SyncRagdollToPose = [&](SkinnedModelRendererComponent& skinned, RagdollComponent& ragdoll, TransformComponent& trans, InfoComponent& info, BodyInterface& bodyInterface, bool canInterpolate){
-		if(ragdoll.isDirty == true) return;
-
-		//if(skinned.finalPose.Size() <= 0) return;
-		skinned.posePalette.resize(skinned.GetModel()->skeleton.GetRestPose().Size());
-		if constexpr(resetFinalPoseWithRestPose) skinned.finalPose = skinned.GetModel()->skeleton.GetRestPose();
-
-		auto& pose = skinned.finalPose;
-
-		for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
-			BodyID i = ragdoll.data->ragdoll->GetBodyIDs()[p];
-			RVec3 pos;
-			Quat rot;
-			bodyInterface.GetPositionAndRotation(i, pos, rot);
-
-			if(ragdoll.interpolate && EnableInterpolation && canInterpolate){
-				float alpha = Time::TimeScale() <= 0 ? 1 : InterpolationAlpha();
-				Vector3 interpolatedPos = math::mix(ragdoll.parts[p].previousPosition, FromJolt(pos), alpha);
-				Quaternion interpolatedRot = math::slerp(ragdoll.parts[p].previousRotation, FromJolt(rot), alpha);
-
-				int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
-				pose.SetGlobalTransform(boneIndex, Transform(
-					trans.InverseTransformPoint(interpolatedPos), 
-					math::inverse(math::quat_cast(trans.GetLocalModelMatrix())) * interpolatedRot, //math::inverse(trans.Rotation()) * FromJolt(rot), 
-					Vector3One
-				));
-			} else{
-			
-				int boneIndex = ragdoll.parts[p].skinnedSkeletonIndex;
-				pose.SetGlobalTransform(boneIndex, Transform(
-					trans.InverseTransformPoint(FromJolt(pos)), 
-					math::inverse(math::quat_cast(trans.GetLocalModelMatrix())) * FromJolt(rot), 
-					//math::inverse(trans.Rotation()) * FromJolt(rot), 
-					Vector3One
-				));
-			}
-		}	
-		pose.GetMatrixPalette(skinned.posePalette, skinned.GetModel()->skeleton.GetInvBindPose());
-	};
+    auto SyncRagdollToPose = [&](SkinnedModelRendererComponent& skinned, RagdollComponent& ragdoll, TransformComponent& trans, InfoComponent& info, BodyInterface& bodyInterface, bool canInterpolate){
+        _SyncRagdollToPose(*scene,skinned,ragdoll,trans,info,bodyInterface,canInterpolate);
+    };
 
 	auto SyncPoseToRagdoll = [&](SkinnedModelRendererComponent& skinned, RagdollComponent& ragdoll, TransformComponent& trans, BodyInterface& bodyInterface){
 		for(size_t p = 0; p < ragdoll.data->ragdoll->GetBodyIDs().size(); ++p){
@@ -5235,7 +5347,7 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask 
 	Assert(_objectLayerFilter.ShouldCollide(Layers::Layer1) == true);
 	Assert(_objectLayerFilter.ShouldCollide(Layers::Layer2) == false);*/
 
-	physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, settings, collector, {}, objectLayerFilter);
+    physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, settings, collector, {}, objectLayerFilter);
 	if(collector.HadHit()){
 		const JPH::RayCastResult& result = collector.GetHit();
 		JPH::BodyID hitBodyID = result.mBodyID;
