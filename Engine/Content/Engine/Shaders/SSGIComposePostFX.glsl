@@ -61,7 +61,7 @@ Texture2D(0, 3, giAO, giAOSampler)
         vec2 giUV = texCoord * (giSize / screenSize);
         vec4 giAO = SampleTexture2D(giAO, giAOSampler, giUV);
         fragColor = vec4(giAO.rgb, 1.0);
-        fragColor = vec4(giAO.aaa, 1.0);
+        //fragColor = vec4(giAO.aaa, 1.0);
     }
     #endif
 #endif

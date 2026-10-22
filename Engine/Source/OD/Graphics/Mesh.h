@@ -20,7 +20,7 @@ enum class MeshDrawMode{
     TRIANGLES = 0,
     LINES,
     POINTS,
-    QUADS,
+    QUADS, //Remove this later
     TRIANGLES_STRIP
 };
 

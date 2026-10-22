@@ -2169,6 +2169,51 @@ void tf_for_each3(tf::Taskflow& taskflow, Iter begin, Iter end, size_t num_tasks
     }
 }
 
+template<typename Iter, typename Func>
+void tf_for_each4(tf::Taskflow& taskflow, Iter begin, Iter end, size_t num_tasks = 0, Func func = {}){
+    using traits = std::iterator_traits<Iter>;
+    using diff_t = typename traits::difference_type;
+
+    const diff_t total_diff = std::distance(begin, end);
+    if(total_diff <= 0) return;
+
+    const size_t total = static_cast<size_t>(total_diff);
+    if(num_tasks == 0){
+        num_tasks = std::thread::hardware_concurrency();
+        if(num_tasks == 0) num_tasks = 1;
+    }
+    if(num_tasks > total) num_tasks = total;
+
+    const size_t chunk_size = (total + num_tasks - 1) / num_tasks;
+    auto advance_iter = [](Iter it, size_t offset) -> Iter {
+        if constexpr (
+            std::is_same_v<typename traits::iterator_category, std::random_access_iterator_tag> ||
+            std::is_base_of_v<std::random_access_iterator_tag, typename traits::iterator_category>
+        ){
+            return it + static_cast<diff_t>(offset);
+        } else {
+            return std::next(it, static_cast<diff_t>(offset));
+        }
+    };
+
+    // Carry each end forward as the next start, so forward iterators are
+    // traversed once to establish all chunk boundaries instead of once per chunk.
+    Iter chunk_begin = begin;
+    for(size_t taskIndex = 0; taskIndex < num_tasks; ++taskIndex){
+        const size_t start_offset = taskIndex * chunk_size;
+        if(start_offset >= total) break;
+
+        const size_t count = std::min(chunk_size, total - start_offset);
+        Iter chunk_end = advance_iter(chunk_begin, count);
+        taskflow.emplace([chunk_begin, chunk_end, taskIndex, func]() mutable {
+            for(Iter it = chunk_begin; it != chunk_end; ++it){
+                func(*it, taskIndex);
+            }
+        });
+        chunk_begin = chunk_end;
+    }
+}
+
 //////////////////////////////////////////
 inline void FillMeshRenderData(RenderContext& ctx, RenderData& data, MeshRendererComponent& c, TransformComponent& t, InfoComponent& info, entt::entity e){
     data.layer = info.layer;
@@ -2275,6 +2320,7 @@ inline void FillSkinnedMeshRenderData(RenderContext& ctx, RenderData& data, Skin
 }
 
 inline void FillModelRenderData(RenderContext& ctx, RenderData& data, ModelRendererComponent& c, TransformComponent& t, InfoComponent& info, entt::entity e, Model* model, const Model::RenderTarget& target){
+    //TODO: maybe move distance, targetMatrix, aabb from the this to cacl once for ModelRendererComponent
     data.layer = info.layer;
 
     data.distance = math::distance2(ctx.GetCamera().viewPos, t.PositionReadSafe());// t.Position());
@@ -2495,7 +2541,7 @@ void RenderContext::UpdateRenderData(Scene& scene, RendererFeatureContext& passC
     auto meshView = scene.GetRegistry().view<MeshRendererComponent, TransformComponent, InfoComponent>(
         entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable, SkipDraw>
     );
-    tf_for_each3(scene.GetTaskflow(), meshView.begin(), meshView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
+    tf_for_each4(scene.GetTaskflow(), meshView.begin(), meshView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
         auto [c, t, info] = meshView.get<MeshRendererComponent,TransformComponent,InfoComponent>(e);
         if(!info.enable || !c.mesh || !c.material) return;
 
@@ -2510,11 +2556,11 @@ void RenderContext::UpdateRenderData(Scene& scene, RendererFeatureContext& passC
     auto meshRenderView = scene.GetRegistry().view<ModelRendererComponent, TransformComponent, InfoComponent>(
         entt::exclude<StaticRendererComponent, HideInEditor, SelfDisable, SkipDraw>
     );
-    tf_for_each3(scene.GetTaskflow(), meshRenderView.begin(), meshRenderView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
+    tf_for_each4(scene.GetTaskflow(), meshRenderView.begin(), meshRenderView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
         auto [c, t, info] = meshRenderView.get<ModelRendererComponent,TransformComponent,InfoComponent>(e);
         if(info.enable == false || c.draw == false || c.model == nullptr) return;
 
-        Ref<Model> model = c.GetModel();
+        Model* model = c.model.get();
         if(c.finalPose.Size() != model->skeleton.GetBindPose().Size()) c.finalPose = model->skeleton.GetBindPose();
 
         Assert(c.GetRenderTargetVisibility().size() == model->renderTargets.size());
@@ -2524,7 +2570,7 @@ void RenderContext::UpdateRenderData(Scene& scene, RendererFeatureContext& passC
             //if(i < c.GetRenderTargetVisibility().size() && c.GetRenderTargetVisibility()[i] == false) continue;
 
             RenderData& data = renderData.GetNew(taskIndex); 
-            FillModelRenderData(*this, data, c, t, info, e, model.get(), target);
+            FillModelRenderData(*this, data, c, t, info, e, model, target);
         }
     });
     scene.RunAllTaskAndSync();
@@ -2533,7 +2579,7 @@ void RenderContext::UpdateRenderData(Scene& scene, RendererFeatureContext& passC
     {
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::SkinnedMesh");
     auto skinnedMeshView = scene.GetRegistry().view<SkinnedMeshRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
-    tf_for_each3(scene.GetTaskflow(), skinnedMeshView.begin(), skinnedMeshView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
+    tf_for_each4(scene.GetTaskflow(), skinnedMeshView.begin(), skinnedMeshView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
         auto [c, t, info] = skinnedMeshView.get<SkinnedMeshRendererComponent, TransformComponent, InfoComponent>(e);
         if(info.enable == false || c.mesh == nullptr || c.material == nullptr) return; //continue;
 
@@ -2546,11 +2592,11 @@ void RenderContext::UpdateRenderData(Scene& scene, RendererFeatureContext& passC
     {
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::SkinnedModel");
     auto skinnedView = scene.GetRegistry().view<SkinnedModelRendererComponent, TransformComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
-    tf_for_each3(scene.GetTaskflow(), skinnedView.begin(), skinnedView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
+    tf_for_each4(scene.GetTaskflow(), skinnedView.begin(), skinnedView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
         auto [c, t, info] = skinnedView.get<SkinnedModelRendererComponent,TransformComponent,InfoComponent>(e);
         if(info.enable == false || c.draw == false || c.model == nullptr) return; //continue;
 
-        Ref<Model> model = c.GetModel();
+        Model* model = c.model.get();
         if(model == nullptr) return; //continue;
 
         //TODO: Revisar isto, fix temporariamente o model nao esta send renderizando sem chama UpdatePosePalette
@@ -2562,7 +2608,7 @@ void RenderContext::UpdateRenderData(Scene& scene, RendererFeatureContext& passC
             //if(_i < c.GetRenderTargetVisibility().size() && c.GetRenderTargetVisibility()[_i] == false) continue;
             
             RenderData& data = renderData.GetNew(taskIndex);
-            FillSkinnedModelRenderData(*this, data, c, t, info, e, model.get(), target);
+            FillSkinnedModelRenderData(*this, data, c, t, info, e, model, target);
         }
     });
     scene.RunAllTaskAndSync();
@@ -2585,7 +2631,7 @@ void RenderContext::UpdateRenderData(Scene& scene, RendererFeatureContext& passC
     auto decalView = scene.GetRegistry().view<DecalRendererComponent, TransformComponent, InfoComponent>(
         entt::exclude<HideInEditor, SelfDisable, SkipDraw>
     );
-    tf_for_each3(scene.GetTaskflow(), decalView.begin(), decalView.end(), renderData.chunk_count(), [&](auto entity, int taskIndex){
+    tf_for_each4(scene.GetTaskflow(), decalView.begin(), decalView.end(), renderData.chunk_count(), [&](auto entity, int taskIndex){
         auto [decal, trans, info] = decalView.get<DecalRendererComponent, TransformComponent, InfoComponent>(entity);
 
         RenderData& data = renderData.GetNew(taskIndex);
@@ -2599,7 +2645,7 @@ void RenderContext::UpdateRenderData(Scene& scene, RendererFeatureContext& passC
     {
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::StaticMesh");
     auto staticMeshView = scene.GetRegistry().view<MeshRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
-    tf_for_each3(scene.GetTaskflow(), staticMeshView.begin(), staticMeshView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
+    tf_for_each4(scene.GetTaskflow(), staticMeshView.begin(), staticMeshView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
         auto [c, t, s, info] = staticMeshView.get<MeshRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(e);
         if(info.enable == false || c.mesh == nullptr || c.material == nullptr) return; //continue;
 
@@ -2619,7 +2665,7 @@ void RenderContext::UpdateRenderData(Scene& scene, RendererFeatureContext& passC
     {
     OD_PROFILE_SCOPE("RenderContext::UpdateRenderData::StaticModel");
     auto meshStaticRenderView = scene.GetRegistry().view<ModelRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(entt::exclude<HideInEditor, SelfDisable, SkipDraw>);
-    tf_for_each3(scene.GetTaskflow(), meshStaticRenderView.begin(), meshStaticRenderView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
+    tf_for_each4(scene.GetTaskflow(), meshStaticRenderView.begin(), meshStaticRenderView.end(), renderData.chunk_count(), [&](auto e, int taskIndex){
         auto [c, t, s, info] = meshStaticRenderView.get<ModelRendererComponent, TransformComponent, StaticRendererComponent, InfoComponent>(e);
         if(info.enable == false || c.draw == false || c.model == nullptr) return; //continue;
 

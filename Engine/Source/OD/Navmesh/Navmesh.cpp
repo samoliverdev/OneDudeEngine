@@ -137,7 +137,7 @@ public:
         if(prim == DU_DRAW_POINTS) mesh->drawMode = MeshDrawMode::POINTS;
         if(prim == DU_DRAW_LINES) mesh->drawMode = MeshDrawMode::LINES;
         if(prim == DU_DRAW_TRIS) mesh->drawMode = MeshDrawMode::TRIANGLES;
-        if(prim == DU_DRAW_QUADS) mesh->drawMode = MeshDrawMode::QUADS;
+        if(prim == DU_DRAW_QUADS) Assert(false);// mesh->drawMode = MeshDrawMode::QUADS;
     }
 	
     virtual void vertex(const float* pos, unsigned int color){

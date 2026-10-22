@@ -346,6 +346,8 @@ void SceneManager::RegisterComponent(const std::string& name, const std::string&
 
 template<typename T>
 void SceneManager::RegisterScript(const std::string& name){
+    static_assert(std::is_base_of<OD::Script, T>::value);
+
     Assert(scriptsSerializer.find(name) == scriptsSerializer.end());
 
     SerializeFuncs funcs;
