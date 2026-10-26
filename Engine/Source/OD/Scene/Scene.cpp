@@ -662,28 +662,11 @@ Scene::~Scene(){
     lateSystems.clear(); 
 }
 
-/*Entity Scene::AddEntity(std::string name){
-    EntityId e = registry.create();
-    
-    InfoComponent& info = registry.emplace<InfoComponent>(e);
-    info.name = name;
-    info.id = e;
-    
-    TransformComponent& transform = registry.emplace<TransformComponent>(e);
-    transform.registry = &registry;
-
-    Assert(registry.valid(e));
-    Assert(registry.any_of<TransformComponent>(e));
-
-    return Entity(e, this);
-}*/
-
 Entity Scene::AddEntity(const std::string& name){
     Entity e = registry.create();
     
     InfoComponent& info = registry.emplace<InfoComponent>(e);
     info.name = name;
-    //info.id = e;
     
     TransformComponent& transform = registry.emplace<TransformComponent>(e);
     transform.registry = &registry;
@@ -911,11 +894,7 @@ Entity Scene::Instantiate(const Ref<Model> model, bool staticRenderer, int overr
     rootTrans.UpdateGlobalTransformCacheIfNeeded();
 
     return root;
-}
-
-/*Camera& Scene::GetMainCamera(){ 
-    return mainCamera; 
-}*/   
+}  
 
 Entity Scene::GetMainCamera(){
     auto camView = registry.view<CameraComponent>(entt::exclude<SelfDisable>);
@@ -1282,7 +1261,7 @@ void Scene::Load(const char* path){
     std::vector<entt::entity> entities;
     archive(cereal::make_nvp("Entities", entities));
     for(auto i: entities){
-        entt::entity e = registry.create();
+        entt::entity e = registry.create(i);
         loadLookup[i] = e;
     }
 
@@ -1607,10 +1586,6 @@ void EntityHandle::CreateLuaBind(sol::state& lua){
         "IsValid", &EntityHandle::IsValid
     );
 }
-
-/*tf::Executor& Scene::GetExecutor(){ 
-    return executor; 
-}*/
 
 tf::Taskflow& Scene::GetTaskflow(){ 
     return *taskflow; 

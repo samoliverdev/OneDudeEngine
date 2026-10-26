@@ -33,9 +33,14 @@ protected:
 void Log::Init(){
     //std::printf("--------------Log Init--------------\n");
     std::vector<spdlog::sink_ptr> sinks;
+
+    #ifdef FINAL_BUILD
+    sinks.push_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>("Engine.log", true));
+    #else
     sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
     sinks.push_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>("Engine.log", true));
     sinks.push_back(std::make_shared<LogQueueSink>());
+    #endif
 
     logger = std::make_shared<spdlog::logger>("ENGINE", sinks.begin(), sinks.end());
     spdlog::register_logger(logger);

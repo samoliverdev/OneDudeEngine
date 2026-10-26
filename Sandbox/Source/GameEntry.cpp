@@ -54,7 +54,7 @@ OD::ApplicationConfig GetStartAppConfig(){
 }
 
 OD::Module* CreateMainModule(){
-    int i = 22; //10; //-1; //35;
+    int i = 0; //10; //-1; //35;
 
     #ifdef TestNewGPU_API
     i = -9; //34; //22; //10; //-4; //-3; //-2;

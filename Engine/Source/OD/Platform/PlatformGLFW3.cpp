@@ -549,7 +549,7 @@ void Platform::SetFullscreen(bool enabled){
             mode->refreshRate
         );
     } else {
-        int windowWidth;
+        /*int windowWidth;
         int windowHeight;
         glfwGetWindowSize(window, &windowWidth, &windowHeight);
         glfwSetWindowMonitor(
@@ -557,6 +557,28 @@ void Platform::SetFullscreen(bool enabled){
             nullptr,
             windowPosX,
             windowPosY,
+            windowWidth,
+            windowHeight,
+            0
+        );*/
+
+        int windowWidth, windowHeight;
+        glfwGetWindowSize(window, &windowWidth, &windowHeight);
+
+        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+        int monitorX, monitorY;
+        glfwGetMonitorPos(monitor, &monitorX, &monitorY);
+
+        // Center window on monitor
+        int x = monitorX + (mode->width - windowWidth) / 2;
+        int y = monitorY + (mode->height - windowHeight) / 2;
+
+        glfwSetWindowMonitor(
+            window,
+            nullptr,
+            x, y,
             windowWidth,
             windowHeight,
             0

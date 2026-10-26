@@ -4124,7 +4124,7 @@ void PhysicsSystem::PrePhysicsUpdate(Scene& inscene){
 	//return;
 	OD_PROFILE_SCOPE("PhysicsSystem::PrePhysicsUpdate");
 
-	if(skipUpdate) return;
+	//if(skipUpdate) return;
 
 	BodyInterface& bodyInterface = physicsWorld->physicsSystem.GetBodyInterfaceNoLock(); //physicsWorld->physicsSystem.GetBodyInterface();
 
@@ -4228,7 +4228,7 @@ void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 				
 	//OD_PROFILE_SCOPE("PhysicsSystem::FixedPhysicsUpdate");
 
-	if(skipUpdate) return;
+	//if(skipUpdate) return;
 
 	Assert(&GlobalSettings::Get().Get<PhysicsSettings>() == currentSettings);
 	if(scene->Running() == false) return;
@@ -4747,7 +4747,7 @@ void PhysicsSystem::FixedPhysicsUpdate(Scene& inscene){
 
 	scene->RunAllTaskAndSync();
 
-	if(scene->Running() == true){
+	if(scene->Running() == true && skipUpdate == false){
 		if(EnableInterpolation) PreInterpolate();
 
         physicsWorld->physicsSystem.Update(
@@ -4790,7 +4790,7 @@ void PhysicsSystem::PostPhysicsUpdate(Scene& inScene){
 	//return;
 	OD_PROFILE_SCOPE("PhysicsSystem::PostPhysicsUpdate");
 
-	if(skipUpdate) return;
+	//if(skipUpdate) return;
 
 	if constexpr (EnableFixedPostPhysicUpdate){
 		_PostPhysicsUpdate(true, true);

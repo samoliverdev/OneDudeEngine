@@ -15,6 +15,8 @@
 #include <OD/Serializer/Serializer.h>
 #include <magic_enum/magic_enum.hpp>
 
+#include <OD/Utils/JobSystem.h>
+
 using namespace OD;
 
 enum class MovementType{
@@ -109,82 +111,113 @@ struct Transform2{
 };
 
 void BaseMeshSample::OnInit(){
-    Actor actorIn = {};
-    Actor actorOut = {};
+    {
+        Actor actorIn = {};
+        Actor actorOut = {};
 
-    actorOut.name = "Test";
-    actorOut.transform.position = glm::vec3(1, 2, 3);
-    actorOut.transform.scale = glm::vec3(5, 5, 5);
+        actorOut.name = "Test";
+        actorOut.transform.position = glm::vec3(1, 2, 3);
+        actorOut.transform.scale = glm::vec3(5, 5, 5);
 
-    Serializer writer(Mode::Write);
-    writer.Field("actor", actorOut);
+        Serializer writer(Mode::Write);
+        writer.Field("actor", actorOut);
 
-    std::ofstream fileOut("actor.json");
-    writer.Save(fileOut, Format::Json);
-    fileOut.close();
+        std::ofstream fileOut("actor.json");
+        writer.Save(fileOut, Format::Json);
+        fileOut.close();
 
-    std::ifstream fileIn("actor.json");
-    Serializer reader(Mode::Read);
-    reader.Load(fileIn, Format::Json);
-    reader.Field("actor", actorIn);
+        std::ifstream fileIn("actor.json");
+        Serializer reader(Mode::Read);
+        reader.Load(fileIn, Format::Json);
+        reader.Field("actor", actorIn);
 
-    Assert(actorIn.name == "Test");
-    Assert(actorIn.transform.position == glm::vec3(1, 2, 3));
+        Assert(actorIn.name == "Test");
+        Assert(actorIn.transform.position == glm::vec3(1, 2, 3));
 
-    Transform2 trans2;
+        Transform2 trans2;
 
-    Serializer writer2(Mode::Write);
-    writer2.Field("transform", trans2);
-    std::ofstream out("transform.bin", std::ios::binary);
-    writer2.Save(out, Format::Binary);
-    out.close();
+        Serializer writer2(Mode::Write);
+        writer2.Field("transform", trans2);
+        std::ofstream out("transform.bin", std::ios::binary);
+        writer2.Save(out, Format::Binary);
+        out.close();
 
-    Serializer writer3(Mode::Write);
-    writer3.Field("transform", trans2);
-    std::ofstream out2("transform.json");
-    writer3.Save(out2, Format::Json);
-    out2.close();
+        Serializer writer3(Mode::Write);
+        writer3.Field("transform", trans2);
+        std::ofstream out2("transform.json");
+        writer3.Save(out2, Format::Json);
+        out2.close();
+    }
 
-    using CharacterType = OD::GroupOfComps<OD::TransformComponent, OD::MeshRendererComponent>;
+    {
+        using CharacterType = OD::GroupOfComps<OD::TransformComponent, OD::MeshRendererComponent>;
 
-    Registry gg;
-    auto character1 = CharacterType::Create(
-        gg,
-        TransformComponent{},
-        MeshRendererComponent{}
-    );
-    auto character2 = CharacterType::Create(
-        gg,
-        [](auto& trans, auto& renderer){
+        Registry gg;
+        auto character1 = CharacterType::Create(
+            gg,
+            TransformComponent{},
+            MeshRendererComponent{}
+        );
+        auto character2 = CharacterType::Create(
+            gg,
+            [](auto& trans, auto& renderer){
 
+            }
+        );
+    }
+
+    {
+        struct Position { float x, y; };
+        struct Velocity { float dx, dy; };
+        struct Name {std::string name; };
+
+        registry reg;
+        
+        entity e1 = reg.create();
+        reg.add<Position>(e1, 1.0f, 2.0f);
+        reg.add<Velocity>(e1, 0.5f, 1.5f);
+        //reg.add<Name>(e1, "e1");
+        
+        entity e2 = reg.create();
+        reg.add<Position>(e2, 3.0f, 4.0f);
+        reg.add<Velocity>(e2, 0.5f, 1.5f);
+        reg.add<Name>(e2, "e2");
+        
+        // Iterate through all entities with both Position and Velocity
+        auto moving = reg.View<Position, Velocity, Name>();
+        for (entity e : moving) {
+            auto& pos = reg.get<Position>(e);
+            auto& vel = reg.get<Velocity>(e);
+            auto& name = reg.get<Name>(e);
+            pos.x += vel.dx;
+            pos.y += vel.dy;
+            LogInfo("------Name: {}", name.name.c_str());
         }
-    );
+    }
 
-    struct Position { float x, y; };
-    struct Velocity { float dx, dy; };
-    struct Name {std::string name; };
+    {
+        tf::Executor executor;
+        mini_jobs::JobSystem jobs(executor);
 
-    registry reg;
-    
-    entity e1 = reg.create();
-    reg.add<Position>(e1, 1.0f, 2.0f);
-    reg.add<Velocity>(e1, 0.5f, 1.5f);
-    //reg.add<Name>(e1, "e1");
-    
-    entity e2 = reg.create();
-    reg.add<Position>(e2, 3.0f, 4.0f);
-    reg.add<Velocity>(e2, 0.5f, 1.5f);
-    reg.add<Name>(e2, "e2");
-    
-    // Iterate through all entities with both Position and Velocity
-    auto moving = reg.View<Position, Velocity, Name>();
-    for (entity e : moving) {
-        auto& pos = reg.get<Position>(e);
-        auto& vel = reg.get<Velocity>(e);
-        auto& name = reg.get<Name>(e);
-        pos.x += vel.dx;
-        pos.y += vel.dy;
-        LogInfo("------Name: {}", name.name.c_str());
+        int positionsToken = 0;
+        int velocitiesToken = 0;
+        mini_jobs::Resource position(&positionsToken);
+        mini_jobs::Resource velocity(&velocitiesToken);
+
+        jobs.Schedule(
+            [](){ LogInfo("UpdateMovement"); },
+            mini_jobs::Access{}.Read(velocity).Write(position)
+        );
+        jobs.Schedule(
+            [](){ LogInfo("UpdateAnimation"); },
+            mini_jobs::Access{}.Read(position)
+        );
+        jobs.Schedule(
+            [](){ LogInfo("UpdateAI"); },
+            mini_jobs::Access{}.Write(velocity)
+        );
+        
+        jobs.Run();
     }
     
     LogInfo("Game Init");
