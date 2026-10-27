@@ -884,13 +884,13 @@ struct OD_API PhysicsSystem: public System{
     void ShowDebugGizmos();
 
     bool Raycast(Vector3 pos, Vector3 dir, RayResult& hit);
-    bool Raycast(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask mask);
+    bool Raycast(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask mask, bool ignoreSensor = false);
     bool RaycastIgnoreSensor(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask mask);//Created this becose a strange bug with if(ignoreSensor), but still is bug TODO: Fix this later
 
     std::vector<RayResult> OverlapSphere(Vector3 center, float radius);
     std::vector<RayResult> OverlapSphere(Vector3 center, float radius, LayerMask mask);
 
-    std::vector<RayResult> OverlapBox(Vector3 size, Vector3 center, Quaternion rot, float scale, LayerMask mask);
+    std::vector<RayResult> OverlapBox(Vector3 size, Vector3 center, Quaternion rot, float scale, LayerMask mask, bool ignoreSensor = false);
 
     bool IsSimulationEnable();
     void Simulate(float step);
@@ -920,6 +920,8 @@ struct OD_API PhysicsSystem: public System{
     bool skipUpdate = false;
 
 private:
+    bool hasStarted = false;
+
     void CheckForCollisionEvents();
 
     static void OnRemoveRagdoll(entt::registry& r, entt::entity e);

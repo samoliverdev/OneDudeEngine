@@ -3909,6 +3909,11 @@ void CreateTestBodies(JPH::PhysicsSystem& physicsSystem)
 }
 
 void PhysicsSystem::OnStart(Scene& scene){
+	// A stopped scene keeps its PhysicsSystem and Jolt world. Preserve the
+	// component-to-body handles when that same scene is started again.
+	if(hasStarted) return;
+	hasStarted = true;
+
 	//Reset all data from copied scene
 
 	auto rbView = scene.GetRegistry().view<RigidbodyComponent>();
@@ -5260,9 +5265,12 @@ private:
 
 class IgnoreSensorBodyFilter : public JPH::BodyFilter {
 public:
+	bool ignoreSensor = true;
     IgnoreSensorBodyFilter(PhysicsWorld* world):physicsWorld(world){}
 
     bool ShouldCollide(const JPH::BodyID& inBodyID) const override {
+		if(ignoreSensor == false) return true;
+		
 		const JPH::BodyLockRead lock(physicsWorld->physicsSystem.GetBodyLockInterfaceNoLock(), inBodyID);
         Assert(lock.Succeeded());
         return lock.GetBody().IsSensor() == false;
@@ -5323,7 +5331,7 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit){
     return false;
 }
 
-bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask mask){
+bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask mask, bool ignoreSensor){
     Assert(physicsWorld != nullptr); 
 
 	JPH::RRayCast ray;
@@ -5342,12 +5350,14 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask 
 	//if(physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, result)){
 
 	MyObjectLayerFilter objectLayerFilter(mask);
+	IgnoreSensorBodyFilter bodyFilter(physicsWorld);
+	bodyFilter.ignoreSensor = ignoreSensor;
 
 	/*MyObjectLayerFilter _objectLayerFilter({Layers::Layer0 | Layers::Layer1});
 	Assert(_objectLayerFilter.ShouldCollide(Layers::Layer1) == true);
 	Assert(_objectLayerFilter.ShouldCollide(Layers::Layer2) == false);*/
 
-    physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, settings, collector, {}, objectLayerFilter);
+    physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, settings, collector, {}, objectLayerFilter, bodyFilter);
 	if(collector.HadHit()){
 		const JPH::RayCastResult& result = collector.GetHit();
 		JPH::BodyID hitBodyID = result.mBodyID;
@@ -5603,7 +5613,7 @@ std::vector<RayResult> PhysicsSystem::OverlapSphere(Vector3 center, float radius
     return results;
 }
 
-std::vector<RayResult> PhysicsSystem::OverlapBox(Vector3 size, Vector3 center, Quaternion rot, float scale, LayerMask mask){
+std::vector<RayResult> PhysicsSystem::OverlapBox(Vector3 size, Vector3 center, Quaternion rot, float scale, LayerMask mask, bool ignoreSensor){
 	Assert(physicsWorld != nullptr);
 
     std::vector<RayResult> results;
@@ -5620,6 +5630,8 @@ std::vector<RayResult> PhysicsSystem::OverlapBox(Vector3 size, Vector3 center, Q
 	//settings.mMaxSeparationDistance = 0.05f;
 
 	MyObjectLayerFilter objectLayerFilter(mask);
+	IgnoreSensorBodyFilter bodyFilter(physicsWorld);
+	bodyFilter.ignoreSensor = ignoreSensor;
 
     // Collector to gather unique hits
     class SphereOverlapCollector : public JPH::CollideShapeCollector{
@@ -5684,7 +5696,7 @@ std::vector<RayResult> PhysicsSystem::OverlapBox(Vector3 size, Vector3 center, Q
         settings,               // Collision settings
         ToJolt(center), //transform.GetTranslation(),          // Base offset
         collector,              // Collector for results
-		{}, objectLayerFilter
+		{}, objectLayerFilter, bodyFilter
     );
 
     return results;

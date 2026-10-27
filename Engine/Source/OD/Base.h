@@ -39,7 +39,7 @@
     #define DEBUG_BREAK() abort()
 #endif
 
-#ifndef FINAL_BUILD
+//#ifndef FINAL_BUILD
 
 //fprintf(stderr, "Assertion failed: %s, file %s, line %d\n", #expr, __FILE__, __LINE__);  
 #define Assert(expr) \
@@ -50,11 +50,11 @@
         } \
     } while (0)
 
-#else
+/*#else
 
 #define Assert(expr)   
 
-#endif
+#endif*/
 
 //OD_API void* __cdecl operator new[](size_t size, const char* pName, int flags, unsigned debugFlags, const char* file, int line);
 //OD_API void* __cdecl operator new[](size_t size, size_t alignment, size_t alignmentOffset, const char* pName, int flags, unsigned debugFlags, const char* file, int line);

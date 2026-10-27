@@ -35,6 +35,7 @@ void Log::Init(){
     std::vector<spdlog::sink_ptr> sinks;
 
     #ifdef FINAL_BUILD
+    //sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
     sinks.push_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>("Engine.log", true));
     #else
     sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
