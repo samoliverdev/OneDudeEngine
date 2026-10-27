@@ -657,6 +657,7 @@ void AudioSystem::UpdateSettings(){
     Assert(IsMainThread() && "update3dAudio must be called from main thread!");
 
     const auto& settings = GlobalSettings::Get().Get<AudioSettings>();
+    ma_engine_set_volume(&engine, settings.volume);
 }
 
 void AudioSystem::Update(Scene& scene){
