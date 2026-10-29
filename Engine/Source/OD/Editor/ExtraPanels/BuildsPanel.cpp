@@ -108,11 +108,14 @@ void RemoveEmptyDirectories(const fs::path& root){
 // Callback type: return true to copy, false to skip
 using FileCallback = std::function<bool(const fs::path& sourcePath, const fs::path& destPath)>;
 
+bool ShouldSkipFolder(const fs::path& relativeFolder, const std::vector<std::string>& skipFolders);
+
 void CopyDirectoryRecursive(
     const fs::path& sourceDir,
     const fs::path& destDir,
     const std::vector<std::string>& allowedExtensions = {}, // empty = all files
-    FileCallback callback = nullptr
+    FileCallback callback = nullptr,
+    const std::vector<std::string>& skipFolders = {}
 ){
     if(!fs::exists(sourceDir) || !fs::is_directory(sourceDir)){
         //LogError("Source directory does not exist or is not a directory");
@@ -122,12 +125,17 @@ void CopyDirectoryRecursive(
 
     fs::create_directories(destDir);
 
-    for(const auto& entry : fs::recursive_directory_iterator(sourceDir)){
+    for(fs::recursive_directory_iterator it(sourceDir), end; it != end; ++it){
+        const auto& entry = *it;
         const auto& path = entry.path();
         auto relativePath = fs::relative(path, sourceDir);
         auto destPath = destDir / relativePath;
 
         if(entry.is_directory()){
+            if(ShouldSkipFolder(relativePath, skipFolders)){
+                it.disable_recursion_pending();
+                continue;
+            }
             fs::create_directories(destPath);
         } else if(entry.is_regular_file()){
             // Check file extension
@@ -309,6 +317,29 @@ bool IsSubPathOf(const fs::path& file, const std::string& folder){
     return filePath.rfind(folderNorm, 0) == 0; // starts_with
 }
 
+std::string NormalizeRelativeFolder(const fs::path& p){
+    std::string s = p.lexically_normal().generic_string();
+    while(s.rfind("./", 0) == 0) s.erase(0, 2);
+    while(!s.empty() && s.back() == '/') s.pop_back();
+    if(s == ".") s.clear();
+    return s;
+}
+
+bool ShouldSkipFolder(const fs::path& relativeFolder, const std::vector<std::string>& skipFolders){
+    const std::string folderPath = NormalizeRelativeFolder(relativeFolder);
+    if(folderPath.empty()) return false;
+
+    for(const auto& skipFolder : skipFolders){
+        const std::string skipPath = NormalizeRelativeFolder(fs::path(skipFolder));
+        if(skipPath.empty()) continue;
+        if(folderPath == skipPath) return true;
+        if(folderPath.size() > skipPath.size()
+            && folderPath.compare(0, skipPath.size(), skipPath) == 0
+            && folderPath[skipPath.size()] == '/') return true;
+    }
+    return false;
+}
+
 bool ShouldSkip(
     const fs::path& src,
     const std::vector<std::string>& skipFolders
@@ -344,6 +375,27 @@ BuildsPanel::BuildsPanel(){
 void BuildsPanel::OnGui(){
     if(ImGui::Begin("BuildsPanel", &show)){
         ImGui::DrawString("Build Path", buildPath);
+
+        ImGui::SeparatorText("Folders to skip");
+        for(size_t i = 0; i < skipFolders.size(); ++i){
+            ImGui::PushID(static_cast<int>(i));
+            ImGui::DrawString("##SkipFolder", skipFolders[i]);
+            ImGui::SameLine();
+            const bool removeFolder = ImGui::Button("Remove");
+            ImGui::PopID();
+            if(removeFolder){
+                skipFolders.erase(skipFolders.begin() + i);
+                break;
+            }
+        }
+
+        ImGui::DrawString("New folder", skipFolderInput);
+        ImGui::SameLine();
+        if(ImGui::Button("Add folder")){
+            const std::string folder = NormalizeRelativeFolder(fs::path(skipFolderInput));
+            if(!folder.empty()) skipFolders.push_back(folder);
+            skipFolderInput.clear();
+        }
 
         if(ImGui::Button("Build")) Build();
 
@@ -386,7 +438,8 @@ void BuildsPanel::Build(){
             //TODO: Add A Simple audio pack/save to AudioClip
 
             return true; // normal copy
-        }
+        },
+        skipFolders
     );
 
     ProcessTextAssets(

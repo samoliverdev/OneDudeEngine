@@ -26,7 +26,7 @@ class Scene;
 class Model;
 class Prefab;
 
-enum OD_API_IMPORT Layers: int{
+enum OD_API_IMPORT Layers: uint32_t{
     Layer0 = 0,
     Layer1,
     Layer2,
@@ -37,6 +37,27 @@ enum OD_API_IMPORT Layers: int{
     Layer7, 
     Layer8,
     Layer9,
+    Layer10,
+    Layer11,
+    Layer12,
+    Layer13,
+    Layer14,
+    Layer15,
+    Layer16,
+    Layer17,
+    Layer18,
+    Layer19,
+    Layer20,
+    Layer21,
+    Layer22,
+    Layer23,
+    Layer24,
+    Layer25,
+    Layer26,
+    Layer27,
+    Layer28,
+    Layer29,
+    Layer30,
     LayerCount // always last
 };
 
@@ -85,6 +106,27 @@ struct OD_API GlobalSceneData{
         "Layer7",
         "Layer8",
         "Layer9",
+        "Layer10",
+        "Layer11",
+        "Layer12",
+        "Layer13",
+        "Layer14",
+        "Layer15",
+        "Layer16",
+        "Layer17",
+        "Layer18",
+        "Layer19",
+        "Layer20",
+        "Layer21",
+        "Layer22",
+        "Layer23",
+        "Layer24",
+        "Layer25",
+        "Layer26",
+        "Layer27",
+        "Layer28",
+        "Layer29",
+        "Layer30",
     };
 
     template<class Archive>

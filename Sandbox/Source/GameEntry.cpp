@@ -29,6 +29,7 @@
 #include "Samples/ComputeShader.h"
 #include "Samples/SSGI.h"
 #include "Samples/UI.h"
+#include "Samples/BatchRendererGroup.h"
 
 #include "Samples/GPUSample1.h"
 #include "Samples/GPUSample2.h"
@@ -54,7 +55,7 @@ OD::ApplicationConfig GetStartAppConfig(){
 }
 
 OD::Module* CreateMainModule(){
-    int i = 0; //10; //-1; //35;
+    int i = 36; //10; //-1; //35;
 
     #ifdef TestNewGPU_API
     i = -9; //34; //22; //10; //-4; //-3; //-2;
@@ -102,6 +103,7 @@ OD::Module* CreateMainModule(){
     if(i == 33) return new ComputeShaderSample();
     if(i == 34) return new SSGISample();
     if(i == 35) return new UISample();
+    if(i == 36) return new BatchRendererGroupSample();
 
     return new BaseMeshSample();
 }
