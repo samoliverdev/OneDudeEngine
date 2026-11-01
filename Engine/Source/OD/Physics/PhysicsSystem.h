@@ -886,6 +886,7 @@ struct OD_API PhysicsSystem: public System{
     bool Raycast(Vector3 pos, Vector3 dir, RayResult& hit);
     bool Raycast(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask mask, bool ignoreSensor = false);
     bool RaycastIgnoreSensor(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask mask);//Created this becose a strange bug with if(ignoreSensor), but still is bug TODO: Fix this later
+    bool RaycastIgnoreEntity(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask mask, Entity ignoreEntity, bool ignoreSensor = false);
 
     std::vector<RayResult> OverlapSphere(Vector3 center, float radius);
     std::vector<RayResult> OverlapSphere(Vector3 center, float radius, LayerMask mask);

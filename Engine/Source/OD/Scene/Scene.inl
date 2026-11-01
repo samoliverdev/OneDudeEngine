@@ -221,6 +221,24 @@ void Scene::AddComponentRecursive(Entity entity){
 
 template<typename T> 
 void Scene::RemoveComponentRecursive(Entity entity){
+    if(registry.valid(entity) == false) return;
+
+    std::vector<Entity> children;
+    if(registry.any_of<TransformComponent>(entity)){
+        children = registry.get<TransformComponent>(entity).children;
+    }
+
+    if(registry.any_of<T>(entity) == true){
+        registry.remove<T>(entity);
+    }
+
+    for(Entity child: children){
+        RemoveComponentRecursive<T>(child);
+    }
+}
+
+/*template<typename T> 
+void Scene::RemoveComponentRecursive(Entity entity){
     if(registry.any_of<T>(entity) == true){
         registry.remove<T>(entity);
     }
@@ -229,7 +247,7 @@ void Scene::RemoveComponentRecursive(Entity entity){
     for(auto& child: trans.children){
         RemoveComponentRecursive<T>(child);
     }
-}
+}*/
 
 template <typename T>
 T* Scene::TryGetComponent(Entity id){

@@ -5266,14 +5266,21 @@ private:
 class IgnoreSensorBodyFilter : public JPH::BodyFilter {
 public:
 	bool ignoreSensor = true;
-    IgnoreSensorBodyFilter(PhysicsWorld* world):physicsWorld(world){}
+	Entity ignoreEntity = EntityNull;
+	IgnoreSensorBodyFilter(PhysicsWorld* world, Entity inIgnoreEntity = EntityNull):physicsWorld(world), ignoreEntity(inIgnoreEntity){}
 
     bool ShouldCollide(const JPH::BodyID& inBodyID) const override {
-		if(ignoreSensor == false) return true;
-		
 		const JPH::BodyLockRead lock(physicsWorld->physicsSystem.GetBodyLockInterfaceNoLock(), inBodyID);
         Assert(lock.Succeeded());
-        return lock.GetBody().IsSensor() == false;
+		const JPH::Body& body = lock.GetBody();
+		if(ignoreSensor && body.IsSensor()) return false;
+		if(ignoreEntity != EntityNull){
+			uint32_t entityId;
+			int32_t subBodyIndex;
+			DecodeUserData(body.GetUserData(), entityId, subBodyIndex);
+			if(static_cast<Entity>(entityId) == ignoreEntity) return false;
+		}
+		return true;
     }
 private:
     PhysicsWorld* physicsWorld;
@@ -5446,6 +5453,41 @@ bool PhysicsSystem::RaycastIgnoreSensor(Vector3 pos, Vector3 dir, RayResult& hit
 	}
 
     return false;
+}
+
+bool PhysicsSystem::RaycastIgnoreEntity(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask mask, Entity ignoreEntity, bool ignoreSensor){
+	Assert(physicsWorld != nullptr);
+
+	JPH::RRayCast ray;
+	ray.mOrigin = ToJolt(pos);
+	ray.mDirection = ToJolt(dir);
+
+	JPH::RayCastSettings settings;
+	settings.mBackFaceModeTriangles = JPH::EBackFaceMode::IgnoreBackFaces;
+	settings.mBackFaceModeConvex = JPH::EBackFaceMode::IgnoreBackFaces;
+	settings.mTreatConvexAsSolid = false;
+
+	ClosestHitRayCollector collector;
+	MyObjectLayerFilter objectLayerFilter(mask);
+	IgnoreSensorBodyFilter bodyFilter(physicsWorld, ignoreEntity);
+	bodyFilter.ignoreSensor = ignoreSensor;
+	physicsWorld->physicsSystem.GetNarrowPhaseQuery().CastRay(ray, settings, collector, {}, objectLayerFilter, bodyFilter);
+	if(!collector.HadHit()) return false;
+
+	const JPH::RayCastResult& result = collector.GetHit();
+	const JPH::BodyLockRead lock(physicsWorld->physicsSystem.GetBodyLockInterfaceNoLock(), result.mBodyID);
+	Assert(lock.Succeeded());
+	const JPH::Body& body = lock.GetBody();
+	JPH::Vec3 hitPoint = ray.GetPointOnRay(result.mFraction);
+	uint32_t entityId;
+	int32_t subBodyIndex;
+	DecodeUserData(body.GetUserData(), entityId, subBodyIndex);
+	hit.entity = static_cast<Entity>(entityId);
+	hit.subBodyIndex = subBodyIndex;
+	hit.hitPoint = FromJolt(hitPoint);
+	hit.hitNormal = FromJolt(body.GetWorldSpaceSurfaceNormal(result.mSubShapeID2, hitPoint));
+	Assert(scene->IsValid(hit.entity) && "Physic Body without a valid Entity!!!!!");
+	return true;
 }
 
 std::vector<RayResult> PhysicsSystem::OverlapSphere(Vector3 center, float radius){
