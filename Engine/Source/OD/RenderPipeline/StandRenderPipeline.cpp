@@ -745,6 +745,7 @@ void CameraRenderer::RenderPassNew(CameraRenderPass& inpass, RenderContext* rend
         opaqueDrawSettings.renderQueueRange = RenderQueueRange::Opaue;
         opaqueDrawSettings.sortType = SortType::CommonOpaque;
         opaqueDrawSettings.excludedTags.push_back(Hash::StringToHash("ForwardOnly"));
+        opaqueDrawTarget.name = "OpaqueDrawTarget";
         opaqueDrawTarget.sortType = RendererList::SortType::None; //RendererList::SortType::CommonOpaque;
         
         opaqueForwardOnlyDrawSettings.enableIntancing = true;
@@ -1072,16 +1073,18 @@ void CameraRenderer::RenderVisibleGeometryNew(EnvironmentSettings& environmentSe
         //if(context->GetSettings().enableWireframe) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
         context->EndDeferredPass();
 
+#ifndef TestNewGPU_API
         context->CopyDeffered();
         context->BeginDeferredPass(false);
         context->DrawRenderersBuffer(decalDrawTarget, false, true, true);
+#endif
 
-        //context->EndDeferredPass();
-        #if 0
+#if 0
         context->EndDeferredPassAndCopyToForwardPass();
-        #else
+#else
+#ifndef TestNewGPU_API
         context->EndDeferredPass();
-
+#endif
         Ref<Framebuffer> deferred = context->GetDeferredFramebuffer();
 
         context->CleanSSS();
@@ -1122,7 +1125,7 @@ void CameraRenderer::RenderVisibleGeometryNew(EnvironmentSettings& environmentSe
         
         context->DeferredCopyToForwardPass();
 
-        #endif
+#endif
         context->BeginForwardPass(false);
 
         context->DrawRenderersBuffer(opaqueForwardOnlyDrawTarget, true);

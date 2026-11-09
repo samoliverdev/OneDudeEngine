@@ -606,6 +606,7 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
         std::string keywordStr = BuildKeywordString(_enabledKeywords);
         std::string drawTypeStr = DrawTypeToString(drawType);
         shader->name = baseName + "_" + keywordStr + "_" + drawTypeStr;
+        shader->pipeline = shaderSourceData.passes[pass].pipeline;
 
         #ifdef TestNewGPU_API
         for(auto& i: shader->_pipelines) i = Gfx::InvalidID;

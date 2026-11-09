@@ -313,6 +313,7 @@ bool OpenglGPUDevice::_CreatePipeline(PipelineData& data, const char* _source, c
     for(int i = 0; i < reflection.bindings.size(); i++){
         const auto& _bind = reflection.bindings[i];
         Assert(_bind.binding < MaxBindingsLookUp);
+        //Assert(_bind.size != 2912);
 
         if(_bind.type == BindingType::UniformBuffer){
             GLuint blockIndex = glGetUniformBlockIndex(data.program, _bind.blockName.c_str());
@@ -1668,7 +1669,7 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
                     GLuint blockIndex = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].blockIndex;
                     if(blockIndex == GL_INVALID_INDEX) continue;
                     Assert(blockIndex != GL_INVALID_INDEX);
-                    Assert(pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].bufferSize <= buffer.size);
+                    //Assert(pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].bufferSize <= buffer.size);
 
                     const GLuint bindingPoint = uniformBindingPoints[cmd.setBindGroup.slot][binding.binding];
                     Assert(bindingPoint != GL_INVALID_INDEX);
@@ -1754,6 +1755,16 @@ void OpenglGPUDevice::RunRender(RenderFrame& frame){
 
                         glActiveTexture(GL_TEXTURE0 + curTextureIndex);
                         glBindTexture(GL_TEXTURE_CUBE_MAP, cube.tex);
+                        glUniform1i(uniformLoc, curTextureIndex);
+                        curTextureIndex += 1;
+                    } else if(binding.framebuffer != InvalidID){
+                        const FramebufferData& tex = framebufferPool.Get(binding.framebuffer);
+
+                        GLuint uniformLoc = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].uniformLoc;
+                        Assert(uniformLoc >= 0);
+
+                        glActiveTexture(GL_TEXTURE0 + curTextureIndex);
+                        glBindTexture(GL_TEXTURE_CUBE_MAP, binding.framebufferAttacement < 0 ? tex.depthAttachment : tex.colorAttachments[binding.framebufferAttacement]);
                         glUniform1i(uniformLoc, curTextureIndex);
                         curTextureIndex += 1;
                     } else {

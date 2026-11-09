@@ -1,0 +1,2399 @@
+// SPDX-FileCopyrightText: 2025 Erin Catto
+// SPDX-License-Identifier: MIT
+
+#if defined( _MSC_VER ) && !defined( _CRT_SECURE_NO_WARNINGS )
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
+#include "sample.h"
+
+#include "benchmarks.h"
+#include "gfx/debug_adapter.h"
+#include "gfx/draw.h"
+#include "gfx/gtao.h"
+#include "gfx/keycodes.h"
+#include "gfx/renderer.h"
+#include "gfx/shadow.h"
+#include "gfx/text.h"
+#include "host/gui.h"
+#include "human.h"
+#include "imgui.h"
+#include "implot.h"
+#include "jsmn.h"
+#include "sokol_app.h"
+#include "utils.h"
+
+#include "box3d/box3d.h"
+
+#include <ctype.h>
+#include <filesystem>
+#include <nfd.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define INFO_PANEL_WIDTH 20.0f
+
+// Load a file. You must free the character array.
+static char* ReadFile( int& size, const char* filename )
+{
+	FILE* file = fopen( filename, "rb" );
+	if ( file == nullptr )
+	{
+		return nullptr;
+	}
+
+	fseek( file, 0, SEEK_END );
+	long length = ftell( file );
+	fseek( file, 0, SEEK_SET );
+
+	if ( length <= 0 )
+	{
+		fclose( file );
+		return nullptr;
+	}
+
+	size = static_cast<int>( length );
+
+	char* data = (char*)malloc( size + 1 );
+	if ( data == nullptr )
+	{
+		fclose( file );
+		return nullptr;
+	}
+
+	// Short read means a truncated or racing file, so treat it as no file at all
+	size_t read = fread( data, 1, size, file );
+	fclose( file );
+
+	if ( read != (size_t)size )
+	{
+		free( data );
+		return nullptr;
+	}
+
+	data[size] = 0;
+
+	return data;
+}
+
+static const char* settingsFileName = "settings.ini";
+
+// Polled key state, fed from the host event loop (see main.cpp). Indexed by
+// sokol keycode; samples read it through the KEY_* aliases in gfx/keycodes.h.
+static bool s_keyDown[512];
+
+bool IsKeyDown( int key )
+{
+	return (unsigned)key < 512u ? s_keyDown[key] : false;
+}
+
+void SetKeyDown( int key, bool down )
+{
+	if ( (unsigned)key < 512u )
+	{
+		s_keyDown[key] = down;
+	}
+}
+
+void ClearKeysDown()
+{
+	memset( s_keyDown, 0, sizeof( s_keyDown ) );
+}
+
+void SampleContext::Save()
+{
+	const b3DebugDraw* gd = GetGuiDraw();
+	int gtaoQuality = GetGtaoTraceParams().quality;
+
+	FILE* file = fopen( settingsFileName, "w" );
+	if ( file == nullptr )
+	{
+		return;
+	}
+	fprintf( file, "{\n" );
+	fprintf( file, "  \"sampleIndex\": %d,\n", sampleIndex );
+	fprintf( file, "  \"drawShapes\": %s,\n", gd->drawShapes ? "true" : "false" );
+	fprintf( file, "  \"enableShadows\": %s,\n", enableShadows ? "true" : "false" );
+	fprintf( file, "  \"enableGtao\": %s,\n", enableGtao ? "true" : "false" );
+	fprintf( file, "  \"gtaoQuality\": %d,\n", gtaoQuality );
+	fprintf( file, "  \"enableIbl\": %s,\n", GetIblEnabled() ? "true" : "false" );
+	fprintf( file, "  \"exposure\": %g,\n", GetExposure() );
+	fprintf( file, "  \"sunStrength\": %g,\n", GetSun().strength );
+	fprintf( file, "  \"shadowSplitLambda\": %g,\n", GetShadowSplitLambda() );
+	fprintf( file, "  \"debugView\": %d,\n", debugView );
+	fprintf( file, "  \"drawDistance\": %g,\n", drawDistance );
+	fprintf( file, "  \"showHullEdges\": %s,\n", GetEdgeOverlayParams().showHulls ? "true" : "false" );
+	fprintf( file, "  \"showEdgeConvexity\": %s,\n", GetEdgeOverlayParams().showEdgeConvexity ? "true" : "false" );
+	fprintf( file, "  \"showMetrics\": %s,\n", showMetrics ? "true" : "false" );
+	fprintf( file, "  \"showProfile\": %s,\n", showProfile ? "true" : "false" );
+	fprintf( file, "  \"replayKeyframeBudgetMB\": %d,\n", replayKeyframeBudgetMB );
+	fprintf( file, "  \"replayKeyframeMinInterval\": %d\n", replayKeyframeMinInterval );
+	fprintf( file, "}\n" );
+	fclose( file );
+}
+
+#define MAX_TOKENS 64
+
+static int jsoneq( const char* json, jsmntok_t* tok, const char* s )
+{
+	if ( tok->type == JSMN_STRING && (int)strlen( s ) == tok->end - tok->start &&
+		 strncmp( json + tok->start, s, tok->end - tok->start ) == 0 )
+	{
+		return 0;
+	}
+	return -1;
+}
+
+// Tokens are not terminated, so copy before handing one to strtof or strtol.
+// The settings file is hand editable, so truncate a long token rather than
+// trusting it to fit.
+static void CopyToken( char* buffer, int capacity, const char* json, const jsmntok_t& tok )
+{
+	int count = tok.end - tok.start;
+	if ( count > capacity - 1 )
+	{
+		count = capacity - 1;
+	}
+	memcpy( buffer, json + tok.start, count );
+	buffer[count] = 0;
+}
+
+static float ParseFloat( const char* json, const jsmntok_t& tok )
+{
+	char buffer[32];
+	CopyToken( buffer, (int)sizeof( buffer ), json, tok );
+	return strtof( buffer, nullptr );
+}
+
+static int ParseInt( const char* json, const jsmntok_t& tok )
+{
+	char buffer[32];
+	CopyToken( buffer, (int)sizeof( buffer ), json, tok );
+	return (int)strtol( buffer, nullptr, 10 );
+}
+
+void SampleContext::Load()
+{
+	recycleDistance = B3_CONTACT_RECYCLE_DISTANCE;
+
+	int size = 0;
+	char* data = ReadFile( size, settingsFileName );
+	if ( data == nullptr )
+	{
+		return;
+	}
+
+	// Settings file exists, so it is not a new user.
+	newUser = false;
+
+	jsmn_parser parser;
+	jsmntok_t tokens[MAX_TOKENS];
+
+	jsmn_init( &parser );
+
+	int tokenCount = jsmn_parse( &parser, data, size, tokens, MAX_TOKENS );
+
+	for ( int i = 0; i < tokenCount; ++i )
+	{
+		if ( jsoneq( data, &tokens[i], "sampleIndex" ) == 0 )
+		{
+			sampleIndex = ParseInt( data, tokens[i + 1] );
+
+			if ( sampleIndex < 0 )
+			{
+				sampleIndex = 0;
+			}
+			else if ( sampleIndex >= g_sampleCount )
+			{
+				sampleIndex = g_sampleCount - 1;
+			}
+		}
+		else if ( jsoneq( data, &tokens[i], "drawShapes" ) == 0 )
+		{
+			const char* s = data + tokens[i + 1].start;
+			GetGuiDraw()->drawShapes = strncmp( s, "true", 4 ) == 0;
+		}
+		else if ( jsoneq( data, &tokens[i], "enableShadows" ) == 0 )
+		{
+			const char* s = data + tokens[i + 1].start;
+			enableShadows = strncmp( s, "true", 4 ) == 0;
+		}
+		else if ( jsoneq( data, &tokens[i], "enableGtao" ) == 0 )
+		{
+			const char* s = data + tokens[i + 1].start;
+			enableGtao = strncmp( s, "true", 4 ) == 0;
+		}
+		else if ( jsoneq( data, &tokens[i], "gtaoQuality" ) == 0 )
+		{
+			int quality = b3ClampInt( ParseInt( data, tokens[i + 1] ), 0, 2 );
+
+			GtaoTraceParams p = GetGtaoTraceParams();
+			p.quality = (AmbientOcclusionQuality)quality;
+			SetGtaoTraceParams( p );
+		}
+		else if ( jsoneq( data, &tokens[i], "enableIbl" ) == 0 )
+		{
+			const char* s = data + tokens[i + 1].start;
+			SetIblEnabled( strncmp( s, "true", 4 ) == 0 );
+		}
+		else if ( jsoneq( data, &tokens[i], "exposure" ) == 0 )
+		{
+			SetExposure( ParseFloat( data, tokens[i + 1] ) );
+		}
+		else if ( jsoneq( data, &tokens[i], "sunStrength" ) == 0 )
+		{
+			Sun sun = GetSun();
+			sun.strength = ParseFloat( data, tokens[i + 1] );
+			SetSun( sun );
+		}
+		else if ( jsoneq( data, &tokens[i], "shadowSplitLambda" ) == 0 )
+		{
+			SetShadowSplitLambda( ParseFloat( data, tokens[i + 1] ) );
+		}
+		else if ( jsoneq( data, &tokens[i], "debugView" ) == 0 )
+		{
+			debugView = b3ClampInt( ParseInt( data, tokens[i + 1] ), 0, 4 );
+		}
+		else if ( jsoneq( data, &tokens[i], "drawDistance" ) == 0 )
+		{
+			drawDistance = b3ClampFloat( ParseFloat( data, tokens[i + 1] ), 1.0f, Camera::kViewDistance );
+		}
+		else if ( jsoneq( data, &tokens[i], "showHullEdges" ) == 0 )
+		{
+			const char* s = data + tokens[i + 1].start;
+			EdgeOverlayParams p = GetEdgeOverlayParams();
+			p.showHulls = strncmp( s, "true", 4 ) == 0;
+			SetEdgeOverlayParams( &p );
+		}
+		else if ( jsoneq( data, &tokens[i], "showEdgeConvexity" ) == 0 )
+		{
+			const char* s = data + tokens[i + 1].start;
+			EdgeOverlayParams p = GetEdgeOverlayParams();
+			p.showEdgeConvexity = strncmp( s, "true", 4 ) == 0;
+			SetEdgeOverlayParams( &p );
+		}
+		else if ( jsoneq( data, &tokens[i], "showMetrics" ) == 0 )
+		{
+			const char* s = data + tokens[i + 1].start;
+			showMetrics = strncmp( s, "true", 4 ) == 0;
+		}
+		else if ( jsoneq( data, &tokens[i], "showProfile" ) == 0 )
+		{
+			const char* s = data + tokens[i + 1].start;
+			showProfile = strncmp( s, "true", 4 ) == 0;
+		}
+		else if ( jsoneq( data, &tokens[i], "replayKeyframeBudgetMB" ) == 0 )
+		{
+			replayKeyframeBudgetMB = b3ClampInt( ParseInt( data, tokens[i + 1] ), 64, 4096 );
+		}
+		else if ( jsoneq( data, &tokens[i], "replayKeyframeMinInterval" ) == 0 )
+		{
+			replayKeyframeMinInterval = b3ClampInt( ParseInt( data, tokens[i + 1] ), 1, 1024 );
+		}
+	}
+
+	free( data );
+}
+
+Sample::Sample( SampleContext* context )
+{
+	m_context = context;
+	m_camera = &m_context->camera;
+
+	if ( m_camera->m_thirdPerson )
+	{
+		sapp_lock_mouse( false );
+		m_camera->m_thirdPerson = false;
+	}
+
+	m_worldId = b3_nullWorldId;
+
+	m_recording = nullptr;
+	m_recordStartStep = 0;
+
+	m_mouseBodyId = {};
+	m_mouseJointId = {};
+	m_mouseFraction = 0.0f;
+	m_mouseForceScale = 100.0f;
+
+	m_textX = 5;
+	m_textLine = 0;
+	m_textIncrement = 22;
+	m_stepCount = 0;
+	m_userMaterialId = 0;
+
+	memset( m_profiles, 0, sizeof( m_profiles ) );
+	m_currentProfileIndex = 0;
+	m_profileReadIndex = 0;
+	m_profileWriteIndex = 0;
+
+	m_stepWhilePaused = true;
+	m_didStep = false;
+
+	m_haveMouseLast = false;
+	m_mouseLast = { 0.0f, 0.0f };
+	m_mouseDelta = { 0.0f, 0.0f };
+	m_launchSpeedScale = 5.0f;
+
+	m_shadowSplitNear = 0.0f;
+	m_shadowSplitFar = 0.0f;
+
+	g_randomSeed = RAND_SEED;
+
+	b3Capacity capacity = {};
+	CreateWorld( &capacity );
+}
+
+Sample::~Sample()
+{
+	ResetAdapterPool();
+	ResetGroundShapeId();
+	if ( B3_IS_NON_NULL( m_worldId ) )
+	{
+		FinishRecording();
+		b3DestroyWorld( m_worldId );
+	}
+}
+
+void Sample::StartRecording()
+{
+	if ( m_recording != nullptr )
+	{
+		return;
+	}
+
+	// Snapshot the live world as the seed, so recording can begin at any step boundary.
+	m_recording = b3CreateRecording( 0 );
+	b3World_StartRecording( m_worldId, m_recording );
+	m_recordStartStep = m_stepCount;
+}
+
+void Sample::FinishRecording()
+{
+	if ( m_recording == nullptr )
+	{
+		return;
+	}
+
+	b3World_StopRecording( m_worldId );
+
+	// The buffer is freed either way, so a failed write has to be said out loud
+	if ( b3SaveRecordingToFile( m_recording, m_context->recordingFile ) )
+	{
+		snprintf( m_context->savedRecordingFile, sizeof( m_context->savedRecordingFile ), "%s", m_context->recordingFile );
+	}
+	else
+	{
+		fprintf( stderr, "Failed to write recording '%s'\n", m_context->recordingFile );
+	}
+
+	b3DestroyRecording( m_recording );
+	m_recording = nullptr;
+}
+
+void Sample::CreateWorld( b3Capacity* capacity )
+{
+	if ( B3_IS_NON_NULL( m_worldId ) )
+	{
+		FinishRecording();
+		b3DestroyWorld( m_worldId );
+	}
+
+	m_mouseBodyId = {};
+	m_mouseJointId = {};
+	m_mousePoint = {};
+
+	b3WorldDef worldDef = b3DefaultWorldDef();
+	worldDef.workerCount = m_context->workerCount;
+	worldDef.enableSleep = m_context->enableSleep;
+	AttachToWorldDef( &worldDef );
+	if ( capacity != nullptr )
+	{
+		worldDef.capacity = *capacity;
+	}
+	m_worldId = b3CreateWorld( &worldDef );
+
+	b3World_SetContactRecycleDistance( m_worldId, m_context->recycleDistance );
+}
+
+void Sample::ResetText()
+{
+	// Below the menu bar when the UI shows. Hidden, the minimal HUD owns the
+	// top-left, so start lower.
+	float fontSize = ImGui::GetFontSize();
+	if ( m_context->showUI )
+	{
+		m_textLine = (int)( ImGui::GetFrameHeight() + 0.5f * fontSize );
+	}
+	else
+	{
+		m_textLine = (int)( 3.0f * fontSize );
+	}
+
+	m_textX = 5;
+	if ( IsProfileVisible() )
+	{
+		m_textX += (int)( GetProfilePanelWidth() + 0.5f * fontSize );
+	}
+}
+
+void Sample::Step()
+{
+	m_didStep = false;
+
+	float timeStep = 0.0f;
+	if ( m_context->pause == false || m_context->singleStep > 0 )
+	{
+		timeStep = m_context->hertz > 0.0f ? 1.0f / m_context->hertz : 0.0f;
+		m_context->singleStep = b3MaxInt( 0, m_context->singleStep - 1 );
+	}
+
+	if ( B3_IS_NON_NULL( m_mouseJointId ) && b3Joint_IsValid( m_mouseJointId ) == false )
+	{
+		// The world or attached body was destroyed.
+		m_mouseJointId = {};
+
+		if ( B3_IS_NON_NULL( m_mouseBodyId ) )
+		{
+			b3DestroyBody( m_mouseBodyId );
+			m_mouseBodyId = {};
+		}
+	}
+
+	if ( B3_IS_NON_NULL( m_mouseBodyId ) && timeStep > 0.0f )
+	{
+		b3Body_SetTargetTransform( m_mouseBodyId, { m_mousePoint, b3Quat_identity }, timeStep, true );
+	}
+
+	b3World_EnableSleeping( m_worldId, m_context->enableSleep );
+	b3World_EnableWarmStarting( m_worldId, m_context->enableWarmStarting );
+	b3World_EnableContinuous( m_worldId, m_context->enableContinuous );
+	b3World_SetRestitutionIterations( m_worldId, m_context->restitutionIterations );
+	b3World_EnableRestitutionPropagation( m_worldId, m_context->enableRestitutionPropagation );
+	b3World_EnableSSE2Fallback( m_worldId, m_context->enableSSE2Fallback );
+
+	if ( timeStep > 0.0f || m_stepWhilePaused )
+	{
+		b3World_Step( m_worldId, timeStep, m_context->subStepCount );
+	}
+
+	if ( timeStep > 0.0f )
+	{
+		m_stepCount += 1;
+		m_didStep = true;
+
+		if ( m_profileWriteIndex - m_profileReadIndex == m_profileCapacity )
+		{
+			m_profileReadIndex += 1;
+		}
+
+		m_currentProfileIndex = m_profileWriteIndex & ( m_profileCapacity - 1 );
+		m_profiles[m_currentProfileIndex] = b3World_GetProfile( m_worldId );
+
+		m_profileWriteIndex += 1;
+	}
+
+	m_triangleIndex = -1;
+	m_userMaterialId = 0;
+
+	// Cursor pick feeds the surface type readout only. Highlighting is selection driven.
+	if ( m_camera->m_thirdPerson == false )
+	{
+		PickRay pickRay = m_camera->BuildPickRay( m_context->mouseX, m_context->mouseY );
+
+		b3QueryFilter filter = b3DefaultQueryFilter();
+		filter.name = "pick";
+		b3RayResult result = b3World_CastRayClosest( m_worldId, pickRay.origin, pickRay.translation, filter );
+
+		if ( result.hit )
+		{
+			if ( b3Shape_GetType( result.shapeId ) == b3_meshShape )
+			{
+				m_triangleIndex = result.triangleIndex;
+			}
+
+			m_userMaterialId = result.userMaterialId;
+		}
+	}
+
+	// The frame latched the origin before Step, but a third person follow moves the eye while
+	// stepping, so refresh it here. Shapes come back demoted to float against this origin, the same
+	// relative frame the translation free view renders, so everything stays precise far from the origin.
+	SetDrawOrigin( m_camera->DrawOrigin() );
+
+	b3DebugDraw debugDraw;
+	MakeDebugDraw( &debugDraw );
+
+	// Box3D uses this to decide which shapes enter the draw set and lazily fire
+	// createDebugShape. The camera derives it from the view distance, in length units
+	// around the simulation eye, matching the broad-phase tree and the far plane.
+	const b3AABB drawBox = m_camera->DrawBounds();
+
+	// A caster between the view and the sun is off screen but still darkens what
+	// is on screen, so the draw set has to reach past the view box. Bounds come
+	// back in the eye-relative frame the view inverse maps into, hence the offset.
+	b3Vec3 casterLo, casterHi;
+	const Mat4 viewInv = m_camera->ViewInverse();
+	const Mat4 projInv = m_camera->ProjInverse();
+	GetShadowCasterBounds( &viewInv, &projInv, &casterLo, &casterHi );
+	const b3AABB casterBox = b3OffsetAABB( { casterLo, casterHi }, m_camera->DrawOrigin() );
+
+	debugDraw.drawingBounds.lowerBound = b3Min( drawBox.lowerBound, casterBox.lowerBound );
+	debugDraw.drawingBounds.upperBound = b3Max( drawBox.upperBound, casterBox.upperBound );
+
+	// Compound child culling keeps the tighter view box. Widening it there would
+	// cull nothing.
+	SetViewBounds( drawBox );
+
+	ApplyGuiFlags( &debugDraw );
+
+	b3World_Draw( m_worldId, &debugDraw, B3_DEFAULT_MASK_BITS );
+}
+
+bool Sample::FocusBounds( b3AABB* )
+{
+	return false;
+}
+
+float Sample::InfoPanelWidthEm() const
+{
+	return INFO_PANEL_WIDTH;
+}
+
+b3BodyId Sample::FocusBody() const
+{
+	return GetSelectedBody();
+}
+
+void Sample::FocusHome()
+{
+	m_camera->m_pivot = m_context->homePivot;
+	m_camera->SetOrbit( m_context->homeYaw, m_context->homePitch, m_context->homeRadius );
+}
+
+void FrameSelection( SampleContext* context )
+{
+	// A non-body selection such as a recorded query supplies its own bounds and takes priority over
+	// the hovered body. With nothing selected the sample decides what home is. The replay viewer fits
+	// its recording, which lives in a player-owned world rather than the base world.
+	Sample* sample = context->sample;
+	Camera& cam = context->camera;
+	float aspect = cam.m_height > 0 ? (float)cam.m_width / (float)cam.m_height : 1.0f;
+	b3AABB bounds;
+	if ( sample->FocusBounds( &bounds ) )
+	{
+		cam.Frame( bounds, aspect, 1.5f );
+		return;
+	}
+
+	b3BodyId bodyId = sample->FocusBody();
+	if ( B3_IS_NON_NULL( bodyId ) )
+	{
+		cam.Frame( b3Body_ComputeAABB( bodyId ), aspect, 1.5f );
+		return;
+	}
+
+	sample->FocusHome();
+}
+
+void Sample::ResetProfile()
+{
+	// Keeps the elapsed recording length intact across a profile reset
+	m_recordStartStep -= m_stepCount;
+	m_stepCount = 0;
+	memset( m_profiles, 0, sizeof( m_profiles ) );
+	m_currentProfileIndex = 0;
+	m_profileReadIndex = 0;
+	m_profileWriteIndex = 0;
+}
+
+b3BodyId Sample::AddGroundBox( float extent )
+{
+	b3BodyDef bodyDef = b3DefaultBodyDef();
+	bodyDef.name = "ground";
+	bodyDef.position = { 0.0f, -1.0f, 0.0f };
+	b3BodyId groundId = b3CreateBody( m_worldId, &bodyDef );
+
+	b3ShapeDef shapeDef = b3DefaultShapeDef();
+	b3BoxHull hull = b3MakeBoxHull( extent, 1.0f, extent );
+	b3ShapeId shapeId = b3CreateHullShape( groundId, &shapeDef, &hull.base );
+
+	// Draw the ground with the procedural grid material
+	SetGroundShape( shapeId );
+
+	return groundId;
+}
+
+struct RowDef
+{
+	const char* name;
+	int indent;
+	ImU32 color;
+};
+
+float AddSegment( ImDrawList* dl, float availWidth, float t, float stepNow, ImU32 col, float x, ImVec2 cursor, float barHeight )
+{
+	float w = availWidth * ( t / stepNow );
+	if ( w > 0.0f )
+	{
+		dl->AddRectFilled( ImVec2( x, cursor.y ), ImVec2( x + w, cursor.y + barHeight ), col );
+		x += w;
+	}
+
+	return x;
+}
+
+#define PROFILE_SECTION_WIDTH 8.0f
+#define PROFILE_INDENT_WIDTH 0.75f
+#define PROFILE_VALUE_WIDTH 3.0f
+#define PROFILE_BAR_WIDTH 4.0f
+#define PROFILE_COLUMN_COUNT 5
+
+// Shared by the profile panel and the frame time plot so the two views read alike
+static const ImU32 s_colorStep = IM_COL32( 230, 230, 230, 255 );
+static const ImU32 s_colorPairs = IM_COL32( 102, 153, 255, 255 );
+static const ImU32 s_colorCollide = IM_COL32( 255, 140, 51, 255 );
+static const ImU32 s_colorSolve = IM_COL32( 102, 204, 102, 255 );
+static const ImU32 s_colorSolveChild = IM_COL32( 150, 190, 150, 255 );
+static const ImU32 s_colorConstraintChild = IM_COL32( 110, 200, 190, 255 );
+static const ImU32 s_colorSensors = IM_COL32( 200, 120, 220, 255 );
+static const ImU32 s_colorOther = IM_COL32( 140, 140, 140, 255 );
+
+// Well apart from both row background shades so the track reads the same on every row
+static const ImU32 s_colorTrack = IM_COL32( 70, 70, 74, 255 );
+
+bool Sample::IsProfileVisible() const
+{
+	return m_context->showUI && m_context->showProfile && HasProfile();
+}
+
+float Sample::GetProfilePanelWidth() const
+{
+	if ( IsProfileVisible() == false )
+	{
+		return 0.0f;
+	}
+
+	const ImGuiStyle& style = ImGui::GetStyle();
+	float fontSize = ImGui::GetFontSize();
+	float width = PROFILE_SECTION_WIDTH + 3.0f * PROFILE_VALUE_WIDTH + PROFILE_BAR_WIDTH;
+	return width * fontSize + 2.0f * PROFILE_COLUMN_COUNT * style.CellPadding.x + 2.0f * style.WindowPadding.x;
+}
+
+// Left profile panel (I). Full height under the menu bar, clear of the right info panel.
+void Sample::DrawProfile()
+{
+	if ( IsProfileVisible() == false )
+	{
+		return;
+	}
+
+	float fontSize = ImGui::GetFontSize();
+	float menuBarHeight = ImGui::GetFrameHeight();
+	float panelWidth = GetProfilePanelWidth();
+
+	ImGui::SetNextWindowPos( { 0.5f * fontSize, menuBarHeight + 0.5f * fontSize } );
+	ImGui::SetNextWindowSize( { panelWidth, m_camera->m_height - menuBarHeight - fontSize } );
+
+	ImGui::Begin( "Profile", nullptr,
+				  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse |
+					  ImGuiWindowFlags_NoTitleBar );
+
+	int count = m_profileWriteIndex - m_profileReadIndex;
+
+	// Unroll ring buffer into per-field histories.
+	constexpr int kRowCount = 22;
+	float histories[kRowCount][m_profileCapacity];
+	float totals[kRowCount] = {};
+	for ( int i = 0; i < count; ++i )
+	{
+		int idx = ( m_profileReadIndex + i ) & ( m_profileCapacity - 1 );
+		const b3Profile& p = m_profiles[idx];
+		histories[0][i] = p.step;
+		histories[1][i] = p.pairs;
+		histories[2][i] = p.collide;
+		histories[3][i] = p.solve;
+		histories[4][i] = p.solverSetup;
+		histories[5][i] = p.constraints;
+		histories[6][i] = p.prepareConstraints;
+		histories[7][i] = p.integrateVelocities;
+		histories[8][i] = p.warmStart;
+		histories[9][i] = p.solveImpulses;
+		histories[10][i] = p.integratePositions;
+		histories[11][i] = p.relaxImpulses;
+		histories[12][i] = p.restitution;
+		histories[13][i] = p.storeImpulses;
+		histories[14][i] = p.splitIslands;
+		histories[15][i] = p.transforms;
+		histories[16][i] = p.jointEvents;
+		histories[17][i] = p.hitEvents;
+		histories[18][i] = p.refit;
+		histories[19][i] = p.sleepIslands;
+		histories[20][i] = p.bullets;
+		histories[21][i] = p.sensors;
+		for ( int j = 0; j < kRowCount; ++j )
+		{
+			totals[j] += histories[j][i];
+		}
+	}
+
+	// Smoothed over the last few frames so bars don't jitter visibly.
+	constexpr int kNowWindow = 10;
+	float now[kRowCount] = {};
+	{
+		int n = count < kNowWindow ? count : kNowWindow;
+		if ( n > 0 )
+		{
+			float inv = 1.0f / n;
+			for ( int r = 0; r < kRowCount; ++r )
+			{
+				float sum = 0.0f;
+				for ( int i = count - n; i < count; ++i )
+				{
+					sum += histories[r][i];
+				}
+				now[r] = sum * inv;
+			}
+		}
+	}
+
+	float avg[kRowCount] = {};
+	if ( count > 0 )
+	{
+		float scale = 1.0f / count;
+		for ( int i = 0; i < kRowCount; ++i )
+		{
+			avg[i] = scale * totals[i];
+		}
+	}
+
+	float rowMax[kRowCount] = {};
+	for ( int r = 0; r < kRowCount; ++r )
+	{
+		for ( int i = 0; i < count; ++i )
+		{
+			if ( histories[r][i] > rowMax[r] )
+			{
+				rowMax[r] = histories[r][i];
+			}
+		}
+	}
+
+	const RowDef rows[kRowCount] = {
+		{ "step", 0, s_colorStep },
+		{ "pairs", 0, s_colorPairs },
+		{ "collide", 0, s_colorCollide },
+		{ "solve", 0, s_colorSolve },
+		{ "setup", 1, s_colorSolveChild },
+		{ "constraints", 1, s_colorSolveChild },
+		{ "prepare", 2, s_colorConstraintChild },
+		{ "velocities", 2, s_colorConstraintChild },
+		{ "warm start", 2, s_colorConstraintChild },
+		{ "bias", 2, s_colorConstraintChild },
+		{ "positions", 2, s_colorConstraintChild },
+		{ "relax", 2, s_colorConstraintChild },
+		{ "restitution", 2, s_colorConstraintChild },
+		{ "store", 2, s_colorConstraintChild },
+		{ "split", 2, s_colorConstraintChild },
+		{ "transforms", 1, s_colorSolveChild },
+		{ "joint events", 1, s_colorSolveChild },
+		{ "hit events", 1, s_colorSolveChild },
+		{ "refit BVH", 1, s_colorSolveChild },
+		{ "sleep", 1, s_colorSolveChild },
+		{ "bullets", 1, s_colorSolveChild },
+		{ "sensors", 0, s_colorSensors },
+	};
+
+	float stepNow = b3MaxFloat( now[0], 0.001f );
+
+	if ( ImGui::Button( "Reset" ) )
+	{
+		ResetProfile();
+	}
+	ImGui::SameLine();
+	ImGui::Text( " step %.2f ms", now[0] );
+
+	// Flame strip: step subdivided by top-level children.
+	{
+		float pairsT = now[1];
+		float collideT = now[2];
+		float solveT = now[3];
+		float sensorsT = now[21];
+		float otherT = b3MaxFloat( stepNow - pairsT - collideT - solveT - sensorsT, 0.0f );
+
+		float availWidth = ImGui::GetContentRegionAvail().x;
+		float barHeight = 1.5f * fontSize;
+		ImDrawList* dl = ImGui::GetWindowDrawList();
+		ImVec2 cursor = ImGui::GetCursorScreenPos();
+		float x = cursor.x;
+
+		x = AddSegment( dl, availWidth, pairsT, stepNow, s_colorPairs, x, cursor, barHeight );
+		x = AddSegment( dl, availWidth, collideT, stepNow, s_colorCollide, x, cursor, barHeight );
+		x = AddSegment( dl, availWidth, solveT, stepNow, s_colorSolve, x, cursor, barHeight );
+		x = AddSegment( dl, availWidth, sensorsT, stepNow, s_colorSensors, x, cursor, barHeight );
+		x = AddSegment( dl, availWidth, otherT, stepNow, s_colorOther, x, cursor, barHeight );
+
+		ImGui::Dummy( ImVec2( availWidth, barHeight ) );
+	}
+
+	const ImGuiTableFlags tableFlags = ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingFixedFit;
+
+	if ( ImGui::BeginTable( "profile", PROFILE_COLUMN_COUNT, tableFlags ) )
+	{
+		ImGui::TableSetupColumn( "section", ImGuiTableColumnFlags_WidthFixed, PROFILE_SECTION_WIDTH * fontSize );
+		ImGui::TableSetupColumn( "now", ImGuiTableColumnFlags_WidthFixed, PROFILE_VALUE_WIDTH * fontSize );
+		ImGui::TableSetupColumn( "avg", ImGuiTableColumnFlags_WidthFixed, PROFILE_VALUE_WIDTH * fontSize );
+		ImGui::TableSetupColumn( "max", ImGuiTableColumnFlags_WidthFixed, PROFILE_VALUE_WIDTH * fontSize );
+		ImGui::TableSetupColumn( "%", ImGuiTableColumnFlags_WidthFixed, PROFILE_BAR_WIDTH * fontSize );
+		ImGui::TableHeadersRow();
+
+		for ( int r = 0; r < kRowCount; ++r )
+		{
+			const RowDef& d = rows[r];
+
+			ImGui::TableNextRow();
+
+			ImGui::TableNextColumn();
+			float indent = d.indent * PROFILE_INDENT_WIDTH * fontSize;
+			ImGui::SetCursorPosX( ImGui::GetCursorPosX() + indent );
+			ImGui::PushStyleColor( ImGuiCol_Text, d.color );
+			ImGui::TextUnformatted( d.name );
+			ImGui::PopStyleColor();
+
+			// Dim rows that would print as zero so the costly sections stand out
+			bool idle = avg[r] < 0.005f;
+			if ( idle )
+			{
+				ImGui::PushStyleColor( ImGuiCol_Text, ImGui::GetStyleColorVec4( ImGuiCol_TextDisabled ) );
+			}
+			ImGui::TableNextColumn();
+			ImGui::Text( "%6.2f", now[r] );
+			ImGui::TableNextColumn();
+			ImGui::Text( "%6.2f", avg[r] );
+			ImGui::TableNextColumn();
+			ImGui::Text( "%6.2f", rowMax[r] );
+			if ( idle )
+			{
+				ImGui::PopStyleColor();
+			}
+
+			ImGui::TableNextColumn();
+
+			// The step itself is measured against the frame budget to show headroom
+			bool isBudget = r == 0 && m_context->hertz > 0.0f;
+			float reference = isBudget ? 1000.0f / m_context->hertz : stepNow;
+			float frac = b3ClampFloat( now[r] / reference, 0.0f, 1.0f );
+
+			// Text line height instead of a framed progress bar keeps the rows tight
+			float barWidth = ImGui::GetContentRegionAvail().x;
+			float barHeight = ImGui::GetTextLineHeight();
+			ImVec2 p = ImGui::GetCursorScreenPos();
+			ImDrawList* drawList = ImGui::GetWindowDrawList();
+			drawList->AddRectFilled( p, ImVec2( p.x + barWidth, p.y + barHeight ), s_colorTrack );
+			drawList->AddRectFilled( p, ImVec2( p.x + frac * barWidth, p.y + barHeight ), d.color );
+			ImGui::Dummy( ImVec2( barWidth, barHeight ) );
+			if ( isBudget )
+			{
+				ImGui::SetItemTooltip( "%.0f%% of %.1f ms frame", 100.0f * now[r] / reference, reference );
+			}
+			else
+			{
+				ImGui::SetItemTooltip( "%.0f%% of step", 100.0f * now[r] / reference );
+			}
+		}
+		ImGui::EndTable();
+	}
+
+	ImGui::End();
+}
+
+// Vertical bars scaled to a shared maximum, one per value. Stands in for a table that would not
+// fit the drawer, so the caller reports each bar's count from the returned hover index.
+static int DrawBarChart( const char* id, const int* values, const ImU32* colors, int count, int scaleMax, ImVec2 size )
+{
+	ImVec2 origin = ImGui::GetCursorScreenPos();
+	ImGui::InvisibleButton( id, size );
+	bool hovered = ImGui::IsItemHovered();
+	float mouseX = ImGui::GetIO().MousePos.x;
+
+	ImDrawList* drawList = ImGui::GetWindowDrawList();
+	float slot = size.x / count;
+	float gap = b3MinFloat( 2.0f, 0.25f * slot );
+	float invMax = scaleMax > 0 ? 1.0f / scaleMax : 0.0f;
+	float bottom = origin.y + size.y;
+
+	int hoveredIndex = -1;
+	for ( int i = 0; i < count; ++i )
+	{
+		float x0 = origin.x + i * slot;
+		float x1 = x0 + slot - gap;
+
+		// Empty slots still show, so a gap in the sequence reads as a gap
+		drawList->AddRectFilled( ImVec2( x0, origin.y ), ImVec2( x1, bottom ), s_colorTrack );
+
+		float height = b3ClampFloat( values[i] * invMax, 0.0f, 1.0f ) * size.y;
+		if ( values[i] > 0 )
+		{
+			// A tiny count keeps a visible sliver
+			height = b3MaxFloat( height, 1.0f );
+			drawList->AddRectFilled( ImVec2( x0, bottom - height ), ImVec2( x1, bottom ), colors[i] );
+		}
+
+		if ( hovered && x0 <= mouseX && mouseX < x0 + slot )
+		{
+			hoveredIndex = i;
+			drawList->AddRect( ImVec2( x0, origin.y ), ImVec2( x1, bottom ), IM_COL32( 255, 255, 255, 200 ) );
+		}
+	}
+
+	return hoveredIndex;
+}
+
+// Bottom metrics drawer (M). Tabs: the ImPlot frame time chart, Counters, and Renderer.
+// Anchored along the window bottom, between the profile panel and the right info panel.
+void Sample::DrawMetrics()
+{
+	if ( m_context->showMetrics == false )
+	{
+		return;
+	}
+
+	float fontSize = ImGui::GetFontSize();
+	float menuWidth = InfoPanelWidthEm() * fontSize;
+	float drawerHeight = 16.0f * fontSize;
+	float drawerX = 0.5f * fontSize;
+	if ( IsProfileVisible() )
+	{
+		drawerX += GetProfilePanelWidth() + 0.5f * fontSize;
+	}
+	float drawerWidth = m_camera->m_width - menuWidth - fontSize - drawerX;
+
+	ImGui::SetNextWindowPos( { drawerX, m_camera->m_height - drawerHeight - 0.5f * fontSize } );
+	ImGui::SetNextWindowSize( { drawerWidth, drawerHeight } );
+
+	ImGui::Begin( "Metrics", nullptr,
+				  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse |
+					  ImGuiWindowFlags_NoTitleBar );
+
+	if ( ImGui::BeginTabBar( "MetricsTabs", ImGuiTabBarFlags_None ) == false )
+	{
+		ImGui::End();
+		return;
+	}
+
+	if ( HasProfile() && ImGui::BeginTabItem( "Frame Time" ) )
+	{
+		float maxValue = 0.0f;
+		float times[m_profileCapacity];
+		float stepTimes[m_profileCapacity];
+		float pairsTimes[m_profileCapacity];
+		float collideTimes[m_profileCapacity];
+		float solveTimes[m_profileCapacity];
+		float sensorsTimes[m_profileCapacity];
+		int count = m_profileWriteIndex - m_profileReadIndex;
+		for ( int i = 0; i < count; ++i )
+		{
+			int index = ( m_profileReadIndex + i ) & ( m_profileCapacity - 1 );
+			times[i] = i / 60.0f;
+			stepTimes[i] = m_profiles[index].step;
+			pairsTimes[i] = m_profiles[index].pairs;
+			collideTimes[i] = m_profiles[index].collide;
+			solveTimes[i] = m_profiles[index].solve;
+			sensorsTimes[i] = m_profiles[index].sensors;
+			maxValue = b3MaxFloat( stepTimes[i], maxValue );
+		}
+
+		// ImPlot picks a 5 second major interval at this width, leaving one bright line among the half seconds
+		ImPlot::PushStyleVar( ImPlotStyleVar_MinorAlpha, 1.0f );
+		ImPlot::PushStyleColor( ImPlotCol_AxisGrid, IM_COL32( 255, 255, 255, 15 ) );
+
+		ImVec2 plotSize = ImGui::GetContentRegionAvail();
+		if ( ImPlot::BeginPlot( "Profile", plotSize, ImPlotFlags_NoTitle ) )
+		{
+			ImPlot::SetupAxes( nullptr, "ms" );
+			ImPlot::SetupAxisLimits( ImAxis_X1, 0.0, m_profileCapacity / 60.0 );
+			ImPlot::SetupAxisLimits( ImAxis_Y1, 0.0, b3MaxFloat( maxValue, 1.0f ) * 1.05, ImPlotCond_Always );
+			ImPlot::SetNextLineStyle( ImGui::ColorConvertU32ToFloat4( s_colorStep ) );
+			ImPlot::PlotLine( "step", times, stepTimes, count );
+			ImPlot::SetNextLineStyle( ImGui::ColorConvertU32ToFloat4( s_colorPairs ) );
+			ImPlot::PlotLine( "pairs", times, pairsTimes, count );
+			ImPlot::SetNextLineStyle( ImGui::ColorConvertU32ToFloat4( s_colorCollide ) );
+			ImPlot::PlotLine( "collide", times, collideTimes, count );
+			ImPlot::SetNextLineStyle( ImGui::ColorConvertU32ToFloat4( s_colorSolve ) );
+			ImPlot::PlotLine( "solve", times, solveTimes, count );
+			ImPlot::SetNextLineStyle( ImGui::ColorConvertU32ToFloat4( s_colorSensors ) );
+			ImPlot::PlotLine( "sensors", times, sensorsTimes, count );
+			ImPlot::EndPlot();
+		}
+
+		ImPlot::PopStyleColor();
+		ImPlot::PopStyleVar();
+
+		ImGui::EndTabItem();
+	}
+
+	if ( ImGui::BeginTabItem( "Counters" ) )
+	{
+		b3Counters s = b3World_GetCounters( m_worldId );
+		b3Capacity c = b3World_GetMaxCapacity( m_worldId );
+
+		constexpr int colorCount = sizeof( s.colorCounts ) / sizeof( s.colorCounts[0] );
+		constexpr int overflowIndex = colorCount - 1;
+		constexpr int manifoldBucketCount = sizeof( s.manifoldCounts ) / sizeof( s.manifoldCounts[0] );
+
+		// Four fixed columns side by side so the whole tab fits the drawer without scrolling
+		const ImGuiTableFlags tableFlags = ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_SizingFixedFit;
+		if ( ImGui::BeginTable( "counters_layout", 4, tableFlags ) )
+		{
+			ImGui::TableSetupColumn( "world", ImGuiTableColumnFlags_WidthFixed, 11.0f * fontSize );
+			ImGui::TableSetupColumn( "memory", ImGuiTableColumnFlags_WidthFixed, 9.0f * fontSize );
+			ImGui::TableSetupColumn( "collision", ImGuiTableColumnFlags_WidthFixed, 11.0f * fontSize );
+			ImGui::TableSetupColumn( "solver", ImGuiTableColumnFlags_WidthStretch );
+			ImGui::TableHeadersRow();
+			ImGui::TableNextRow();
+
+			ImGui::TableNextColumn();
+			ImGui::Text( "bodies   %d / %d", s.bodyCount, c.staticBodyCount + c.dynamicBodyCount );
+			ImGui::SetItemTooltip( "max static %d, dynamic %d", c.staticBodyCount, c.dynamicBodyCount );
+			ImGui::Text( "shapes   %d / %d", s.shapeCount, c.staticShapeCount + c.dynamicShapeCount );
+			ImGui::SetItemTooltip( "max static %d, dynamic %d", c.staticShapeCount, c.dynamicShapeCount );
+			ImGui::Text( "contacts %d / %d", s.contactCount, c.contactCount );
+			ImGui::SetItemTooltip( "current / max" );
+			ImGui::Text( "joints   %d", s.jointCount );
+			ImGui::Text( "islands  %d", s.islandCount );
+			ImGui::Text( "tasks    %d", s.taskCount );
+
+			ImGui::TableNextColumn();
+			ImGui::Text( "static tree  %d", s.staticTreeHeight );
+			ImGui::SetItemTooltip( "tree height" );
+			ImGui::Text( "movable tree %d", s.treeHeight );
+			ImGui::SetItemTooltip( "tree height" );
+			ImGui::Text( "world %lld K", (long long)( s.byteCount / 1024 ) );
+			ImGui::Text( "stack %d K", s.stackUsed / 1024 );
+			ImGui::Text( "arena %d K", s.arenaCapacity / 1024 );
+
+			ImGui::TableNextColumn();
+			ImGui::Text( "sat %d / %d", s.satCallCount, s.satCacheHitCount );
+			ImGui::SetItemTooltip( "SAT calls / cache hits" );
+			ImGui::Text( "toi %d / %d / %d", s.distanceIterations, s.pushBackIterations, s.rootIterations );
+			ImGui::SetItemTooltip( "TOI distance / push back / root iterations" );
+
+			// The world clamps into the second to last bucket, so the last is always empty and the
+			// second to last means that many or more
+			constexpr int manifoldBarCount = manifoldBucketCount - 1;
+			int totalManifolds = 0;
+			int maxManifolds = 0;
+			ImU32 manifoldColors[manifoldBarCount];
+			for ( int i = 0; i < manifoldBarCount; ++i )
+			{
+				totalManifolds += s.manifoldCounts[i];
+				maxManifolds = b3MaxInt( maxManifolds, s.manifoldCounts[i] );
+				manifoldColors[i] = s_colorPairs;
+			}
+
+			ImGui::TextDisabled( "manifolds per pair" );
+			ImVec2 manifoldSize = { ImGui::GetContentRegionAvail().x, 4.0f * fontSize };
+			int hoveredBucket =
+				DrawBarChart( "##manifolds", s.manifoldCounts, manifoldColors, manifoldBarCount, maxManifolds, manifoldSize );
+			if ( hoveredBucket >= 0 )
+			{
+				const char* plus = hoveredBucket == manifoldBarCount - 1 ? "+" : "";
+				ImGui::SetTooltip( "%d%s manifolds: %d of %d pairs", hoveredBucket + 1, plus, s.manifoldCounts[hoveredBucket],
+								   totalManifolds );
+			}
+
+			ImGui::TableNextColumn();
+
+			// Bars are scaled to the largest normal color so the distribution shape reads clearly. Overflow
+			// gets a share bar of its own below to flag coupling problems.
+			int totalCount = 0;
+			int maxCount = 0;
+			ImU32 colors[overflowIndex];
+			for ( int i = 0; i < colorCount; ++i )
+			{
+				totalCount += s.colorCounts[i];
+				if ( i != overflowIndex )
+				{
+					maxCount = b3MaxInt( maxCount, s.colorCounts[i] );
+					uint32_t hex = static_cast<uint32_t>( b3GetGraphColor( i ) );
+					colors[i] = IM_COL32( ( hex >> 16 ) & 0xFF, ( hex >> 8 ) & 0xFF, hex & 0xFF, 255 );
+				}
+			}
+			int overflowCount = s.colorCounts[overflowIndex];
+
+			ImGui::Text( "%d constraints across %d colors", totalCount, overflowIndex );
+
+			ImVec2 colorSize = { ImGui::GetContentRegionAvail().x, 5.0f * fontSize };
+			int hoveredColor = DrawBarChart( "##colors", s.colorCounts, colors, overflowIndex, maxCount, colorSize );
+			if ( hoveredColor >= 0 )
+			{
+				ImGui::SetTooltip( "color %d: %d", hoveredColor, s.colorCounts[hoveredColor] );
+			}
+
+			// Overflow and recycling share a line to keep the column within the drawer height
+			float halfWidth = 0.5f * ( ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x );
+
+			float overflowFrac = totalCount > 0 ? (float)overflowCount / (float)totalCount : 0.0f;
+			char overflowOverlay[32];
+			snprintf( overflowOverlay, sizeof( overflowOverlay ), "overflow %d", overflowCount );
+			ImGui::PushStyleColor( ImGuiCol_PlotHistogram, IM_COL32( 220, 60, 60, 255 ) );
+			ImGui::ProgressBar( overflowFrac, ImVec2( halfWidth, 0.0f ), overflowOverlay );
+			ImGui::PopStyleColor();
+			ImGui::SetItemTooltip( "Constraints in the overflow color, solved serially" );
+			ImGui::SameLine();
+
+			float recycledFrac = s.awakeContactCount > 0
+									 ? b3ClampFloat( (float)s.recycledContactCount / (float)s.awakeContactCount, 0.0f, 1.0f )
+									 : 0.0f;
+			char recycledOverlay[48];
+			snprintf( recycledOverlay, sizeof( recycledOverlay ), "recycled %d / %d", s.recycledContactCount,
+					  s.awakeContactCount );
+			ImGui::ProgressBar( recycledFrac, ImVec2( -FLT_MIN, 0.0f ), recycledOverlay );
+			ImGui::SetItemTooltip( "Awake contacts that reused last step's manifold" );
+
+			ImGui::EndTable();
+		}
+
+		ImGui::EndTabItem();
+	}
+
+	if ( ImGui::BeginTabItem( "Renderer" ) )
+	{
+		const RenderStats st = GetRenderStats();
+
+		// Display-link frame time vs the RenderFrame submit cost, both
+		// EMA-smoothed so the readout doesn't flicker.
+		const float frameMs = (float)( sapp_frame_duration() * 1000.0 );
+		static float smoothedFrameMs = 0.0f;
+		static float smoothedCpuMs = 0.0f;
+		smoothedFrameMs = ( smoothedFrameMs <= 0.0f ) ? frameMs : smoothedFrameMs * 0.9f + frameMs * 0.1f;
+		smoothedCpuMs = ( smoothedCpuMs <= 0.0f ) ? st.frameTimeMs : smoothedCpuMs * 0.9f + st.frameTimeMs * 0.1f;
+		const float fps = ( smoothedFrameMs > 0.0f ) ? ( 1000.0f / smoothedFrameMs ) : 0.0f;
+
+		const char* backend = "?";
+		switch ( sg_query_backend() )
+		{
+			case SG_BACKEND_D3D11:
+				backend = "D3D11";
+				break;
+			case SG_BACKEND_METAL_MACOS:
+				backend = "Metal";
+				break;
+			case SG_BACKEND_GLCORE:
+				backend = "GLCORE";
+				break;
+			case SG_BACKEND_GLES3:
+				backend = "GLES3";
+				break;
+			case SG_BACKEND_WGPU:
+				backend = "WGPU";
+				break;
+			default:
+				break;
+		}
+
+		ImGui::Text( "%s   %.2f ms  (%.0f FPS)   CPU %.2f ms", backend, smoothedFrameMs, fps, smoothedCpuMs );
+		ImGui::Text( "draw calls %d  (approx)", st.drawCallCount );
+		ImGui::Separator();
+		ImGui::Text( "opaque   cubes %d  spheres %d  capsules %d  geom %d (%d spans)", st.cubeCount, st.sphereCount,
+					 st.capsuleCount, st.geomInstanceCount, st.geomSpanCount );
+		ImGui::Text( "transp.  cubes %d  spheres %d  capsules %d  geom %d", st.cubeCountXp, st.sphereCountXp, st.capsuleCountXp,
+					 st.geomInstanceCountXp );
+		ImGui::Text( "overlays lines %d  points %d", st.lineCount, st.pointCount );
+
+		ImGui::EndTabItem();
+	}
+
+	// Sample-specific tabs (the Replay viewer adds Timeline here).
+	DrawMetricsTab();
+
+	ImGui::EndTabBar();
+	ImGui::End();
+}
+
+void Sample::MouseDown( b3Vec2 p, int button, int modifiers )
+{
+	if ( m_camera->m_thirdPerson )
+	{
+		return;
+	}
+
+	if ( button == 0 && modifiers == 0 )
+	{
+		// Plain click selects the body under the cursor, any type. Empty space clears.
+		PickRay pickRay = m_camera->BuildPickRay( p.x, p.y );
+
+		b3QueryFilter filter = b3DefaultQueryFilter();
+		filter.name = "select";
+		b3RayResult result = b3World_CastRayClosest( m_worldId, pickRay.origin, pickRay.translation, filter );
+
+		if ( result.hit )
+		{
+			SetSelectedBody( b3Shape_GetBody( result.shapeId ) );
+		}
+		else
+		{
+			ClearSelection();
+		}
+	}
+	else if ( button == 0 && modifiers == MOD_CTRL )
+	{
+		// Ctrl click grabs a dynamic body with a kinematic mouse body and a motor joint.
+		PickRay pickRay = m_camera->BuildPickRay( p.x, p.y );
+
+		b3QueryFilter filter = b3DefaultQueryFilter();
+		filter.name = "grab";
+		b3RayResult result = b3World_CastRayClosest( m_worldId, pickRay.origin, pickRay.translation, filter );
+
+		b3BodyId bodyId = result.hit ? b3Shape_GetBody( result.shapeId ) : b3_nullBodyId;
+		if ( result.hit && b3Body_GetType( bodyId ) == b3_dynamicBody )
+		{
+			m_mousePoint = result.point;
+
+			b3BodyDef bodyDef = b3DefaultBodyDef();
+			bodyDef.type = b3_kinematicBody;
+			bodyDef.position = m_mousePoint;
+			bodyDef.enableSleep = false;
+			m_mouseBodyId = b3CreateBody( m_worldId, &bodyDef );
+
+			// Grabbing also selects so the body stays highlighted while dragged.
+			SetSelectedBody( bodyId );
+
+			b3MotorJointDef jointDef = b3DefaultMotorJointDef();
+			jointDef.base.bodyIdA = m_mouseBodyId;
+			jointDef.base.bodyIdB = bodyId;
+			jointDef.base.localFrameB.p = b3Body_GetLocalPoint( bodyId, result.point );
+			jointDef.linearHertz = 7.5f;
+			jointDef.linearDampingRatio = 1.0f;
+
+			b3MassData massData = b3Body_GetMassData( bodyId );
+			float g = b3Length( b3World_GetGravity( m_worldId ) );
+			float mg = massData.mass * g;
+			jointDef.maxSpringForce = m_mouseForceScale * mg;
+
+			if ( massData.mass > 0.0f )
+			{
+				// This acts like angular friction
+				float trace = massData.inertia.cx.x + massData.inertia.cy.y + massData.inertia.cz.z;
+				float lever = sqrtf( trace / ( 3.0f * massData.mass ) );
+				jointDef.maxVelocityTorque = 0.5f * lever * mg;
+			}
+
+			m_mouseJointId = b3CreateMotorJoint( m_worldId, &jointDef );
+
+			b3Body_SetAwake( bodyId, true );
+
+			m_mouseFraction = result.fraction;
+		}
+	}
+	else if ( modifiers & MOD_SHIFT )
+	{
+		PickRay pickRay = m_camera->BuildPickRay( p.x, p.y );
+		b3Vec3 direction = b3Normalize( pickRay.translation );
+
+		b3ShapeDef shapeDef = b3DefaultShapeDef();
+		if ( modifiers & MOD_CTRL )
+		{
+			b3BodyDef bodyDef = b3DefaultBodyDef();
+			bodyDef.type = b3_dynamicBody;
+			bodyDef.position = pickRay.origin + 2.0f * direction;
+			bodyDef.linearVelocity = ( 10.0f * m_launchSpeedScale ) * direction;
+			bodyDef.isBullet = true;
+			b3BodyId bodyId = b3CreateBody( m_worldId, &bodyDef );
+
+			b3HullData* hull = b3CreateCylinder( 2.0f, 0.15f, 0.0f, 6 );
+			b3CreateHullShape( bodyId, &shapeDef, hull );
+			b3DestroyHull( hull );
+		}
+		else if ( modifiers & MOD_ALT )
+		{
+			b3Pos position = pickRay.origin + 2.0f * direction;
+			Human human = {};
+			CreateHuman( &human, m_worldId, position, 1.0f, 1.0f, 1.0f, 0, nullptr, true );
+			Human_SetBullet( &human, true );
+			Human_SetVelocity( &human, ( 10.0f * m_launchSpeedScale ) * direction );
+		}
+		else
+		{
+			b3BodyDef bodyDef = b3DefaultBodyDef();
+			bodyDef.type = b3_dynamicBody;
+			bodyDef.position = pickRay.origin + 2.0f * direction;
+			bodyDef.linearVelocity = ( 20.0f * m_launchSpeedScale ) * direction;
+			bodyDef.isBullet = true;
+			b3BodyId bodyId = b3CreateBody( m_worldId, &bodyDef );
+
+			b3Sphere sphere = { b3Vec3_zero, 0.25f };
+			shapeDef.density *= 4.0f;
+			b3CreateSphereShape( bodyId, &shapeDef, &sphere );
+		}
+	}
+}
+
+void Sample::MouseUp( b3Vec2 p, int button )
+{
+	if ( b3Joint_IsValid( m_mouseJointId ) )
+	{
+		b3DestroyJoint( m_mouseJointId, true );
+	}
+
+	if ( b3Body_IsValid( m_mouseBodyId ) )
+	{
+		b3DestroyBody( m_mouseBodyId );
+	}
+
+	m_mouseJointId = b3_nullJointId;
+	m_mouseBodyId = b3_nullBodyId;
+	m_mouseFraction = 0.0f;
+}
+
+void Sample::MouseMove( b3Vec2 p )
+{
+	if ( m_camera->m_thirdPerson )
+	{
+		// The cursor is locked in third person, so look uses the host's
+		// relative deltas. Camera angles are radians here (host camera).
+		m_mouseDelta = { m_context->mouseDX, m_context->mouseDY };
+
+		const float sensitivity = 0.1f * B3_DEG_TO_RAD;
+		m_camera->m_yaw -= 2.0f * sensitivity * m_mouseDelta.x;
+		m_camera->m_pitch += sensitivity * m_mouseDelta.y;
+		m_camera->m_pitch = b3ClampFloat( m_camera->m_pitch, -85.0f * B3_DEG_TO_RAD, 85.0f * B3_DEG_TO_RAD );
+	}
+
+	PickRay pickRay = m_camera->BuildPickRay( p.x, p.y );
+	if ( B3_IS_NON_NULL( m_mouseJointId ) )
+	{
+		m_mousePoint = pickRay.origin + m_mouseFraction * pickRay.translation;
+	}
+}
+
+void Sample::DrawTextLine( const char* text, ... )
+{
+	va_list args;
+	va_start( args, text );
+	char buffer[512];
+	vsnprintf( buffer, sizeof( buffer ), text, args );
+	va_end( args );
+	DrawScreenString( m_textX, m_textLine, MakeColor( b3_colorWhite ), buffer );
+	m_textLine += m_textIncrement;
+}
+
+SampleEntry g_sampleEntries[MAX_SAMPLES];
+int g_sampleCount = 0;
+int g_replayIndex = -1;
+
+int RegisterSample( const char* category, const char* name, SampleCreateFcn* fcn )
+{
+	int index = g_sampleCount;
+	if ( index < MAX_SAMPLES )
+	{
+		g_sampleEntries[index] = { category, name, fcn };
+		g_sampleCount += 1;
+		return index;
+	}
+
+	return -1;
+}
+
+// Like RegisterSample but remembers the index so the Replay menu can switch to the viewer.
+int RegisterReplay( const char* category, const char* name, SampleCreateFcn* fcn )
+{
+	int index = RegisterSample( category, name, fcn );
+	if ( index >= 0 )
+	{
+		g_replayIndex = index;
+	}
+	return index;
+}
+
+void SelectSample( SampleContext* context, int selection, bool restart )
+{
+	if ( selection < 0 || selection >= g_sampleCount )
+	{
+		// Out of range: keep the current sample rather than calling a null factory.
+		return;
+	}
+
+	if ( restart == false )
+	{
+		context->pause = false;
+	}
+
+	// Steps queued in a sample that never consumes them must not play out in the next one
+	context->singleStep = 0;
+
+	// delete tolerates the first selection, before any sample exists.
+	delete context->sample;
+	context->sample = nullptr;
+
+	context->sampleIndex = selection;
+	context->restart = restart;
+	context->sample = g_sampleEntries[selection].CreateFcn( context );
+
+	// A restart keeps the camera where it was, so the original starting view stays home
+	if ( restart == false )
+	{
+		context->homePivot = context->camera.m_pivot;
+		context->homeYaw = context->camera.m_yaw;
+		context->homePitch = context->camera.m_pitch;
+		context->homeRadius = context->camera.m_radius;
+	}
+
+	// A sample that knows where its content sits relative to its camera says
+	// so, and is taken at its word. The ceiling below guards a guess, not a
+	// measurement, so capping an explicit request would only hide it.
+	if ( context->sample->m_shadowSplitFar > 0.0f )
+	{
+		// A sample wanting only more reach leaves the near end at zero.
+		float splitNear = context->sample->m_shadowSplitNear;
+		SetShadowSplits( splitNear > 0.0f ? splitNear : SHADOW_SPLIT_NEAR, context->sample->m_shadowSplitFar );
+	}
+	else
+	{
+		// Otherwise fit the range to the world bounds. The bounds are a poor
+		// proxy for how far shadows need to reach: a ground plate stretches
+		// the diagonal well past anything worth shadowing, so the ceiling
+		// matters more than the estimate.
+		b3AABB bounds = b3World_GetBounds( context->sample->m_worldId );
+		float diagonal = b3Distance( bounds.lowerBound, bounds.upperBound );
+		SetShadowSplits( SHADOW_SPLIT_NEAR, b3ClampFloat( diagonal, SHADOW_SPLIT_FAR, SHADOW_SPLIT_FAR_MAX ) );
+	}
+
+	// Samples read restart only while constructing, to keep the camera across a
+	// restart. Clear it so a later switch starts fresh.
+	context->restart = false;
+}
+
+void OpenReplayFileDialog( SampleContext* context )
+{
+	if ( g_replayIndex < 0 )
+	{
+		return;
+	}
+
+	if ( NFD_Init() != NFD_OKAY )
+	{
+		return;
+	}
+
+	nfdu8char_t* outPath = nullptr;
+	nfdu8filteritem_t filter[1] = { { "Box3D recording", "b3rec" } };
+
+	// Start in the working directory, where recordings are saved by default. A
+	// deleted or unreadable working directory just means no starting point.
+	std::error_code ec;
+	std::u8string cwd = std::filesystem::current_path( ec ).u8string();
+	const nfdu8char_t* defaultPath = ec ? nullptr : reinterpret_cast<const nfdu8char_t*>( cwd.c_str() );
+
+	if ( NFD_OpenDialogU8( &outPath, filter, 1, defaultPath ) == NFD_OKAY )
+	{
+		snprintf( context->replayFile, sizeof( context->replayFile ), "%s", outPath );
+		NFD_FreePathU8( outPath );
+		SelectSample( context, g_replayIndex, false );
+	}
+	NFD_Quit();
+}
+
+// Subsequence fuzzy match. Returns a score (higher is better) or -1 if the
+// needle is not a subsequence of the haystack. Bonuses for a prefix match, a
+// word start, and a contiguous run, so "stack" ranks Pyramid > Stack sensibly.
+static int FuzzyScore( const char* needle, const char* haystack )
+{
+	if ( needle == nullptr || needle[0] == '\0' )
+	{
+		return 0;
+	}
+
+	int score = 0;
+	int hi = 0;
+	int prevMatchHi = -2;
+
+	for ( int ni = 0; needle[ni] != '\0'; ++ni )
+	{
+		int nc = tolower( (unsigned char)needle[ni] );
+		while ( haystack[hi] != '\0' && tolower( (unsigned char)haystack[hi] ) != nc )
+		{
+			++hi;
+		}
+		if ( haystack[hi] == '\0' )
+		{
+			return -1;
+		}
+
+		int bonus = 1;
+		if ( hi == 0 )
+		{
+			bonus += 10; // prefix
+		}
+		else if ( !isalnum( (unsigned char)haystack[hi - 1] ) )
+		{
+			bonus += 5; // word start
+		}
+		if ( hi == prevMatchHi + 1 )
+		{
+			bonus += 3; // contiguous run
+		}
+
+		score += bonus;
+		prevMatchHi = hi;
+		++hi;
+	}
+
+	return score;
+}
+
+struct Scored
+{
+	int idx;
+	int score;
+};
+
+// Filter and rank the sample registry against the picker query. Name matches
+// outweigh category-only matches. Equal scores keep the sorted registry order.
+static void RebuildPicker( const char* q, int* outFiltered, int* outCount )
+{
+	static Scored scored[MAX_SAMPLES];
+	int n = 0;
+	for ( int i = 0; i < g_sampleCount; ++i )
+	{
+		int nameScore = FuzzyScore( q, g_sampleEntries[i].Name );
+		int catScore = FuzzyScore( q, g_sampleEntries[i].Category );
+		int best = -1;
+		if ( nameScore >= 0 )
+		{
+			best = nameScore * 2;
+		}
+		if ( catScore >= 0 && catScore > best )
+		{
+			best = catScore;
+		}
+		if ( best < 0 )
+		{
+			continue;
+		}
+		scored[n].idx = i;
+		scored[n].score = best;
+		n += 1;
+	}
+
+	// Stable insertion sort by score descending.
+	for ( int i = 1; i < n; ++i )
+	{
+		Scored tmp = scored[i];
+		int j = i - 1;
+		while ( j >= 0 && scored[j].score < tmp.score )
+		{
+			scored[j + 1] = scored[j];
+			--j;
+		}
+		scored[j + 1] = tmp;
+	}
+
+	for ( int i = 0; i < n; ++i )
+	{
+		outFiltered[i] = scored[i].idx;
+	}
+	*outCount = n;
+}
+
+static void DrawRow( const char* key, const char* desc )
+{
+	ImGui::TableNextRow();
+	ImGui::TableSetColumnIndex( 0 );
+	ImGui::TextUnformatted( key );
+	ImGui::TableSetColumnIndex( 1 );
+	ImGui::TextUnformatted( desc );
+}
+
+// b3HexColor (0xRRGGBB) to an opaque ImVec4 for panel text. Distinct from
+// gfx/utility.h's MakeColor, which returns the renderer's linear Vec4.
+static ImVec4 HexColor( b3HexColor hexColor )
+{
+	uint32_t h = (uint32_t)hexColor;
+	ImU32 color = IM_COL32( ( h >> 16 ) & 0xFF, ( h >> 8 ) & 0xFF, h & 0xFF, 255 );
+	return ImGui::ColorConvertU32ToFloat4( color );
+}
+
+// Abbreviated render controls: mostly visualization/debug toggles plus a single
+// exposure slider. The deep GTAO knobs and most edge/outline parameters keep
+// their renderer defaults, only the edge convexity coloring is exposed.
+static void DrawRenderMenu( SampleContext& ctx )
+{
+	ImGui::MenuItem( "Shadows", nullptr, &ctx.enableShadows );
+
+	if ( ImGui::BeginMenu( "Cascades" ) )
+	{
+		ImGui::PushItemWidth( 8.0f * ImGui::GetFontSize() );
+
+		// Where the split distribution starts, not where shadows start. Raising
+		// it hands the whole working volume to the first cascade and coarsens
+		// it to suit. The c0 row below is what to steer by: it says how far the
+		// sharp cascade reaches and what one of its texels costs.
+		float splitNear = GetShadowSplitNear();
+		if ( ImGui::SliderFloat( "Start", &splitNear, 0.1f, 30.0f, "%.1f m" ) )
+		{
+			SetShadowSplits( splitNear, GetShadowSplitFar() );
+		}
+
+		// Selecting a sample refits the range to the world, so a value dialed
+		// in here survives only until the next sample switch.
+		float splitFar = GetShadowSplitFar();
+		if ( ImGui::SliderFloat( "Range", &splitFar, 10.0f, 200.0f, "%.0f m" ) )
+		{
+			SetShadowSplitFar( splitFar );
+		}
+
+		float lambda = GetShadowSplitLambda();
+		if ( ImGui::SliderFloat( "Distribution", &lambda, 0.0f, 1.0f, "%.2f" ) )
+		{
+			SetShadowSplitLambda( lambda );
+		}
+
+		ImGui::PopItemWidth();
+
+		// Where each cascade ends and how much world one of its texels covers.
+		// A quality cliff at a boundary is the step between two neighboring
+		// texel sizes, which is easier to read here than off the image.
+		if ( ImGui::BeginTable( "cascades", 3, ImGuiTableFlags_SizingFixedFit ) )
+		{
+			ImGui::TableSetupColumn( "csm" );
+			ImGui::TableSetupColumn( "far" );
+			ImGui::TableSetupColumn( "texel" );
+			ImGui::TableHeadersRow();
+			for ( int i = 0; i < SHADOW_CASCADE_COUNT; ++i )
+			{
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex( 0 );
+				ImGui::Text( "%d", i );
+				ImGui::TableSetColumnIndex( 1 );
+				ImGui::Text( "%.1f m", GetCascadeFarViewZ( i ) );
+				ImGui::TableSetColumnIndex( 2 );
+				ImGui::Text( "%.0f mm", 1000.0f * GetCascadeTexelWorld( i ) );
+			}
+			ImGui::EndTable();
+		}
+
+		ImGui::EndMenu();
+	}
+
+	if ( ImGui::BeginMenu( "GTAO" ) )
+	{
+		ImGui::MenuItem( "Enable", nullptr, &ctx.enableGtao );
+
+		GtaoTraceParams p = GetGtaoTraceParams();
+		int quality = p.quality;
+		static const char* qualityNames[] = { "Medium", "High", "Ultra" };
+		if ( ImGui::Combo( "Quality", &quality, qualityNames, 3 ) )
+		{
+			p.quality = (AmbientOcclusionQuality)quality;
+			SetGtaoTraceParams( p );
+		}
+		ImGui::EndMenu();
+	}
+
+	bool ibl = GetIblEnabled();
+	if ( ImGui::MenuItem( "IBL", nullptr, &ibl ) )
+	{
+		SetIblEnabled( ibl );
+	}
+
+	EdgeOverlayParams edgeParams = GetEdgeOverlayParams();
+	if ( ImGui::MenuItem( "Hull Edges", nullptr, &edgeParams.showHulls ) )
+	{
+		SetEdgeOverlayParams( &edgeParams );
+	}
+	if ( ImGui::MenuItem( "Edge Convexity", nullptr, &edgeParams.showEdgeConvexity ) )
+	{
+		SetEdgeOverlayParams( &edgeParams );
+	}
+
+	ImGui::Separator();
+
+	ImGui::PushItemWidth( 8.0f * ImGui::GetFontSize() );
+	float ev = GetExposure();
+	if ( ImGui::SliderFloat( "Exposure", &ev, -8.0f, 4.0f, "%.2f" ) )
+	{
+		SetExposure( ev );
+	}
+
+	Sun sun = GetSun();
+	if ( ImGui::SliderFloat( "Sun", &sun.strength, 0.0f, 1.0f, "%.2f" ) )
+	{
+		SetSun( sun );
+	}
+
+	ImGui::PopItemWidth();
+
+	ImGui::Separator();
+
+	if ( ImGui::BeginMenu( "Debug View" ) )
+	{
+		static const char* viewNames[] = {
+			"0 - lit", "1 - view-space distance", "2 - CSM cascade", "3 - view-space normal", "4 - raw GTAO",
+		};
+		for ( int i = 0; i < 5; ++i )
+		{
+			if ( ImGui::RadioButton( viewNames[i], ctx.debugView == i ) )
+			{
+				ctx.debugView = i;
+			}
+		}
+		ImGui::EndMenu();
+	}
+}
+
+static void DrawMenuBar( SampleContext* context )
+{
+	b3DebugDraw* gd = GetGuiDraw();
+	float fontSize = ImGui::GetFontSize();
+
+	if ( ImGui::BeginMainMenuBar() )
+	{
+		if ( ImGui::BeginMenu( "Sim" ) )
+		{
+			ImGui::MenuItem( "Pause", "P", &context->pause );
+			if ( ImGui::MenuItem( "Single Step", "." ) )
+			{
+				context->singleStep += 1;
+			}
+			if ( ImGui::MenuItem( "Restart", "R" ) )
+			{
+				SelectSample( context, context->sampleIndex, true );
+			}
+			ImGui::Separator();
+			if ( ImGui::MenuItem( "Previous Sample", "[" ) )
+			{
+				SelectSample( context, ( context->sampleIndex + g_sampleCount - 1 ) % g_sampleCount, false );
+			}
+			if ( ImGui::MenuItem( "Next Sample", "]" ) )
+			{
+				SelectSample( context, ( context->sampleIndex + 1 ) % g_sampleCount, false );
+			}
+			ImGui::Separator();
+			if ( ImGui::MenuItem( "Reset Profile" ) )
+			{
+				context->sample->ResetProfile();
+			}
+			if ( ImGui::MenuItem( "Dump Mem Stats" ) )
+			{
+				b3World_DumpMemoryStats( context->sample->m_worldId );
+			}
+			ImGui::Separator();
+			if ( ImGui::MenuItem( "Quit", "Ctrl+Q" ) )
+			{
+				sapp_request_quit();
+			}
+			ImGui::EndMenu();
+		}
+
+		if ( ImGui::BeginMenu( "View" ) )
+		{
+			if ( ImGui::MenuItem( "Hide UI", "Tab" ) )
+			{
+				context->showUI = false;
+			}
+			if ( ImGui::MenuItem( "Hide UI and Text", "Shift+Tab" ) )
+			{
+				context->showUI = false;
+				context->showText = false;
+			}
+			if ( ImGui::MenuItem( "Frame Selection", "F" ) )
+			{
+				FrameSelection( context );
+			}
+			if ( ImGui::MenuItem( "Reset Camera", "Home" ) )
+			{
+				context->sample->FocusHome();
+			}
+			ImGui::MenuItem( "Shapes", nullptr, &gd->drawShapes );
+			if ( ImGui::BeginMenu( "Transparency" ) )
+			{
+				ImGui::MenuItem( "Dynamic", nullptr, &context->transparentDynamic );
+				ImGui::MenuItem( "Kinematic", nullptr, &context->transparentKinematic );
+				ImGui::EndMenu();
+			}
+			ImGui::MenuItem( "Joints", nullptr, &gd->drawJoints );
+			ImGui::MenuItem( "Joint Extras", nullptr, &gd->drawJointExtras );
+			ImGui::MenuItem( "Bounds", nullptr, &gd->drawBounds );
+			ImGui::MenuItem( "Mass", nullptr, &gd->drawMass );
+			ImGui::MenuItem( "Sleep", nullptr, &gd->drawSleep );
+			ImGui::MenuItem( "Body Names", nullptr, &gd->drawBodyNames );
+			ImGui::MenuItem( "Graph Colors", nullptr, &gd->drawGraphColors );
+			ImGui::MenuItem( "Islands", nullptr, &gd->drawIslands );
+			ImGui::Separator();
+			ImGui::MenuItem( "Contact Points", nullptr, &gd->drawContacts );
+			ImGui::MenuItem( "Contact Normals", nullptr, &gd->drawContactNormals );
+			ImGui::MenuItem( "Contact Features", nullptr, &gd->drawContactFeatures );
+			ImGui::MenuItem( "Contact Forces", nullptr, &gd->drawContactForces );
+			if ( ImGui::BeginMenu( "Anchor" ) )
+			{
+				if ( ImGui::MenuItem( "Anchor A", nullptr, gd->drawAnchorA == true ) )
+				{
+					gd->drawAnchorA = true;
+				}
+				if ( ImGui::MenuItem( "Anchor B", nullptr, gd->drawAnchorA == false ) )
+				{
+					gd->drawAnchorA = false;
+				}
+				ImGui::EndMenu();
+			}
+			ImGui::Separator();
+			ImGui::MenuItem( "Metrics", "M", &context->showMetrics );
+			ImGui::MenuItem( "Profile", "I", &context->showProfile, context->sample->HasProfile() );
+			ImGui::PushItemWidth( 8.0f * fontSize );
+			ImGui::SliderFloat( "Draw Distance", &context->drawDistance, 10.0f, Camera::kViewDistance, "%.0f m" );
+			ImGui::PopItemWidth();
+			ImGui::Separator();
+			if ( ImGui::BeginMenu( "Scale" ) )
+			{
+				ImGui::PushItemWidth( 6.0f * fontSize );
+				ImGui::InputFloat( "Joint", &gd->jointScale );
+				ImGui::InputFloat( "Force", &gd->forceScale, 0, 0, "%.6f", ImGuiInputTextFlags_CharsScientific );
+				ImGui::PopItemWidth();
+				ImGui::EndMenu();
+			}
+			ImGui::EndMenu();
+		}
+
+		if ( ImGui::BeginMenu( "Render" ) )
+		{
+			DrawRenderMenu( *context );
+			ImGui::EndMenu();
+		}
+
+		if ( ImGui::BeginMenu( "Samples" ) )
+		{
+			int i = 0;
+			while ( i < g_sampleCount )
+			{
+				const char* category = g_sampleEntries[i].Category;
+				if ( ImGui::BeginMenu( category ) )
+				{
+					while ( i < g_sampleCount && strcmp( category, g_sampleEntries[i].Category ) == 0 )
+					{
+						bool selected = ( i == context->sampleIndex );
+						if ( ImGui::MenuItem( g_sampleEntries[i].Name, nullptr, selected ) )
+						{
+							SelectSample( context, i, false );
+						}
+						++i;
+					}
+					ImGui::EndMenu();
+				}
+				else
+				{
+					while ( i < g_sampleCount && strcmp( category, g_sampleEntries[i].Category ) == 0 )
+					{
+						++i;
+					}
+				}
+			}
+			ImGui::EndMenu();
+		}
+
+		// Only present once the replay viewer is registered. Open pops a native picker, then hands
+		// the chosen file to the viewer through replayFile.
+		if ( g_replayIndex >= 0 && ImGui::BeginMenu( "Replay" ) )
+		{
+			if ( ImGui::MenuItem( "Open..." ) )
+			{
+				// Defer the native picker to the top of the next frame. Running it
+				// here would block on a nested run loop mid-frame (after the buffers
+				// were uploaded and the ImGui frame began), re-entering the render
+				// loop. See OpenReplayFileDialog and SampleContext::openReplayPicker.
+				context->openReplayPicker = true;
+			}
+			ImGui::EndMenu();
+		}
+
+		static bool showAbout = false;
+		if ( ImGui::BeginMenu( "Help" ) )
+		{
+			ImGui::MenuItem( "Controls", "?", &context->showControls );
+			ImGui::MenuItem( "About", nullptr, &showAbout );
+			ImGui::EndMenu();
+		}
+
+		ImGui::EndMainMenuBar();
+
+		if ( context->showControls )
+		{
+			ImGui::SetNextWindowPos( { context->camera.m_width * 0.5f, context->camera.m_height * 0.35f }, ImGuiCond_Appearing,
+									 { 0.5f, 0.5f } );
+			ImGui::SetNextWindowSize( { 26.0f * fontSize, 0.0f }, ImGuiCond_Appearing );
+
+			if ( ImGui::Begin( "Controls", &context->showControls,
+							   ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize ) )
+			{
+				ImGui::SeparatorText( "Keyboard" );
+				if ( ImGui::BeginTable( "keys", 2, ImGuiTableFlags_SizingFixedFit ) )
+				{
+					DrawRow( "Tab", "Show / hide UI" );
+					DrawRow( "Shift+Tab", "Show / hide UI and text" );
+					DrawRow( "M", "Show / hide metrics" );
+					DrawRow( "I", "Show / hide profile" );
+					DrawRow( "P", "Pause / resume" );
+					DrawRow( ".", "Single step (Shift: 5)" );
+					DrawRow( ",", "Step back, replay only (Shift: 5)" );
+					DrawRow( "R", "Restart sample" );
+					DrawRow( "[  ]", "Previous / next sample" );
+					DrawRow( "Ctrl+O", "Open sample picker" );
+					DrawRow( "F", "Frame selection" );
+					DrawRow( "Home", "Reset camera" );
+					DrawRow( "?", "Show / hide controls" );
+					DrawRow( "Esc", "Cancel / close" );
+					DrawRow( "Ctrl+Q", "Quit" );
+					ImGui::EndTable();
+				}
+
+				ImGui::SeparatorText( "Mouse" );
+				if ( ImGui::BeginTable( "mouse", 2, ImGuiTableFlags_SizingFixedFit ) )
+				{
+					DrawRow( "Left click", "Select body/shape" );
+					DrawRow( "Ctrl + left drag", "Move bodies (mouse joint)" );
+					DrawRow( "Alt + left drag", "Orbit camera" );
+					DrawRow( "Alt + middle drag", "Pan camera" );
+					DrawRow( "Alt + right drag", "Zoom (dolly)" );
+					DrawRow( "Right drag", "Fly look (WASD, Q / E to move)" );
+					DrawRow( "Scroll", "Zoom" );
+					DrawRow( "Shift + left", "Shoot (Ctrl spin, Alt ragdoll)" );
+					ImGui::EndTable();
+				}
+			}
+			ImGui::End();
+		}
+
+		if ( showAbout )
+		{
+			ImGui::SetNextWindowPos( { context->camera.m_width * 0.5f, context->camera.m_height * 0.5f }, ImGuiCond_Appearing,
+									 { 0.5f, 0.5f } );
+			ImGui::SetNextWindowSize( { 22.0f * fontSize, 0.0f }, ImGuiCond_Appearing );
+
+			if ( ImGui::Begin( "About", &showAbout, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize ) )
+			{
+				b3Version version = b3GetVersion();
+				ImGui::Text( "Box3D %d.%d.%d", version.major, version.minor, version.revision );
+				ImGui::Spacing();
+				ImGui::TextLinkOpenURL( "github.com/erincatto/box3d", "https://github.com/erincatto/box3d" );
+			}
+			ImGui::End();
+		}
+	}
+}
+
+static void DrawSamplePicker( SampleContext* context )
+{
+	float fontSize = ImGui::GetFontSize();
+
+	// Opens a transient popup; type to filter by name or category, Up/Down to
+	// navigate, Enter to select, Esc / click-outside to dismiss.
+	static char query[64] = {};
+	static char prevQuery[64] = {};
+	static int highlight = 0;
+	static int prevHighlight = 0;
+	static int filtered[MAX_SAMPLES];
+	static int filteredCount = 0;
+	static bool justOpened = false;
+	static bool forceScroll = false;
+
+	if ( context->openSamplePicker )
+	{
+		ImGui::OpenPopup( "##sample_picker" );
+		context->openSamplePicker = false;
+		query[0] = '\0';
+		prevQuery[0] = '\0';
+		highlight = 0;
+		prevHighlight = 0;
+		RebuildPicker( query, filtered, &filteredCount );
+		justOpened = true;
+		forceScroll = true;
+	}
+
+	ImGui::SetNextWindowPos( { context->camera.m_width * 0.5f, context->camera.m_height * 0.35f }, ImGuiCond_Appearing,
+							 { 0.5f, 0.5f } );
+	ImGui::SetNextWindowSize( { 32.0f * fontSize, 0.0f }, ImGuiCond_Appearing );
+
+	if ( ImGui::BeginPopup( "##sample_picker",
+							ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoSavedSettings ) )
+	{
+		if ( justOpened )
+		{
+			ImGui::SetKeyboardFocusHere();
+			justOpened = false;
+		}
+
+		ImGui::PushItemWidth( -1.0f );
+		ImGui::InputTextWithHint( "##q", "Search by name or category...", query, sizeof( query ) );
+		ImGui::PopItemWidth();
+
+		if ( strcmp( query, prevQuery ) != 0 )
+		{
+			RebuildPicker( query, filtered, &filteredCount );
+			strncpy( prevQuery, query, sizeof( prevQuery ) );
+			prevQuery[sizeof( prevQuery ) - 1] = '\0';
+			highlight = 0;
+			forceScroll = true;
+		}
+
+		if ( filteredCount > 0 )
+		{
+			if ( ImGui::IsKeyPressed( ImGuiKey_DownArrow, true ) )
+			{
+				highlight = ( highlight + 1 ) % filteredCount;
+			}
+			if ( ImGui::IsKeyPressed( ImGuiKey_UpArrow, true ) )
+			{
+				highlight = ( highlight + filteredCount - 1 ) % filteredCount;
+			}
+		}
+		bool commit = ImGui::IsKeyPressed( ImGuiKey_Enter, false ) || ImGui::IsKeyPressed( ImGuiKey_KeypadEnter, false );
+
+		ImGui::BeginChild( "##results", { 0.0f, 14.0f * fontSize }, ImGuiChildFlags_Borders );
+		for ( int row = 0; row < filteredCount; ++row )
+		{
+			int i = filtered[row];
+			char label[160];
+			snprintf( label, sizeof( label ), "%s  >  %s", g_sampleEntries[i].Category, g_sampleEntries[i].Name );
+			bool sel = ( row == highlight );
+			if ( ImGui::Selectable( label, sel ) )
+			{
+				highlight = row;
+				commit = true;
+			}
+			if ( sel && ( forceScroll || highlight != prevHighlight ) )
+			{
+				ImGui::SetScrollHereY();
+			}
+		}
+		ImGui::EndChild();
+		prevHighlight = highlight;
+		forceScroll = false;
+
+		if ( commit && filteredCount > 0 )
+		{
+			SelectSample( context, filtered[highlight], false );
+			ImGui::CloseCurrentPopup();
+		}
+
+		// The active search field eats the first Esc, so dismiss here instead of
+		// relying on the popup's default nav close.
+		if ( ImGui::IsKeyPressed( ImGuiKey_Escape, false ) )
+		{
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::EndPopup();
+	}
+}
+
+// A dot after the widget that reveals help on hover. Unlike a tooltip on the widget itself,
+// it never covers the value being edited, and it is quieter than a "(?)" on every row.
+static void HelpMarker( const char* text )
+{
+	ImGui::SameLine( 0.0f, ImGui::GetStyle().ItemInnerSpacing.x );
+	float width = ImGui::GetFontSize();
+	float height = ImGui::GetFrameHeight();
+	ImVec2 pos = ImGui::GetCursorScreenPos();
+	ImGui::Dummy( { width, height } );
+	bool hovered = ImGui::IsItemHovered();
+	ImU32 color = ImGui::GetColorU32( ImGuiCol_CheckMark, hovered ? 1.0f : 0.6f );
+	ImVec2 center = { pos.x + 0.5f * width, pos.y + 0.5f * height };
+	ImGui::GetWindowDrawList()->AddCircleFilled( center, 0.2f * width, color );
+	ImGui::SetItemTooltip( "%s", text );
+}
+
+static void DrawInfoPanel( SampleContext* context )
+{
+	const SampleEntry& entry = g_sampleEntries[context->sampleIndex];
+	float fontSize = ImGui::GetFontSize();
+	float menuWidth = context->sample->InfoPanelWidthEm() * fontSize;
+	float menuBarHeight = ImGui::GetFrameHeight();
+
+	// Full-height panel pinned under the menu bar at the right edge, matching Box2D.
+	ImGui::SetNextWindowPos( { context->camera.m_width - menuWidth - 0.5f * fontSize, menuBarHeight + 0.5f * fontSize } );
+	ImGui::SetNextWindowSize( { menuWidth, context->camera.m_height - menuBarHeight - fontSize } );
+
+	ImGui::Begin( "Info", nullptr,
+				  ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse |
+					  ImGuiWindowFlags_NoTitleBar );
+
+	ImGui::TextColored( HexColor( b3_colorGoldenRod ), "%s", entry.Name );
+	ImGui::TextColored( HexColor( b3_colorLightGray ), "%s", entry.Category );
+	ImGui::Separator();
+
+	if ( context->pause )
+	{
+		ImGui::TextColored( HexColor( b3_colorRed ), "PAUSED" );
+		ImGui::SameLine();
+		ImGui::TextDisabled( "(p)" );
+		ImGui::Separator();
+	}
+
+	const float frameMs = (float)( sapp_frame_duration() * 1000.0 );
+	ImGui::TextColored( HexColor( b3_colorSeaGreen ), "frame %.1f ms", frameMs );
+	ImGui::TextColored( HexColor( b3_colorSeaGreen ), "step %d", context->sample->m_stepCount );
+	ImGui::Separator();
+
+	// The camera lives in display space, so pivot, radius and speed are in meters
+	// regardless of the simulation's length units.
+	b3Pos p = context->camera.m_pivot;
+	ImGui::TextColored( HexColor( b3_colorSeaGreen ), "pivot m (%.1f, %.1f, %.1f)", p.x, p.y, p.z );
+	float yawDeg = B3_RAD_TO_DEG * context->camera.m_yaw;
+	float pitchDeg = B3_RAD_TO_DEG * context->camera.m_pitch;
+	ImGui::TextColored( HexColor( b3_colorSeaGreen ), "yaw/pitch (%.1f, %.1f)", yawDeg, pitchDeg );
+	ImGui::TextColored( HexColor( b3_colorSeaGreen ), "radius m %.1f, speed m/s %.1f", context->camera.m_radius,
+						context->camera.m_speed );
+
+	ImGui::Separator();
+
+	ImGui::PushItemWidth( 6.0f * fontSize );
+	if ( context->sample->DrawControls() )
+	{
+		ImGui::Separator();
+	}
+	ImGui::PopItemWidth();
+
+	if ( context->sample->HasSolverControls() && ImGui::CollapsingHeader( "Solver", ImGuiTreeNodeFlags_DefaultOpen ) )
+	{
+		ImGui::PushItemWidth( 6.0f * fontSize );
+		ImGui::SliderInt( "Sub-steps##Solver", &context->subStepCount, 1, 50 );
+		HelpMarker( "The solver breaks the full step into several sub-steps.\nMore sub-steps usually lead to more accurate results." );
+
+		ImGui::SliderInt( "Bounce Iters##Solver", &context->restitutionIterations, 0, 8 );
+		HelpMarker( "Iterations for the restitution solver." );
+
+		ImGui::SliderFloat( "Hertz##Solver", &context->hertz, 5.0f, 240.0f, "%.0f Hz" );
+		HelpMarker( "The number of world steps per second." );
+
+		if ( ImGui::SliderInt( "Workers##Solver", &context->workerCount, 1, B3_MAX_WORKERS ) )
+		{
+			context->workerCount = b3ClampInt( context->workerCount, 1, B3_MAX_WORKERS );
+			SelectSample( context, context->sampleIndex, true );
+		}
+		HelpMarker( "The number worker threads used by the world step." );
+
+		float recyclingCentimeters = 100.0f * context->recycleDistance;
+		if ( ImGui::SliderFloat( "Recycle##Solver", &recyclingCentimeters, 0.0f, 10.0f, "%.1f cm" ) )
+		{
+			context->recycleDistance = 0.01f * recyclingCentimeters;
+			b3World_SetContactRecycleDistance( context->sample->m_worldId, context->recycleDistance );
+		}
+		HelpMarker( "The contact recycling distance tolerance.\nSet to zero to disable recycling." );
+		ImGui::PopItemWidth();
+
+		ImGui::Checkbox( "Sleep##Solver", &context->enableSleep );
+		HelpMarker( "Allow bodies to sleep, reducing simulation CPU cost." );
+
+		ImGui::Checkbox( "Warm Starting##Solver", &context->enableWarmStarting );
+		HelpMarker( "Enable solver warm starting which usually improves stacking stability." );
+
+		ImGui::Checkbox( "Continuous##Solver", &context->enableContinuous );
+		HelpMarker( "Enable continuous collision detection." );
+
+		ImGui::Checkbox( "Bounce Propagation##Solver", &context->enableRestitutionPropagation );
+		HelpMarker( "Enable restitution solver propagation across all touching contacts points" );
+
+		static bool avx2Available = b3IsAVX2Available();
+		if ( avx2Available )
+		{
+			ImGui::Checkbox( "SSE2 Fallback##Solver", &context->enableSSE2Fallback );
+			HelpMarker( "Use the 4 wide SSE2 path instead of the 8 wide AVX2 path.\nThe simulation is bitwise identical either way." );
+		}
+
+		if ( ImGui::Shortcut( ImGuiKey_R ) || ImGui::Button( "Restart" ) )
+		{
+			SelectSample( context, context->sampleIndex, true );
+		}
+	}
+
+	if ( context->sample->HasSolverControls() && ImGui::CollapsingHeader( "Recording", ImGuiTreeNodeFlags_DefaultOpen ) )
+	{
+		ImGui::PushItemWidth( 9.0f * fontSize );
+		ImGui::InputText( "File##Recording", context->recordingFile, sizeof( context->recordingFile ) );
+		ImGui::PopItemWidth();
+
+		if ( context->sample->m_recording == nullptr )
+		{
+			// Restart to a clean world then snapshot it at step 0, a whole session capture.
+			if ( ImGui::Button( "Record (restart)##Recording" ) )
+			{
+				SelectSample( context, context->sampleIndex, true );
+				context->sample->StartRecording();
+			}
+
+			// Snapshot the running world and log from here, the mid simulation case.
+			if ( ImGui::Button( "Record Now##Recording" ) )
+			{
+				context->sample->StartRecording();
+			}
+
+			if ( g_replayIndex >= 0 && context->savedRecordingFile[0] != 0 )
+			{
+				if ( ImGui::Button( "Play##Recording" ) )
+				{
+					snprintf( context->replayFile, sizeof( context->replayFile ), "%s", context->savedRecordingFile );
+					SelectSample( context, g_replayIndex, false );
+				}
+				ImGui::SetItemTooltip( "Open %s in the replay viewer", context->savedRecordingFile );
+			}
+		}
+		else
+		{
+			if ( ImGui::Button( "Stop##Recording" ) )
+			{
+				context->sample->FinishRecording();
+			}
+		}
+
+		if ( context->sample->m_recording != nullptr )
+		{
+			float kilobytes = b3Recording_GetSize( context->sample->m_recording ) / 1024.0f;
+			int steps = context->sample->m_stepCount - context->sample->m_recordStartStep;
+			if ( kilobytes < 1024.0f )
+			{
+				ImGui::TextColored( HexColor( b3_colorRed ), "recording %d steps, %.0f KB", steps, kilobytes );
+			}
+			else
+			{
+				ImGui::TextColored( HexColor( b3_colorRed ), "recording %d steps, %.1f MB", steps, kilobytes / 1024.0f );
+			}
+		}
+	}
+
+	ImGui::End();
+}
+
+// Minimal in-world HUD shown only when the UI is hidden: sample identity at the
+// top-left, frame time and step count at the bottom-left. Matches Box2D DrawHud.
+static void DrawHud( SampleContext* context )
+{
+	const SampleEntry& entry = g_sampleEntries[context->sampleIndex];
+	float fontSize = ImGui::GetFontSize();
+
+	DrawScreenStringFormat( 5, (int)( 0.5f * fontSize ), MakeColor( b3_colorYellow ), "%s : %s", entry.Category, entry.Name );
+
+	if ( context->pause )
+	{
+		DrawScreenString( 5, (int)( 3.0f * fontSize ), MakeColor( b3_colorRed ), "****PAUSED****" );
+	}
+
+	DrawScreenStringFormat( 5, context->camera.m_height - (int)( 1.5f * fontSize ), MakeColor( b3_colorSeaGreen ),
+							"%.1f ms  step %d", 1000.0f * (float)sapp_frame_duration(), context->sample->m_stepCount );
+}
+
+void DrawUI( SampleContext* context )
+{
+	// Hidden shows only the minimal in-world HUD.
+	if ( context->showUI == false )
+	{
+		if ( context->showText )
+		{
+			DrawHud( context );
+		}
+		return;
+	}
+
+	DrawMenuBar( context );
+	DrawSamplePicker( context );
+	DrawInfoPanel( context );
+
+	// Extra top-level windows (the Replay viewer adds the Outline panel).
+	context->sample->DrawSampleWindows();
+
+	// Sample controls live in the info panel.
+	context->sample->DrawProfile();
+	context->sample->DrawMetrics();
+}
+
+void Sample::ToggleThirdPerson()
+{
+	if ( m_camera->m_thirdPerson )
+	{
+		sapp_lock_mouse( false );
+		m_camera->m_thirdPerson = false;
+	}
+	else
+	{
+		sapp_lock_mouse( true );
+		m_camera->m_thirdPerson = true;
+		ClearSelection();
+	}
+}
+
+MoverInput Sample::GetMoverInput() const
+{
+	MoverInput input = {};
+	input.forward = -m_camera->GetForward();
+	input.right = m_camera->GetRight();
+
+	input.forward.y = 0.0f;
+	input.forward = b3Normalize( input.forward );
+
+	if ( m_camera->m_thirdPerson == false )
+	{
+		return input;
+	}
+
+	if ( IsKeyDown( KEY_W ) )
+	{
+		input.throttle.x += 1.0f;
+	}
+
+	if ( IsKeyDown( KEY_S ) )
+	{
+		input.throttle.x -= 1.0f;
+	}
+
+	if ( IsKeyDown( KEY_A ) )
+	{
+		input.throttle.y -= 1.0f;
+	}
+
+	if ( IsKeyDown( KEY_D ) )
+	{
+		input.throttle.y += 1.0f;
+	}
+
+	input.jump = IsKeyDown( KEY_SPACE );
+	input.sprint = IsKeyDown( KEY_LEFT_SHIFT ) || IsKeyDown( KEY_RIGHT_SHIFT );
+	input.walk = IsKeyDown( KEY_LEFT_CONTROL ) || IsKeyDown( KEY_RIGHT_CONTROL );
+	return input;
+}
+
+float CastClosestCallback( b3ShapeId shapeId, b3Pos point, b3Vec3 normal, float fraction, uint64_t materialId, int triangleIndex,
+						   int childIndex, void* context )
+{
+	CastClosestContext* rayContext = (CastClosestContext*)context;
+	rayContext->shapeId = shapeId;
+	rayContext->point = point;
+	rayContext->normal = normal;
+	rayContext->fraction = fraction;
+	rayContext->materialId = materialId;
+	rayContext->childIndex = childIndex;
+	rayContext->triangleIndex = triangleIndex;
+	rayContext->hit = true;
+	return fraction;
+}
+
+MechanicalEnergy MeasureEnergy( b3WorldId worldId, const b3BodyId* bodyIds, int count )
+{
+	b3Vec3 gravity = b3World_GetGravity( worldId );
+
+	MechanicalEnergy energy = {};
+	for ( int i = 0; i < count; ++i )
+	{
+		b3MassData massData = b3Body_GetMassData( bodyIds[i] );
+		b3Vec3 v = b3Body_GetLinearVelocity( bodyIds[i] );
+
+		// The inertia tensor is in the body frame, so bring the angular velocity back to it
+		b3Vec3 w = b3InvRotateVector( b3Body_GetRotation( bodyIds[i] ), b3Body_GetAngularVelocity( bodyIds[i] ) );
+
+		energy.linear += 0.5f * massData.mass * b3Dot( v, v );
+		energy.angular += 0.5f * b3Dot( w, b3MulMV( massData.inertia, w ) );
+		energy.potential -= massData.mass * b3Dot( gravity, b3ToVec3( b3Body_GetWorldCenter( bodyIds[i] ) ) );
+	}
+
+	return energy;
+}

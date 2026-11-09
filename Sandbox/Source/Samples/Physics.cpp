@@ -265,7 +265,7 @@ void PhysicsSample::OnInit(){
     //scene->Save("test.scene", EntityNull);
     
     //scene->Start();
-    Application::AddModule<Editor>(false);
+    Application::AddModule<Editor>(true);
 
     //LogInfo("Testdff!!!!!!!!!!!!");
 

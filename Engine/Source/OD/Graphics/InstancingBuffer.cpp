@@ -76,6 +76,8 @@ bool InstancingBuffer::IsValid(){
 //}
 
 void InstancingBuffer::SetData(const Matrix4* data, unsigned int incount){
+    if(incount == 0) return;
+
     #ifdef TestNewGPU_API
     //Assert(false);
     if(buffer != Gfx::InvalidID) gfxDevice->DestroyBuffer(buffer);

@@ -1295,7 +1295,7 @@ void Scene::Load(const char* path){
 }
 
 void Scene::_Load(const char* path, entt::entity prefab){
-    LogWarning("LoadingPrefab: {}", path);
+    LogInfo("LoadingPrefab: {}", path);
     //Assert(false);
 
     ResourceStream as(path, ResourceManager::Get().GetPackages());
@@ -1346,7 +1346,7 @@ void Scene::_Load(const char* path, entt::entity prefab){
 }
 
 Entity Scene::InstantiatePrefab(const char* path){
-    //LogWarning("LoadingPrefab: %s", path);
+    //LogInfo("LoadingPrefab: %s", path);
     //Assert(false);
 
     std::ifstream is(path);

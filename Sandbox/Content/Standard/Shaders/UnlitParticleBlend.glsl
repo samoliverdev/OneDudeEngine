@@ -13,6 +13,7 @@
     DepthTest NONE
     DepthMask False
     Blend SRC_ALPHA ONE_MINUS_SRC_ALPHA
+    RenderPass DefaultWindows Forward 
 #pragma EndPassDef
 
 //SRC_ALPHA ONE_MINUS_SRC_ALPHA

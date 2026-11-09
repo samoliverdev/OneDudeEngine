@@ -1,0 +1,87 @@
+// SPDX-FileCopyrightText: 2025 Erin Catto
+// SPDX-License-Identifier: MIT
+#pragma once
+
+#include "box3d/id.h"
+#include "box3d/math_functions.h"
+
+#include <stdbool.h>
+
+// This allows benchmarks to be tested on the benchmark app and also visualized in the samples app
+
+typedef struct b3Capacity b3Capacity;
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+// This is used by the sample app to draw a ground grid. Should only
+// be used for box hulls.
+b3ShapeId GetGroundShapeId( void );
+void ResetGroundShapeId( void );
+
+void CreateTrees25( b3WorldId worldId );
+void CreateTrees50( b3WorldId worldId );
+void CreateTrees100( b3WorldId worldId );
+void DestroyTrees( void );
+void CreateMeshDropBenchmark( b3WorldId worldId );
+void DestroyMeshDropBenchmark( void );
+void CreateJointGrid( b3WorldId worldId );
+void CreateJunkyard( b3WorldId worldId );
+void GetJunkyardCapacity( b3Capacity* capacity );
+void StepJunkyard( b3WorldId worldId, int stepCount );
+void CreateLargePyramid( b3WorldId worldId );
+void CreateWidePyramid( b3WorldId worldId );
+void CreateManyPyramids( b3WorldId worldId );
+void GetRainCapacity( b3Capacity* capacity );
+void CreateRain( b3WorldId worldId );
+void StepRain( b3WorldId worldId, int stepCount );
+void DestroyRain( void );
+void GetLargeWorldCapacity( b3Capacity* capacity );
+void CreateLargeWorld( b3WorldId worldId );
+void StepLargeWorld( b3WorldId worldId, int stepCount );
+void GetWasherCapacity( b3Capacity* capacity );
+void CreateWasher( b3WorldId worldId );
+void CreateConvexPile( b3WorldId worldId );
+void GetConvexPileCapacity( b3Capacity* capacity );
+void GetSpinnerCapacity( b3Capacity* capacity );
+void CreateSpinner( b3WorldId worldId );
+void DestroySpinner( void );
+float GetSpinnerAngle( void );
+void GetSleepCapacity( b3Capacity* capacity );
+void CreateSleep( b3WorldId worldId );
+void StepSleep( b3WorldId worldId, int stepCount );
+
+#define VILLAGE_STEP_COUNT 600
+
+typedef struct VillageCast
+{
+	b3Pos origin;
+	b3Pos point;
+	b3Vec3 normal;
+	float fraction;
+	bool hit;
+} VillageCast;
+
+// The sphere casts from the latest village step, for drawing
+typedef struct VillageCurtain
+{
+	const VillageCast* casts;
+	int castCount;
+	b3Vec3 translation;
+	float radius;
+} VillageCurtain;
+
+void GetVillageCapacity( b3Capacity* capacity );
+void CreateVillage( b3WorldId worldId );
+void StepVillage( b3WorldId worldId, int stepIndex );
+void DestroyVillage( void );
+VillageCurtain GetVillageCurtain( void );
+
+// void CreateSmash( b3WorldId worldId );
+// void CreateTumbler( b3WorldId worldId );
+
+#ifdef __cplusplus
+}
+#endif

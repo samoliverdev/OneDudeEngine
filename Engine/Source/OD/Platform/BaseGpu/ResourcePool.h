@@ -1,6 +1,8 @@
 #pragma once
 #include "OD/Core/Log.h"
 #include "OD/Gfx/Gfx.h"
+#include <functional>
+#include <utility>
 #include <vector>
 
 namespace OD{
@@ -49,6 +51,14 @@ struct ResourcePool{
     uint32_t InvalidID = std::numeric_limits<uint32_t>::max();
 
     DebugRWGuard poolGuard;
+
+    /*inline void SetDestroyFunction(std::function<void(T&)> function){
+        destroyFunction = std::move(function);
+    }*/
+
+    inline bool HasPendingDestroyedIds() const{
+        return !idsDestred.empty();
+    }
 
     inline bool IsValid(uint32_t id){
         if(id == InvalidID) return false;
@@ -151,6 +161,7 @@ struct ResourcePool{
         poolGuard.BeginWrite();
 
         for(auto id : idsDestred){
+            //if(destroyFunction) destroyFunction(Get(id));
             freeIds.push_back(id);
         }
         idsDestred.clear();
@@ -205,6 +216,7 @@ private:
 
     std::vector<uint32_t> freeIds;
     std::vector<uint32_t> idsDestred;
+    //std::function<void(T&)> destroyFunction;
     uint32_t curId = 0;
 
     std::vector<uint32_t> singleThreadIds;

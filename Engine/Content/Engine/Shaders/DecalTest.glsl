@@ -19,6 +19,8 @@
     DepthMask False
     DepthTest LESS_EQUAL
     Blend SRC_ALPHA ONE_MINUS_SRC_ALPHA
+
+    RenderPass Deferred DeferredCopy
 #pragma EndPassDef
 
 #define Deferred
@@ -40,12 +42,12 @@ BeginUniform(0, 0, Main)
     Uniform float startFade;
     Uniform float endFade;
 EndUniform()
-Texture2D(0, 1, mainTex, mainSampler)
+Texture2D(0, 10, mainTex, mainSampler)
 //Texture2D(0, 2, gPosition, gPositionSampler)
-Texture2D(0, 3, gNormal, gNormalSampler)
-Texture2D(0, 4, gAlbedoSpec, gAlbedoSpecSampler)
-Texture2D(0, 4, gOther, gOtherSpecSampler)
-Texture2D(0, 10, gDepth, gDepthSampler)
+Texture2D(0, 11, gNormal, gNormalSampler)
+Texture2D(0, 12, gAlbedoSpec, gAlbedoSpecSampler)
+Texture2D(0, 13, gOther, gOtherSpecSampler)
+Texture2D(0, 14, gDepth, gDepthSampler)
 
 #if defined(VERTEX) && defined(MainPass)
     //flat out mat4 outDecalWorldToLocal;

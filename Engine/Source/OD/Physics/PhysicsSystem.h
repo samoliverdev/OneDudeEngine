@@ -5,11 +5,18 @@
 #include "OD/Animation/Pose.h"
 #include "concurrentqueue.h"
 
-#define UseJoltPhysics
+#define OD_PHYSICS_BACKEND_JOLT
+//#define OD_PHYSICS_BACKEND_BOX3D
 
+#if defined(OD_PHYSICS_BACKEND_BOX3D)
+#include <box3d/box3d.h>
+#endif
+
+#if defined(OD_PHYSICS_BACKEND_JOLT)
 namespace JPH{
     class BodyInterface;
 }
+#endif
  
 namespace OD{
 
@@ -275,7 +282,7 @@ private:
     float friction = 0.2f;
     float linearDamping = 0;
     float angularDamping = 0.05;
-    PhysicMotionQuality motionQuality;
+    PhysicMotionQuality motionQuality = PhysicMotionQuality::Discrete;
     bool neverSleep = false;
     bool useTransformScale = true;
 
@@ -359,8 +366,8 @@ struct OD_API RagdollComponent{
     enum class Type{Dynamic, Kinematic, Static, Trigger, Disable};
     enum class MotorType{None, Jolt, TargetRot, TargetRotLocal};
 
-    Type type;
-    MotorType motorType;
+    Type type = Type::Dynamic;
+    MotorType motorType = MotorType::None;
 
     bool interpolate = false;
     bool isDirty = true;
@@ -677,6 +684,8 @@ private:
     //bool disableSelfCollision = true;
     bool isDirty = true;
 
+    Scene* scene = nullptr; // Runtime-only owner for backend queries.
+
     class JointObject* data = nullptr;
 };
 
@@ -717,7 +726,9 @@ private:
     btCollisionObject* body = nullptr;
     #endif
 
-    #if defined(UseJoltPhysics)
+#if defined(OD_PHYSICS_BACKEND_BOX3D)
+    class Box3DHeightmapData* data = nullptr;
+    #elif defined(OD_PHYSICS_BACKEND_JOLT)
     class PhysicObject* data = nullptr; 
     #endif
 };
@@ -879,7 +890,9 @@ struct OD_API PhysicsSystem: public System{
     virtual void OnDrawGizmos(Scene& scene, Camera& cam) override;
 
     void _PostPhysicsUpdate(bool onlyPostSync, bool canInterpolate);
+#if defined(OD_PHYSICS_BACKEND_JOLT)
     void UpdateHipsMotor(RagdollComponent& ragdoll, SkinnedModelRendererComponent& skinned, TransformComponent& trans, JPH::BodyInterface& bodyInterface);
+#endif
 
     void ShowDebugGizmos();
 
@@ -962,6 +975,7 @@ private:
     Scene* scene;
 
 public:
+#if defined(OD_PHYSICS_BACKEND_JOLT)
     static void _SyncRagdollToPose(Scene& scene, SkinnedModelRendererComponent& skinned, RagdollComponent& ragdoll, TransformComponent& trans, InfoComponent& info, JPH::BodyInterface& bodyInterface, bool canInterpolate);
 
     //INFO: I think this can be a litter performace impruvment instead of using lambda
@@ -976,6 +990,7 @@ public:
         bool canInterpolate;
         void operator()();
     };
+#endif
 };
 
 void PhysicsModuleInit();

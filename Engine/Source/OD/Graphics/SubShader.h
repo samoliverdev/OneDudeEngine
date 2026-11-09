@@ -67,7 +67,7 @@ struct OD_API ShaderPipeline{
     BlendMode dstAlphaBlend;
     BlendOp opBlend = BlendOp::FUNC_ADD;
 
-    bool supportInstancing;
+    bool supportInstancing = false;
 
     template <class Archive>
     void serialize(Archive& ar){

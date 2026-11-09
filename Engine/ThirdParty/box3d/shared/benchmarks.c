@@ -1,0 +1,1615 @@
+// SPDX-FileCopyrightText: 2026 Erin Catto
+// SPDX-License-Identifier: MIT
+
+#include "benchmarks.h"
+
+#include "human.h"
+#include "utils.h"
+
+#include "box3d/box3d.h"
+
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
+
+#ifdef NDEBUG
+#define BENCHMARK_DEBUG 0
+#else
+#define BENCHMARK_DEBUG 1
+#endif
+
+static b3ShapeId g_groundShapeId = { 0 };
+
+b3ShapeId GetGroundShapeId( void )
+{
+	return g_groundShapeId;
+}
+
+void ResetGroundShapeId( void )
+{
+	g_groundShapeId = b3_nullShapeId;
+}
+
+void CreateJointGrid( b3WorldId worldId )
+{
+	b3World_EnableSleeping( worldId, false );
+
+	int n = BENCHMARK_DEBUG ? 10 : 100;
+
+	// Allocate to avoid huge stack usage
+	b3BodyId* bodies = malloc( n * n * sizeof( b3BodyId ) );
+	int index = 0;
+
+	b3ShapeDef shapeDef = b3DefaultShapeDef();
+	shapeDef.filter.categoryBits = 2;
+	shapeDef.filter.maskBits = ~2u;
+
+	b3Sphere sphere = { { 0.0f, 0.0f, 0.0f }, 0.4f };
+
+	b3SphericalJointDef jointDef = b3DefaultSphericalJointDef();
+	b3BodyDef bodyDef = b3DefaultBodyDef();
+	bodyDef.enableSleep = false;
+
+	for ( int k = 0; k < n; ++k )
+	{
+		for ( int i = 0; i < n; ++i )
+		{
+			float fk = (float)k;
+			float fi = (float)i;
+
+			if ( i == 0 )
+			{
+				bodyDef.type = b3_staticBody;
+			}
+			else
+			{
+				bodyDef.type = b3_dynamicBody;
+			}
+
+			bodyDef.position = (b3Pos){ fk, -fi, 0.0f };
+
+			b3BodyId body = b3CreateBody( worldId, &bodyDef );
+
+			b3CreateSphereShape( body, &shapeDef, &sphere );
+
+			if ( i > 0 )
+			{
+				jointDef.base.bodyIdA = bodies[index - 1];
+				jointDef.base.bodyIdB = body;
+				jointDef.base.localFrameA.p = (b3Vec3){ 0.0f, -0.5f, 0.0f };
+				jointDef.base.localFrameB.p = (b3Vec3){ 0.0f, 0.5f, 0.0f };
+				b3CreateSphericalJoint( worldId, &jointDef );
+			}
+
+			if ( k > 0 )
+			{
+				jointDef.base.bodyIdA = bodies[index - n];
+				jointDef.base.bodyIdB = body;
+				jointDef.base.localFrameA.p = (b3Vec3){ 0.5f, 0.0f, 0.0f };
+				jointDef.base.localFrameB.p = (b3Vec3){ -0.5f, 0.0f, 0.0f };
+				b3CreateSphericalJoint( worldId, &jointDef );
+			}
+
+			bodies[index++] = body;
+		}
+	}
+
+	free( bodies );
+}
+
+// The 80 block version falls over after 1000 steps.
+void CreateLargePyramid( b3WorldId worldId )
+{
+	b3World_EnableSleeping( worldId, false );
+
+	int baseCount = BENCHMARK_DEBUG ? 20 : 100;
+
+	{
+		b3BodyDef bodyDef = b3DefaultBodyDef();
+		bodyDef.position = (b3Pos){ 0.0f, -1.0f, 0.0f };
+		b3BodyId groundId = b3CreateBody( worldId, &bodyDef );
+
+		b3BoxHull box = b3MakeBoxHull( 400.0f, 1.0f, 400.0f );
+		b3ShapeDef shapeDef = b3DefaultShapeDef();
+		g_groundShapeId = b3CreateHullShape( groundId, &shapeDef, &box.base );
+	}
+
+	b3BodyDef bodyDef = b3DefaultBodyDef();
+	bodyDef.type = b3_dynamicBody;
+
+	b3ShapeDef shapeDef = b3DefaultShapeDef();
+	shapeDef.density = 100.0f;
+
+	float h = 0.5f;
+	b3BoxHull box = b3MakeBoxHull( h, h, h );
+
+	float shift = 1.0f * h;
+
+	for ( int i = 0; i < baseCount; ++i )
+	{
+		float y = ( 2.0f * i + 1.0f ) * shift;
+
+		for ( int j = i; j < baseCount; ++j )
+		{
+			float x = ( i + 1.0f ) * shift + 2.0f * ( j - i ) * shift - h * baseCount;
+
+			bodyDef.position = (b3Pos){ x, y, 0.0f };
+
+			b3BodyId bodyId = b3CreateBody( worldId, &bodyDef );
+			b3CreateHullShape( bodyId, &shapeDef, &box.base );
+		}
+	}
+}
+
+void CreateWidePyramid( b3WorldId worldId )
+{
+	{
+		b3BodyDef bodyDef = b3DefaultBodyDef();
+		bodyDef.position = (b3Pos){ 0.0f, -1.0f, 0.0f };
+		b3BodyId groundId = b3CreateBody( worldId, &bodyDef );
+
+		b3BoxHull box = b3MakeBoxHull( 100.0f, 1.0f, 100.0f );
+		b3ShapeDef shapeDef = b3DefaultShapeDef();
+		g_groundShapeId = b3CreateHullShape( groundId, &shapeDef, &box.base );
+	}
+
+	const float boxSize = 2.0f;
+	const float boxSeparation = 0.5f;
+	const float halfBoxSize = 0.5f * boxSize;
+	const int pyramidHeight = BENCHMARK_DEBUG ? 5 : 15;
+
+	float h = halfBoxSize - 0.025;
+	b3BoxHull box = b3MakeBoxHull( h, h, h );
+	b3BodyDef bodyDef = b3DefaultBodyDef();
+	bodyDef.type = b3_dynamicBody;
+
+	b3ShapeDef shapeDef = b3DefaultShapeDef();
+
+	for ( int i = 0; i < pyramidHeight; ++i )
+	{
+		for ( int j = i / 2; j < pyramidHeight - ( i + 1 ) / 2; ++j )
+		{
+			for ( int k = i / 2; k < pyramidHeight - ( i + 1 ) / 2; ++k )
+			{
+				float x = -pyramidHeight + boxSize * j + ( i & 1 ? halfBoxSize : 0.0f );
+				float y = 1.0f + ( boxSize + boxSeparation ) * i;
+				float z = -pyramidHeight + boxSize * k + ( i & 1 ? halfBoxSize : 0.0f );
+				bodyDef.position = (b3Pos){ x, y, z };
+
+				b3BodyId bodyId = b3CreateBody( worldId, &bodyDef );
+				b3CreateHullShape( bodyId, &shapeDef, &box.base );
+			}
+		}
+	}
+}
+
+static void CreateSmallPyramid( b3WorldId worldId, int baseCount, float extent, float centerX, float baseZ )
+{
+	b3BodyDef bodyDef = b3DefaultBodyDef();
+	bodyDef.type = b3_dynamicBody;
+	bodyDef.enableSleep = false;
+
+	b3ShapeDef shapeDef = b3DefaultShapeDef();
+	shapeDef.density = 100.0f;
+
+	b3BoxHull box = b3MakeBoxHull( extent, extent, extent );
+
+	for ( int i = 0; i < baseCount; ++i )
+	{
+		float y = ( 2.0f * i + 1.0f ) * extent;
+
+		for ( int j = i; j < baseCount; ++j )
+		{
+			float x = ( i + 1.0f ) * extent + 2.0f * ( j - i ) * extent + centerX - 0.5f;
+			bodyDef.position = (b3Pos){ x, y, baseZ };
+
+			b3BodyId bodyId = b3CreateBody( worldId, &bodyDef );
+			b3CreateHullShape( bodyId, &shapeDef, &box.base );
+		}
+	}
+}
+
+void CreateManyPyramids( b3WorldId worldId )
+{
+	int baseCount = 10;
+	float extent = 0.5f;
+	int rowCount = BENCHMARK_DEBUG ? 3 : 14;
+	int columnCount = BENCHMARK_DEBUG ? 3 : 14;
+	float groundExtent = extent * columnCount * ( baseCount + 1.0f );
+
+	{
+		b3BodyDef bodyDef = b3DefaultBodyDef();
+		bodyDef.position = (b3Pos){ 0.0f, -1.0f, 0.0f };
+		b3BodyId groundId = b3CreateBody( worldId, &bodyDef );
+
+		b3ShapeDef shapeDef = b3DefaultShapeDef();
+		b3BoxHull box = b3MakeBoxHull( groundExtent, 1.0f, groundExtent );
+		g_groundShapeId = b3CreateHullShape( groundId, &shapeDef, &box.base );
+	}
+
+	float baseWidth = 2.0f * extent * baseCount;
+	float baseZ = -groundExtent + 2.0f * extent;
+	float deltaZ = 2.0f * ( groundExtent - 2.0f * extent ) / ( rowCount - 1.0f );
+
+	for ( int i = 0; i < rowCount; ++i )
+	{
+		for ( int j = 0; j < columnCount; ++j )
+		{
+			float centerX = -groundExtent + j * ( baseWidth + 2.0f * extent ) + 2.0f * extent;
+			CreateSmallPyramid( worldId, baseCount, extent, centerX, baseZ );
+		}
+
+		baseZ += deltaZ;
+	}
+}
+
+#define RAIN_GRID_SIZE 15.0f
+#define RAIN_LARGE_WORLD 0
+#ifdef NDEBUG
+#if RAIN_LARGE_WORLD == 1
+#define RAIN_GRID_COUNT 700
+#define RAIN_GROUP_SIZE 1
+#else
+#define RAIN_GRID_COUNT 10
+#define RAIN_GROUP_SIZE 3
+#endif
+
+#else
+
+#if RAIN_LARGE_WORLD == 1
+#define RAIN_GRID_COUNT 12
+#define RAIN_GROUP_SIZE 1
+#else
+#define RAIN_GRID_COUNT 3
+#define RAIN_GROUP_SIZE 2
+#endif
+#endif
+
+typedef struct Group
+{
+	Human humans[RAIN_GROUP_SIZE];
+} Group;
+
+typedef struct RainData
+{
+	Group* groups;
+	b3MeshData* gridMesh;
+	b3MeshData* torusMesh;
+	int columnCount;
+	int columnIndex;
+} RainData;
+
+RainData g_rainData;
+
+void GetRainCapacity( b3Capacity* capacity )
+{
+#if RAIN_LARGE_WORLD == 1
+#ifdef NDEBUG
+	capacity->staticShapeCount = 1000 * 1024;
+	capacity->dynamicShapeCount = 2 * 1024;
+	capacity->staticBodyCount = 500 * 1024;
+	capacity->dynamicBodyCount = 2 * 1024;
+#else
+	capacity->staticShapeCount = 512;
+	capacity->dynamicShapeCount = 128;
+	capacity->staticBodyCount = 256;
+	capacity->dynamicBodyCount = 128;
+#endif
+#endif
+}
+
+void CreateRain( b3WorldId worldId )
+{
+	memset( &g_rainData, 0, sizeof( g_rainData ) );
+
+	g_rainData.groups = malloc( RAIN_GRID_COUNT * RAIN_GRID_COUNT * sizeof( Group ) );
+	memset( g_rainData.groups, 0, RAIN_GRID_COUNT * RAIN_GRID_COUNT * sizeof( Group ) );
+
+	int halfMeshGridRows = 4;
+	float meshGridCellWidth = RAIN_GRID_SIZE / ( 2.0f * halfMeshGridRows );
+	g_rainData.gridMesh = b3CreateGridMesh( 2 * halfMeshGridRows, 2 * halfMeshGridRows, meshGridCellWidth, 1, true );
+	g_rainData.torusMesh = b3CreateTorusMesh( 16, 16, 0.25f * RAIN_GRID_SIZE, 1.0f );
+
+	float span = RAIN_GRID_SIZE * RAIN_GRID_COUNT;
+	b3BodyDef bodyDef = b3DefaultBodyDef();
+	b3ShapeDef shapeDef = b3DefaultShapeDef();
+
+	bodyDef.position.x = -0.5f * span + 0.5f * RAIN_GRID_SIZE;
+	for ( int i = 0; i < RAIN_GRID_COUNT; ++i )
+	{
+		bodyDef.position.z = -0.5f * span + 0.5f * RAIN_GRID_SIZE;
+		for ( int j = 0; j < RAIN_GRID_COUNT; ++j )
+		{
+			b3BodyId body = b3CreateBody( worldId, &bodyDef );
+			b3CreateMeshShape( body, &shapeDef, g_rainData.gridMesh, b3Vec3_one );
+			b3CreateMeshShape( body, &shapeDef, g_rainData.torusMesh, b3Vec3_one );
+
+			bodyDef.position.z += RAIN_GRID_SIZE;
+		}
+
+		bodyDef.position.x += RAIN_GRID_SIZE;
+	}
+
+	// b3World_SetJointTuning( worldId, 60.0f, 1.0f );
+}
+
+void DestroyRain( void )
+{
+	b3DestroyMesh( g_rainData.gridMesh );
+	b3DestroyMesh( g_rainData.torusMesh );
+
+	free( g_rainData.groups );
+	g_rainData.groups = NULL;
+}
+
+void CreateGroup( b3WorldId worldId, int rowIndex, int columnIndex )
+{
+	assert( rowIndex < RAIN_GRID_COUNT && columnIndex < RAIN_GRID_COUNT );
+
+	int groupIndex = rowIndex * RAIN_GRID_COUNT + columnIndex;
+
+	float span = RAIN_GRID_COUNT * RAIN_GRID_SIZE;
+	float groupDistance = 1.0f * span / RAIN_GRID_COUNT;
+
+	b3Pos position;
+	position.x = -0.5f * span + groupDistance * ( columnIndex + 0.5f );
+	position.y = 20.0f;
+	position.z = -0.5f * span + groupDistance * ( rowIndex + 0.5f );
+
+	float frictionTorque = 5.0f;
+	float hertz = 1.0f;
+	float dampingRatio = 0.7f;
+	bool colorize = false;
+
+	for ( int i = 0; i < RAIN_GROUP_SIZE; ++i )
+	{
+		Human* human = g_rainData.groups[groupIndex].humans + i;
+		CreateHuman( human, worldId, position, frictionTorque, hertz, dampingRatio, groupIndex, NULL, colorize );
+		position.x += 0.75f;
+	}
+}
+
+void DestroyGroup( int rowIndex, int columnIndex )
+{
+	assert( rowIndex < RAIN_GRID_COUNT && columnIndex < RAIN_GRID_COUNT );
+
+	int groupIndex = rowIndex * RAIN_GRID_COUNT + columnIndex;
+
+	for ( int i = 0; i < RAIN_GROUP_SIZE; ++i )
+	{
+		DestroyHuman( g_rainData.groups[groupIndex].humans + i );
+	}
+}
+
+void StepRain( b3WorldId worldId, int stepCount )
+{
+	int delay = BENCHMARK_DEBUG ? 0x7F : 0x2F;
+	int increment = RAIN_LARGE_WORLD ? 100 : 1;
+
+	if ( ( stepCount & delay ) == 0 )
+	{
+		if ( g_rainData.columnCount < RAIN_GRID_COUNT )
+		{
+			for ( int i = 0; i < RAIN_GRID_COUNT; i += increment )
+			{
+				CreateGroup( worldId, i, g_rainData.columnCount );
+			}
+
+			g_rainData.columnCount = b3MinInt( g_rainData.columnCount + increment, RAIN_GRID_COUNT );
+		}
+		else
+		{
+			for ( int i = 0; i < RAIN_GRID_COUNT; i += increment )
+			{
+				DestroyGroup( i, g_rainData.columnIndex );
+				CreateGroup( worldId, i, g_rainData.columnIndex );
+			}
+
+			g_rainData.columnIndex = g_rainData.columnIndex + increment;
+			if ( g_rainData.columnIndex >= RAIN_GRID_COUNT )
+			{
+				g_rainData.columnIndex = 0;
+			}
+		}
+	}
+}
+
+// Static Floor: a huge grid of static box bodies with b3ShapeDef::invokeContactCreation = true,
+// plus a small number of dynamic spheres that drop onto it staggered over time. The point of this
+// benchmark is to exercise the b3BroadPhase move buffer at steady state when it was once populated
+// with ~staticShapeCount entries and now sees only a handful of dynamic moves per step.
+#define STATIC_FLOOR_CELL_SIZE 10.0f
+#if BENCHMARK_DEBUG
+#define STATIC_FLOOR_GRID 32
+#define STATIC_FLOOR_SPHERES 16
+#define STATIC_FLOOR_DROP_INTERVAL 8
+#else
+#define STATIC_FLOOR_GRID 1000
+#define STATIC_FLOOR_SPHERES 100
+#define STATIC_FLOOR_DROP_INTERVAL 5
+#endif
+
+typedef struct StaticFloorData
+{
+	int spheresDropped;
+} StaticFloorData;
+
+static StaticFloorData g_staticFloorData;
+
+void GetLargeWorldCapacity( b3Capacity* capacity )
+{
+	int floorCount = STATIC_FLOOR_GRID * STATIC_FLOOR_GRID;
+	capacity->staticShapeCount = floorCount;
+	capacity->staticBodyCount = floorCount;
+	capacity->dynamicShapeCount = STATIC_FLOOR_SPHERES;
+	capacity->dynamicBodyCount = STATIC_FLOOR_SPHERES;
+	capacity->contactCount = b3MaxInt( 1024, 8 * STATIC_FLOOR_SPHERES );
+}
+
+void CreateLargeWorld( b3WorldId worldId )
+{
+	memset( &g_staticFloorData, 0, sizeof( g_staticFloorData ) );
+
+	float cell = STATIC_FLOOR_CELL_SIZE;
+	int gridCount = STATIC_FLOOR_GRID;
+	float halfSpan = 0.5f * cell * gridCount;
+
+	b3BoxHull box = b3MakeBoxHull( 0.5f * cell, 0.25f, 0.5f * cell );
+
+	b3BodyDef bodyDef = b3DefaultBodyDef();
+	b3ShapeDef shapeDef = b3DefaultShapeDef();
+
+	// The trigger: every static shape gets buffered into the move set on creation.
+	shapeDef.invokeContactCreation = true;
+
+	for ( int i = 0; i < gridCount; ++i )
+	{
+		float x = -halfSpan + ( i + 0.5f ) * cell;
+		for ( int j = 0; j < gridCount; ++j )
+		{
+			float z = -halfSpan + ( j + 0.5f ) * cell;
+			bodyDef.position = (b3Pos){ x, 0.0f, z };
+			b3BodyId body = b3CreateBody( worldId, &bodyDef );
+			b3CreateHullShape( body, &shapeDef, &box.base );
+		}
+	}
+}
+
+void StepLargeWorld( b3WorldId worldId, int stepCount )
+{
+	if ( g_staticFloorData.spheresDropped >= STATIC_FLOOR_SPHERES )
+	{
+		return;
+	}
+
+	if ( stepCount == 0 )
+	{
+		return;
+	}
+
+	if ( ( stepCount % STATIC_FLOOR_DROP_INTERVAL ) != 0 )
+	{
+		return;
+	}
+
+	// Spread spheres in a coarse grid across the floor so they don't all pile on one box.
+	int side = 1;
+	while ( side * side < STATIC_FLOOR_SPHERES )
+	{
+		side += 1;
+	}
+
+	int idx = g_staticFloorData.spheresDropped;
+	int gi = idx % side;
+	int gj = idx / side;
+
+	float halfSpan = 0.5f * STATIC_FLOOR_CELL_SIZE * STATIC_FLOOR_GRID;
+	// Confine drops to the inner 80% of the floor so spheres can't roll off the edge.
+	float inset = 0.1f * 2.0f * halfSpan;
+	float usable = 2.0f * halfSpan - 2.0f * inset;
+	float x = -halfSpan + inset + ( gi + 0.5f ) * ( usable / side );
+	float z = -halfSpan + inset + ( gj + 0.5f ) * ( usable / side );
+
+	b3BodyDef bodyDef = b3DefaultBodyDef();
+	bodyDef.type = b3_dynamicBody;
+	bodyDef.position = (b3Pos){ x, 1.5f, z };
+
+	b3ShapeDef shapeDef = b3DefaultShapeDef();
+	b3Sphere sphere = { { 0.0f, 0.0f, 0.0f }, 0.5f };
+
+	b3BodyId body = b3CreateBody( worldId, &bodyDef );
+	b3CreateSphereShape( body, &shapeDef, &sphere );
+
+	g_staticFloorData.spheresDropped += 1;
+}
+
+void GetWasherCapacity( b3Capacity* capacity )
+{
+	capacity->staticShapeCount = 16;
+	capacity->dynamicShapeCount = 10000;
+	capacity->staticBodyCount = 16;
+	capacity->dynamicBodyCount = 10000;
+	capacity->contactCount = 60000;
+}
+
+void CreateWasher( b3WorldId worldId )
+{
+	bool kinematic = true;
+
+	b3BodyId groundId;
+	{
+		b3BodyDef bodyDef = b3DefaultBodyDef();
+		bodyDef.position.y = -1.0f;
+		groundId = b3CreateBody( worldId, &bodyDef );
+
+		b3BoxHull box = b3MakeBoxHull( 60.0f, 1.0f, 60.0f );
+		b3ShapeDef shapeDef = b3DefaultShapeDef();
+		g_groundShapeId = b3CreateHullShape( groundId, &shapeDef, &box.base );
+	}
+
+	{
+		float motorSpeed = 25.0f;
+
+		b3BodyDef bodyDef = b3DefaultBodyDef();
+		bodyDef.position = (b3Pos){ 0.0f, 21.0f, 0.0f };
+
+		if ( kinematic == true )
+		{
+			bodyDef.type = b3_kinematicBody;
+			bodyDef.angularVelocity = (b3Vec3){ 0.0f, 0.0f, ( B3_PI / 180.0f ) * motorSpeed };
+			bodyDef.linearVelocity = (b3Vec3){ 0.001f, -0.002f, 0.0f };
+		}
+		else
+		{
+			bodyDef.type = b3_dynamicBody;
+		}
+
+		b3BodyId bodyId = b3CreateBody( worldId, &bodyDef );
+
+		b3ShapeDef shapeDef = b3DefaultShapeDef();
+
+		float r0 = 14.0f;
+		float r1 = 16.0f;
+		float r2 = 18.0f;
+		b3Vec3 nd = { 0.0f, 0.0f, -10.0f };
+		b3Vec3 pd = { 0.0f, 0.0f, 10.0f };
+
+		float angle = B3_PI / 18.0f;
+		b3Quat q = b3MakeQuatFromAxisAngle( b3Vec3_axisZ, angle );
+		b3Quat qo = b3MakeQuatFromAxisAngle( b3Vec3_axisZ, 0.1f * angle );
+		b3Vec3 u1 = { 1.0f, 0.0f, 0.0f };
+		for ( int i = 0; i < 36; ++i )
+		{
+			b3Vec3 u2;
+			if ( i == 35 )
+			{
+				u2 = (b3Vec3){ 1.0f, 0.0f, 0.0f };
+			}
+			else
+			{
+				u2 = b3RotateVector( q, u1 );
+			}
+
+			{
+				b3Vec3 a1 = b3InvRotateVector( qo, u1 );
+				b3Vec3 a2 = b3RotateVector( qo, u2 );
+				b3Vec3 p1 = b3MulAdd( nd, r1, a1 );
+				b3Vec3 p2 = b3MulAdd( nd, r2, a1 );
+				b3Vec3 p3 = b3MulAdd( nd, r1, a2 );
+				b3Vec3 p4 = b3MulAdd( nd, r2, a2 );
+				b3Vec3 p5 = b3MulAdd( pd, r1, a1 );
+				b3Vec3 p6 = b3MulAdd( pd, r2, a1 );
+				b3Vec3 p7 = b3MulAdd( pd, r1, a2 );
+				b3Vec3 p8 = b3MulAdd( pd, r2, a2 );
+
+				b3Vec3 points[8] = { p1, p2, p3, p4, p5, p6, p7, p8 };
+				b3HullData* hull = b3CreateHull( points, 8, 8 );
+				b3CreateHullShape( bodyId, &shapeDef, hull );
+				b3DestroyHull( hull );
+			}
+
+			if ( i % 9 == 0 )
+			{
+				b3Vec3 p1 = b3MulAdd( nd, r0, u1 );
+				b3Vec3 p2 = b3MulAdd( nd, r1, u1 );
+				b3Vec3 p3 = b3MulAdd( nd, r0, u2 );
+				b3Vec3 p4 = b3MulAdd( nd, r1, u2 );
+				b3Vec3 p5 = b3MulAdd( pd, r0, u1 );
+				b3Vec3 p6 = b3MulAdd( pd, r1, u1 );
+				b3Vec3 p7 = b3MulAdd( pd, r0, u2 );
+				b3Vec3 p8 = b3MulAdd( pd, r1, u2 );
+
+				b3Vec3 points[8] = { p1, p2, p3, p4, p5, p6, p7, p8 };
+				b3HullData* hull = b3CreateHull( points, 8, 8 );
+				b3CreateHullShape( bodyId, &shapeDef, hull );
+				b3DestroyHull( hull );
+			}
+
+			u1 = u2;
+		}
+
+		if ( kinematic == false )
+		{
+			b3RevoluteJointDef jointDef = b3DefaultRevoluteJointDef();
+			jointDef.base.bodyIdA = groundId;
+			jointDef.base.bodyIdB = bodyId;
+			jointDef.base.localFrameA.p.y = 10.0f;
+			jointDef.motorSpeed = ( B3_PI / 180.0f ) * motorSpeed;
+			jointDef.maxMotorTorque = 1e8f;
+			jointDef.enableMotor = true;
+
+			b3CreateRevoluteJoint( worldId, &jointDef );
+		}
+	}
+
+	int gridCount = BENCHMARK_DEBUG ? 8 : 20;
+	float a = 0.2f;
+
+	b3BoxHull cube = b3MakeBoxHull( a, a, a );
+	b3BodyDef bodyDef = b3DefaultBodyDef();
+	bodyDef.type = b3_dynamicBody;
+	b3ShapeDef shapeDef = b3DefaultShapeDef();
+
+	float x = -2.0f * a * gridCount;
+	for ( int i = 0; i < gridCount; ++i )
+	{
+		float y = -2.0f * a * gridCount + 21.0f;
+		for ( int j = 0; j < gridCount; ++j )
+		{
+			float z = -2.0f * a * gridCount;
+			for ( int k = 0; k < gridCount; ++k )
+			{
+				bodyDef.position = (b3Pos){ x, y, z };
+				b3BodyId bodyId = b3CreateBody( worldId, &bodyDef );
+
+				b3CreateHullShape( bodyId, &shapeDef, &cube.base );
+				z += 4.0f * a;
+			}
+
+			y += 4.0f * a;
+		}
+
+		x += 4.0f * a;
+	}
+}
+
+struct
+{
+	b3MeshData* meshData;
+} g_treeData;
+
+static void CreateTrees( b3WorldId worldId, int scale )
+{
+	memset( &g_treeData, 0, sizeof( g_treeData ) );
+
+	// float tilt = 0.15f * B3_PI;
+	float tilt = 0.0f * B3_PI;
+	b3BodyDef bodyDef = b3DefaultBodyDef();
+	bodyDef.position = (b3Pos){ 0.0f, 0.0f, 0.0f };
+	bodyDef.rotation = b3MakeQuatFromAxisAngle( (b3Vec3){ 1.0f, 0.0f, 0.0 }, tilt );
+	b3BodyId groundId = b3CreateBody( worldId, &bodyDef );
+
+	int xCount = scale * 150;
+	// int zCount = BENCHMARK_DEBUG ? 100 : 400;
+	int zCount = scale * 200;
+
+	float cellWidth = 1.0f / scale;
+	float amplitude = 0.4f;
+	float rowHz = 0.05f;
+	float columnHz = 0.1f;
+
+	g_treeData.meshData = b3CreateWaveMesh( xCount, zCount, cellWidth, amplitude, rowHz, columnHz );
+	b3ShapeDef shapeDef = b3DefaultShapeDef();
+	b3CreateMeshShape( groundId, &shapeDef, g_treeData.meshData, b3Vec3_one );
+
+	bodyDef.type = b3_dynamicBody;
+	bodyDef.sleepThreshold = 0.2f;
+	bodyDef.rotation = b3Quat_identity;
+
+	int bodyCount = BENCHMARK_DEBUG ? 10 : 50;
+
+	shapeDef.baseMaterial.friction = 0.9f;
+	shapeDef.baseMaterial.rollingResistance = 0.05f;
+	shapeDef.updateBodyMass = false;
+	shapeDef.density = 1.0f;
+
+	int hullCount = 22;
+	b3HullData* hulls[22] = { 0 };
+
+	float y = 1.0f;
+	float r = 0.75f;
+	float l = 1.5f;
+	for ( int i = 0; i < hullCount; ++i )
+	{
+		hulls[i] = b3CreateCylinder( l + 2.0f * r, r, y - r, 6 );
+		y += l + 2.0f * r;
+		r = 0.95f * r;
+	}
+
+	float angularVelocity = -0.5f;
+	float z = BENCHMARK_DEBUG ? -15.0f : -70.0f;
+	b3CosSin cs = b3ComputeCosSin( tilt );
+	float yTilt = cs.sine / cs.cosine;
+	for ( int bodyIndex = 0; bodyIndex < bodyCount; ++bodyIndex )
+	{
+		bodyDef.position = (b3Pos){ 0.0, 1.0f - z * yTilt, z };
+		b3BodyId bodyId = b3CreateBody( worldId, &bodyDef );
+
+		for ( int shapeIndex = 0; shapeIndex < 22; ++shapeIndex )
+		{
+			// Random rotation provided no benefit to behavior.
+			// float angle = B3_PI * RandomFloat();
+			// b3Transform xf;
+			// xf.p = b3Vec3_zero;
+			// xf.q = b3MakeQuatFromAxisAngle( (b3Vec3){ 0.0f, 1.0f, 0.0f }, angle );
+			// b3Vec3 scale = {1.0f, 1.0f, 1.0f};
+			// b3CreateTransformedHullShape( bodyId, &shapeDef, hulls[shapeIndex], xf, scale );
+			b3CreateHullShape( bodyId, &shapeDef, hulls[shapeIndex] );
+		}
+
+		float velocityScale = 0.5f + ( 0.5f * bodyIndex ) / bodyCount;
+		b3Body_ApplyMassFromShapes( bodyId );
+		b3Pos center = b3Body_GetWorldCenter( bodyId );
+		b3Vec3 omega = { 0.0f, 0.0f, velocityScale * angularVelocity };
+		b3Vec3 v = b3Cross( omega, b3SubPos( center, bodyDef.position ) );
+		b3Body_SetAngularVelocity( bodyId, omega );
+		b3Body_SetLinearVelocity( bodyId, v );
+
+		z += 3.0f;
+		angularVelocity = -angularVelocity;
+	}
+
+	for ( int i = 0; i < hullCount; ++i )
+	{
+		b3DestroyHull( hulls[i] );
+	}
+}
+
+void CreateTrees25( b3WorldId worldId )
+{
+	CreateTrees( worldId, 4 );
+}
+
+void CreateTrees50( b3WorldId worldId )
+{
+	CreateTrees( worldId, 2 );
+}
+
+void CreateTrees100( b3WorldId worldId )
+{
+	CreateTrees( worldId, 1 );
+}
+
+void DestroyTrees( void )
+{
+	b3DestroyMesh( g_treeData.meshData );
+	memset( &g_treeData, 0, sizeof( g_treeData ) );
+}
+
+struct
+{
+	b3MeshData* meshData;
+} g_meshDropData;
+
+void CreateMeshDropBenchmark( b3WorldId worldId )
+{
+	memset( &g_meshDropData, 0, sizeof( g_meshDropData ) );
+
+	int meshGridCount = 120;
+	int borderCount = 10;
+	float cellWidth = 1.0f;
+
+	{
+		b3BodyDef bodyDef = b3DefaultBodyDef();
+		b3BodyId groundId = b3CreateBody( worldId, &bodyDef );
+
+		float rowHz = 0.1f;
+		float columnHz = 0.2f;
+		float groundAmplitude = 0.5f;
+
+		g_meshDropData.meshData =
+			b3CreateWaveMesh( meshGridCount, meshGridCount, cellWidth, groundAmplitude, rowHz, columnHz );
+		b3ShapeDef shapeDef = b3DefaultShapeDef();
+		shapeDef.filter.categoryBits = 1;
+		b3CreateMeshShape( groundId, &shapeDef, g_meshDropData.meshData, b3Vec3_one );
+	}
+
+	{
+		b3BoxHull box = b3MakeBoxHull( 0.02f, 0.2f, 0.04f );
+
+		b3BodyDef bodyDef = b3DefaultBodyDef();
+		bodyDef.type = b3_dynamicBody;
+
+		b3ShapeDef shapeDef = b3DefaultShapeDef();
+		shapeDef.baseMaterial.rollingResistance = 0.1f;
+
+		// Don't allow shapes to collide with each other.
+		shapeDef.filter.categoryBits = 2;
+		shapeDef.filter.maskBits = 1;
+
+		g_randomSeed = 3963634789;
+
+		int gridCount = BENCHMARK_DEBUG ? 20 : 100;
+		float spacing = cellWidth * ( meshGridCount - 2 * borderCount ) / gridCount;
+		float offset = 0.5f * spacing * ( 1 - gridCount );
+
+		for ( int i = 0; i < gridCount; ++i )
+		{
+			for ( int j = 0; j < gridCount; ++j )
+			{
+				b3Vec3 linearVelocity = RandomVec3Uniform( -1.0f, 1.0f );
+				b3Vec3 angularVelocity = RandomVec3Uniform( -5.0f, 5.0f );
+
+				bodyDef.position = (b3Pos){ offset + spacing * i, 5.0f, offset + spacing * j };
+				bodyDef.linearVelocity = linearVelocity;
+				bodyDef.angularVelocity = angularVelocity;
+				b3BodyId bodyId = b3CreateBody( worldId, &bodyDef );
+
+				b3CreateHullShape( bodyId, &shapeDef, &box.base );
+			}
+		}
+	}
+}
+
+void DestroyMeshDropBenchmark( void )
+{
+	b3DestroyMesh( g_meshDropData.meshData );
+	memset( &g_meshDropData, 0, sizeof( g_meshDropData ) );
+}
+
+struct JunkyardData
+{
+	b3BodyId pusherId;
+	float degrees;
+	float radius;
+} g_junkyardData;
+
+void CreateJunkyard( b3WorldId worldId )
+{
+	b3BodyId groundId;
+	{
+		b3BodyDef bodyDef = b3DefaultBodyDef();
+		bodyDef.position.y = -1.0f;
+		groundId = b3CreateBody( worldId, &bodyDef );
+	}
+
+	{
+		b3ShapeDef shapeDef = b3DefaultShapeDef();
+		{
+			b3BoxHull box = b3MakeBoxHull( 120.0f, 1.0f, 120.0f );
+			g_groundShapeId = b3CreateHullShape( groundId, &shapeDef, &box.base );
+		}
+		{
+			b3Vec3 offset = { -50.0f, 8.0f, 0.0f };
+			b3BoxHull box = b3MakeOffsetBoxHull( 1.0f, 8.0f, 50.0f, offset );
+			b3CreateHullShape( groundId, &shapeDef, &box.base );
+		}
+		{
+			b3Vec3 offset = { 50.0f, 8.0f, 0.0f };
+			b3BoxHull box = b3MakeOffsetBoxHull( 1.0f, 8.0f, 50.0f, offset );
+			b3CreateHullShape( groundId, &shapeDef, &box.base );
+		}
+		{
+			b3Vec3 offset = { 0.0f, 8.0f, -50.0f };
+			b3BoxHull box = b3MakeOffsetBoxHull( 50.0f, 8.0f, 1.0f, offset );
+			b3CreateHullShape( groundId, &shapeDef, &box.base );
+		}
+		{
+			b3Vec3 offset = { 0.0f, 8.0f, 50.0f };
+			b3BoxHull box = b3MakeOffsetBoxHull( 50.0f, 8.0f, 1.0f, offset );
+			b3CreateHullShape( groundId, &shapeDef, &box.base );
+		}
+	}
+	{
+		b3HullData* rockHull = b3CreateRock( 1.5f );
+
+		int count = BENCHMARK_DEBUG ? 2 : 24;
+		float height = 24.0f;
+		b3BodyDef bodyDef = b3DefaultBodyDef();
+		bodyDef.type = b3_dynamicBody;
+		b3ShapeDef shapeDef = b3DefaultShapeDef();
+		for ( int Y = 0; Y < count; ++Y )
+		{
+			for ( int X = 0; X <= 20; ++X )
+			{
+				for ( int Z = 0; Z <= 20; ++Z )
+				{
+					bodyDef.position.x = -40.0f + 4.0f * X;
+					bodyDef.position.y = 4.0f * Y + height + 1.0f;
+					bodyDef.position.z = -40.0f + 4.0f * Z;
+					b3BodyId bodyId = b3CreateBody( worldId, &bodyDef );
+					b3CreateHullShape( bodyId, &shapeDef, rockHull );
+				}
+			}
+		}
+
+		b3DestroyHull( rockHull );
+	}
+
+	g_junkyardData.radius = 35.0f;
+	float mHeight = 24.0f;
+
+	b3HullData* hull = b3CreateCylinder( mHeight, 4.0f, 0.0f, 16 );
+	b3BodyDef bodyDef = b3DefaultBodyDef();
+	bodyDef.type = b3_kinematicBody;
+	bodyDef.position = (b3Pos){ g_junkyardData.radius, 0.0f, 0.0f };
+	g_junkyardData.pusherId = b3CreateBody( worldId, &bodyDef );
+	g_junkyardData.degrees = 0.0f;
+	b3ShapeDef shapeDef = b3DefaultShapeDef();
+	b3CreateHullShape( g_junkyardData.pusherId, &shapeDef, hull );
+	b3DestroyHull( hull );
+}
+
+void GetJunkyardCapacity(b3Capacity* capacity)
+{
+#ifdef NDEBUG
+	capacity->staticShapeCount = 16;
+	capacity->dynamicShapeCount = 20 * 20 * 24 + 1;
+	capacity->staticBodyCount = 16;
+	capacity->dynamicBodyCount = 20 * 20 * 24 + 1;
+	capacity->contactCount = 250 * 1024;
+#else
+	capacity->staticShapeCount = 16;
+	capacity->dynamicShapeCount = 20 * 20 * 2 + 1;
+	capacity->staticBodyCount = 16;
+	capacity->dynamicBodyCount = 20 * 20 * 2 + 1;
+#endif
+}
+
+void StepJunkyard( b3WorldId worldId, int stepCount )
+{
+	(void)worldId;
+	(void)stepCount;
+
+	float timeStep = 1.0f / 60.0f;
+	const float omega = -6.0f;
+	g_junkyardData.degrees += omega * timeStep;
+	b3CosSin cs = b3ComputeCosSin( g_junkyardData.degrees * B3_PI / 180.0f );
+	float r = g_junkyardData.radius;
+	b3Pos targetPos = { r * cs.cosine, 0.0f, r * cs.sine };
+	b3WorldTransform target = { .p = targetPos, .q = b3Quat_identity };
+	b3Body_SetTargetTransform( g_junkyardData.pusherId, target, timeStep, false );
+}
+
+// Huge pile of large convexes, ported from PEEL. Each convex is the hull of 32 random points on a
+// sphere. A fixed LCG seed makes the hull identical across runs so results compare directly.
+
+void GetConvexPileCapacity( b3Capacity* capacity )
+{
+#ifdef NDEBUG
+	capacity->dynamicShapeCount = 5120;
+	capacity->dynamicBodyCount = 5120;
+	capacity->contactCount = 64 * 1024;
+#endif
+}
+
+void CreateConvexPile( b3WorldId worldId )
+{
+	{
+		b3BodyDef bodyDef = b3DefaultBodyDef();
+		bodyDef.position = (b3Pos){ 0.0f, -1.0f, 0.0f };
+		b3BodyId groundId = b3CreateBody( worldId, &bodyDef );
+
+		b3BoxHull box = b3MakeBoxHull( 250.0f, 1.0f, 250.0f );
+		b3ShapeDef shapeDef = b3DefaultShapeDef();
+		g_groundShapeId = b3CreateHullShape( groundId, &shapeDef, &box.base );
+	}
+
+	int countX = 8;
+	int countZ = 8;
+	int layers = BENCHMARK_DEBUG ? 10 : 80;
+	float amplitude = 2.0f;
+	float scatter = 2.0f * amplitude;
+
+	b3HullData* convex = b3CreateComplexHull( amplitude );
+
+	b3BodyDef bodyDef = b3DefaultBodyDef();
+	bodyDef.type = b3_dynamicBody;
+	b3ShapeDef shapeDef = b3DefaultShapeDef();
+
+	// Grid tall enough to collapse into a pile
+	for ( int layer = 0; layer < layers; ++layer )
+	{
+		for ( int z = 0; z < countZ; ++z )
+		{
+			for ( int x = 0; x < countX; ++x )
+			{
+				float posX = ( (float)x - 0.5f * (float)countX ) * scatter;
+				float posZ = ( (float)z - 0.5f * (float)countZ ) * scatter;
+				float posY = amplitude + 2.0f * amplitude * (float)layer;
+
+				bodyDef.position = (b3Pos){ posX, posY, posZ };
+				b3BodyId bodyId = b3CreateBody( worldId, &bodyDef );
+				b3CreateHullShape( bodyId, &shapeDef, convex );
+			}
+		}
+	}
+
+	b3DestroyHull( convex );
+}
+
+#define SPINNER_SEGMENT_COUNT 90
+
+typedef struct
+{
+	b3MeshData* cylinderMesh;
+	b3JointId spinnerId;
+} SpinnerData;
+
+static SpinnerData g_spinnerData;
+
+// An inward facing cylinder capped on both ends, axis along z. Every triangle is wound so its
+// normal points at the axis, which is what holds the contents in. The caps do the same job along
+// the axis that the 2D loop had for free.
+static b3MeshData* CreateInwardCylinderMesh( float radius, float halfDepth, float yCenter, int segmentCount )
+{
+	int vertexCount = 2 * segmentCount + 2;
+	int triangleCount = 4 * segmentCount;
+
+	b3Vec3* vertices = malloc( vertexCount * sizeof( b3Vec3 ) );
+	int* indices = malloc( 3 * triangleCount * sizeof( int ) );
+
+	for ( int i = 0; i < segmentCount; ++i )
+	{
+		float angle = 2.0f * B3_PI * (float)i / (float)segmentCount;
+		b3CosSin cs = b3ComputeCosSin( angle );
+		float x = radius * cs.cosine;
+		float y = radius * cs.sine + yCenter;
+		vertices[2 * i + 0] = (b3Vec3){ x, y, -halfDepth };
+		vertices[2 * i + 1] = (b3Vec3){ x, y, halfDepth };
+	}
+
+	int centerNegative = 2 * segmentCount;
+	int centerPositive = 2 * segmentCount + 1;
+	vertices[centerNegative] = (b3Vec3){ 0.0f, yCenter, -halfDepth };
+	vertices[centerPositive] = (b3Vec3){ 0.0f, yCenter, halfDepth };
+
+	int index = 0;
+	for ( int i = 0; i < segmentCount; ++i )
+	{
+		int j = ( i + 1 ) % segmentCount;
+
+		// Wall, normal towards the axis
+		indices[index++] = 2 * i + 0;
+		indices[index++] = 2 * i + 1;
+		indices[index++] = 2 * j + 1;
+
+		indices[index++] = 2 * i + 0;
+		indices[index++] = 2 * j + 1;
+		indices[index++] = 2 * j + 0;
+
+		// Near cap, normal towards positive z
+		indices[index++] = centerNegative;
+		indices[index++] = 2 * i + 0;
+		indices[index++] = 2 * j + 0;
+
+		// Far cap, normal towards negative z
+		indices[index++] = centerPositive;
+		indices[index++] = 2 * j + 1;
+		indices[index++] = 2 * i + 1;
+	}
+
+	assert( index == 3 * triangleCount );
+
+	b3MeshDef meshDef = { 0 };
+	meshDef.vertices = vertices;
+	meshDef.vertexCount = vertexCount;
+	meshDef.indices = indices;
+	meshDef.triangleCount = triangleCount;
+	meshDef.identifyEdges = true;
+
+	b3MeshData* meshData = b3CreateMesh( &meshDef, NULL, 0 );
+
+	free( vertices );
+	free( indices );
+
+	return meshData;
+}
+
+void GetSpinnerCapacity( b3Capacity* capacity )
+{
+	capacity->staticShapeCount = 4;
+	capacity->staticBodyCount = 4;
+	capacity->dynamicShapeCount = 2000;
+	capacity->dynamicBodyCount = 2000;
+	capacity->contactCount = 20000;
+}
+
+// A paddle on a motor churning a pile of small shapes inside a closed cylinder. The cylinder axis
+// is z so the cross section matches the 2D benchmark and the hinge, which turns about the local
+// frame z axis, lines up with it. The paddle circle is internally tangent to the cylinder at the
+// bottom, so the tip scrapes the floor.
+void CreateSpinner( b3WorldId worldId )
+{
+	g_spinnerData = (SpinnerData){ 0 };
+
+	float radius = 12.0f;
+	float halfDepth = 1.0f;
+	float yCenter = radius;
+
+	b3BodyId groundId;
+	{
+		b3BodyDef bodyDef = b3DefaultBodyDef();
+		groundId = b3CreateBody( worldId, &bodyDef );
+
+		g_spinnerData.cylinderMesh = CreateInwardCylinderMesh( radius, halfDepth, yCenter, SPINNER_SEGMENT_COUNT );
+
+		b3ShapeDef shapeDef = b3DefaultShapeDef();
+		shapeDef.baseMaterial.friction = 0.1f;
+		b3CreateMeshShape( groundId, &shapeDef, g_spinnerData.cylinderMesh, b3Vec3_one );
+	}
+
+	{
+		float halfLength = 0.5f * radius;
+
+		b3BodyDef bodyDef = b3DefaultBodyDef();
+		bodyDef.type = b3_dynamicBody;
+		bodyDef.position = (b3Pos){ 0.0f, yCenter - halfLength, 0.0f };
+		bodyDef.enableSleep = false;
+
+		b3BodyId spinnerId = b3CreateBody( worldId, &bodyDef );
+
+		b3BoxHull paddle = b3MakeBoxHull( 0.3f, halfLength + 0.1f, halfDepth + 0.1f );
+		b3ShapeDef shapeDef = b3DefaultShapeDef();
+		shapeDef.baseMaterial.friction = 0.0f;
+		b3CreateHullShape( spinnerId, &shapeDef, &paddle.base );
+
+		b3RevoluteJointDef jointDef = b3DefaultRevoluteJointDef();
+		jointDef.base.bodyIdA = groundId;
+		jointDef.base.bodyIdB = spinnerId;
+		jointDef.base.localFrameA.p = (b3Vec3){ 0.0f, yCenter - halfLength, 0.0f };
+		jointDef.enableMotor = true;
+		jointDef.motorSpeed = 8.0f;
+		jointDef.maxMotorTorque = FLT_MAX;
+
+		g_spinnerData.spinnerId = b3CreateRevoluteJoint( worldId, &jointDef );
+	}
+
+	b3Sphere sphere = { { 0.0f, 0.0f, 0.0f }, 0.2f };
+
+	b3BodyDef bodyDef = b3DefaultBodyDef();
+	bodyDef.type = b3_dynamicBody;
+
+	b3ShapeDef shapeDef = b3DefaultShapeDef();
+	shapeDef.baseMaterial.friction = 0.1f;
+	shapeDef.baseMaterial.restitution = 0.1f;
+	shapeDef.density = 0.25f;
+
+	int bodyCount = BENCHMARK_DEBUG ? 500 : 1500;
+
+	// The grid starts low where the cylinder is narrow, so the span has to fit the chord there
+	float spacing = 0.55f;
+	float yStart = 2.0f;
+	float chordHalfWidth = sqrtf( radius * radius - ( yCenter - yStart ) * ( yCenter - yStart ) );
+	float xLimit = chordHalfWidth - 2.0f * spacing;
+	float zLimit = halfDepth - 2.0f * sphere.radius;
+
+	float x = -xLimit;
+	float y = yStart;
+	float z = -zLimit;
+
+	for ( int i = 0; i < bodyCount; ++i )
+	{
+		bodyDef.position = (b3Pos){ x, y, z };
+		b3BodyId bodyId = b3CreateBody( worldId, &bodyDef );
+
+		b3CreateSphereShape( bodyId, &shapeDef, &sphere );
+
+		z += spacing;
+
+		if ( z > zLimit )
+		{
+			z = -zLimit;
+			x += spacing;
+
+			if ( x > xLimit )
+			{
+				x = -xLimit;
+				y += spacing;
+			}
+		}
+	}
+}
+
+void DestroySpinner( void )
+{
+	if ( g_spinnerData.cylinderMesh != NULL )
+	{
+		b3DestroyMesh( g_spinnerData.cylinderMesh );
+		g_spinnerData.cylinderMesh = NULL;
+	}
+}
+
+// The motor is unbounded, so a healthy run holds the commanded speed and the angle advances
+// steadily. A stalling solver shows up here before it shows up in the step time.
+float GetSpinnerAngle( void )
+{
+	if ( b3Joint_IsValid( g_spinnerData.spinnerId ) == false )
+	{
+		return 0.0f;
+	}
+
+	return b3RevoluteJoint_GetAngle( g_spinnerData.spinnerId );
+}
+
+#define SLEEP_PYRAMID_COUNT 10
+
+typedef struct
+{
+	b3BodyId bodyIdA[SLEEP_PYRAMID_COUNT];
+	b3BodyId bodyIdB[SLEEP_PYRAMID_COUNT];
+} SleepData;
+
+static SleepData g_sleepData;
+
+// Reports two bodies that are certain to share a touching contact, so the filter joint below
+// always lands inside one island.
+static void CreateSleepPyramid( b3WorldId worldId, int baseCount, float extent, float centerX, b3BodyId* bodyIdA,
+								b3BodyId* bodyIdB )
+{
+	b3BodyDef bodyDef = b3DefaultBodyDef();
+	bodyDef.type = b3_dynamicBody;
+	bodyDef.sleepThreshold = 1.0f;
+
+	b3ShapeDef shapeDef = b3DefaultShapeDef();
+	b3BoxHull box = b3MakeBoxHull( extent, extent, extent );
+
+	for ( int i = 0; i < baseCount; ++i )
+	{
+		float y = ( 2.0f * i + 1.0f ) * extent;
+
+		for ( int j = i; j < baseCount; ++j )
+		{
+			float x = ( i + 1.0f ) * extent + 2.0f * ( j - i ) * extent + centerX;
+			bodyDef.position = (b3Pos){ x, y, 0.0f };
+
+			b3BodyId bodyId = b3CreateBody( worldId, &bodyDef );
+			b3CreateHullShape( bodyId, &shapeDef, &box.base );
+
+			if ( i == 0 && j == 0 )
+			{
+				*bodyIdA = bodyId;
+			}
+			else if ( i == 1 && j == 1 )
+			{
+				// Rests on the base body above, so the pair always has a touching contact
+				*bodyIdB = bodyId;
+			}
+		}
+	}
+}
+
+void GetSleepCapacity( b3Capacity* capacity )
+{
+	capacity->staticShapeCount = 4;
+	capacity->staticBodyCount = 4;
+	capacity->dynamicShapeCount = 2200;
+	capacity->dynamicBodyCount = 2200;
+	capacity->contactCount = 12000;
+}
+
+// Stress tests waking and sleeping. Each pyramid settles into its own island and the step below
+// wakes one of them again, so the island splitter never gets to rest.
+void CreateSleep( b3WorldId worldId )
+{
+	g_sleepData = (SleepData){ 0 };
+
+	int baseCount = BENCHMARK_DEBUG ? 8 : 20;
+	float extent = 0.5f;
+
+	float baseWidth = 2.0f * extent * baseCount;
+	float pitch = baseWidth + 8.0f * extent;
+	float span = pitch * ( SLEEP_PYRAMID_COUNT - 1 );
+
+	{
+		b3BodyDef bodyDef = b3DefaultBodyDef();
+		bodyDef.position = (b3Pos){ 0.0f, -1.0f, 0.0f };
+		b3BodyId groundId = b3CreateBody( worldId, &bodyDef );
+
+		b3BoxHull box = b3MakeBoxHull( 0.5f * span + baseWidth, 1.0f, 4.0f );
+		b3ShapeDef shapeDef = b3DefaultShapeDef();
+		g_groundShapeId = b3CreateHullShape( groundId, &shapeDef, &box.base );
+	}
+
+	for ( int i = 0; i < SLEEP_PYRAMID_COUNT; ++i )
+	{
+		float centerX = -0.5f * span + i * pitch - 0.5f * baseWidth;
+		CreateSleepPyramid( worldId, baseCount, extent, centerX, g_sleepData.bodyIdA + i, g_sleepData.bodyIdB + i );
+	}
+}
+
+void StepSleep( b3WorldId worldId, int stepCount )
+{
+	(void)stepCount;
+
+	for ( int i = 0; i < SLEEP_PYRAMID_COUNT; ++i )
+	{
+		if ( b3Body_IsAwake( g_sleepData.bodyIdA[i] ) == false )
+		{
+			// Creating and destroying a joint engages the island splitter
+			b3FilterJointDef jointDef = b3DefaultFilterJointDef();
+			jointDef.base.bodyIdA = g_sleepData.bodyIdA[i];
+			jointDef.base.bodyIdB = g_sleepData.bodyIdB[i];
+			b3JointId jointId = b3CreateFilterJoint( worldId, &jointDef );
+
+			// This wakes the island
+			b3DestroyJoint( jointId, true );
+
+			// Only one per step
+			break;
+		}
+	}
+}
+
+#define VILLAGE_TILE_WIDTH 4
+#define VILLAGE_CAST_RADIUS 0.05f
+#define VILLAGE_CAST_HEIGHT 10.0f
+#define VILLAGE_CAST_LENGTH 12.0f
+
+#if BENCHMARK_DEBUG
+#define VILLAGE_GRID 10
+#define VILLAGE_BODY_GRID 10
+#else
+#define VILLAGE_GRID 100
+#define VILLAGE_BODY_GRID 70
+#endif
+
+// One cast per meter across the full span
+#define VILLAGE_MAX_CASTS ( VILLAGE_GRID * VILLAGE_TILE_WIDTH + 1 )
+
+typedef struct VillageData
+{
+	b3CompoundData* compound;
+	b3Quat rotation;
+	float halfSpan;
+	b3Vec3 castTranslation;
+	int castCount;
+	VillageCast casts[VILLAGE_MAX_CASTS];
+} VillageData;
+
+static VillageData g_villageData;
+
+void GetVillageCapacity( b3Capacity* capacity )
+{
+	int bodyCount = VILLAGE_BODY_GRID * VILLAGE_BODY_GRID;
+	capacity->staticShapeCount = 1;
+	capacity->staticBodyCount = 1;
+	capacity->dynamicShapeCount = bodyCount;
+	capacity->dynamicBodyCount = bodyCount;
+	capacity->contactCount = 4 * bodyCount;
+}
+
+void CreateVillage( b3WorldId worldId )
+{
+	memset( &g_villageData, 0, sizeof( g_villageData ) );
+	g_randomSeed = 2718281828;
+
+	int gridCount = VILLAGE_GRID;
+	float tileWidth = VILLAGE_TILE_WIDTH;
+	float halfSpan = 0.5f * tileWidth * gridCount;
+	g_villageData.halfSpan = halfSpan;
+
+	{
+		int tileCount = gridCount * gridCount;
+		int propCapacity = tileCount / 8 + 1;
+
+		b3CompoundHullDef* hulls = malloc( tileCount * sizeof( b3CompoundHullDef ) );
+		b3CompoundMeshDef* meshes = malloc( tileCount * sizeof( b3CompoundMeshDef ) );
+		b3CompoundCapsuleDef* capsules = malloc( propCapacity * sizeof( b3CompoundCapsuleDef ) );
+		b3CompoundSphereDef* spheres = malloc( propCapacity * sizeof( b3CompoundSphereDef ) );
+
+		b3SurfaceMaterial material = b3DefaultSurfaceMaterial();
+		b3BoxHull tile = b3MakeBoxHull( 0.5f * tileWidth, 0.5f, 0.5f * tileWidth );
+
+		// A wave patch replaces a sparse set of tiles so the compound carries mesh children
+		b3MeshData* wave = b3CreateWaveMesh( 8, 8, tileWidth / 8.0f, 0.25f, 0.25f, 0.25f );
+
+		int hullCount = 0;
+		int meshCount = 0;
+		int capsuleCount = 0;
+		int sphereCount = 0;
+
+		for ( int i = 0; i < gridCount; ++i )
+		{
+			float x = -halfSpan + ( i + 0.5f ) * tileWidth;
+
+			for ( int j = 0; j < gridCount; ++j )
+			{
+				float z = -halfSpan + ( j + 0.5f ) * tileWidth;
+
+				if ( i % 16 == 8 && j % 16 == 8 )
+				{
+					meshes[meshCount] = (b3CompoundMeshDef){
+						.meshData = wave,
+						.transform = { { x, 0.0f, z }, b3Quat_identity },
+						.scale = b3Vec3_one,
+						.materials = &material,
+						.materialCount = 1,
+					};
+					meshCount += 1;
+					continue;
+				}
+
+				hulls[hullCount] = (b3CompoundHullDef){
+					.hull = &tile.base,
+					.transform = { { x, -0.5f, z }, b3Quat_identity },
+					.material = material,
+				};
+				hullCount += 1;
+
+				int tileIndex = i * gridCount + j;
+				if ( tileIndex % 8 != 0 )
+				{
+					continue;
+				}
+
+				if ( ( tileIndex / 8 ) & 1 )
+				{
+					float radius = 0.25f;
+					capsules[capsuleCount] = (b3CompoundCapsuleDef){
+						.capsule = { { x - 1.0f, radius, z }, { x + 1.0f, radius, z }, radius },
+						.material = material,
+					};
+					capsuleCount += 1;
+				}
+				else
+				{
+					float radius = 0.5f;
+					spheres[sphereCount] = (b3CompoundSphereDef){
+						.sphere = { { x, radius, z }, radius },
+						.material = material,
+					};
+					sphereCount += 1;
+				}
+			}
+		}
+
+		b3CompoundDef def = {
+			.capsules = capsules,
+			.capsuleCount = capsuleCount,
+			.hulls = hulls,
+			.hullCount = hullCount,
+			.meshes = meshes,
+			.meshCount = meshCount,
+			.spheres = spheres,
+			.sphereCount = sphereCount,
+		};
+
+		g_villageData.compound = b3CreateCompound( &def );
+
+		// The compound clones its inputs
+		b3DestroyMesh( wave );
+		free( hulls );
+		free( meshes );
+		free( capsules );
+		free( spheres );
+
+		// Rotated so broad-phase lookups transform into the compound frame
+		g_villageData.rotation = b3MakeQuatFromAxisAngle( (b3Vec3){ 0.0f, 1.0f, 0.0f }, -1.15f * B3_PI );
+
+		b3BodyDef bodyDef = b3DefaultBodyDef();
+		bodyDef.rotation = g_villageData.rotation;
+		b3BodyId groundId = b3CreateBody( worldId, &bodyDef );
+
+		b3ShapeDef shapeDef = b3DefaultShapeDef();
+		b3CreateBakedCompoundShape( groundId, &shapeDef, g_villageData.compound );
+	}
+
+	{
+		b3Sphere sphere = { { 0.0f, 0.0f, 0.0f }, 0.3f };
+		b3Capsule capsule = { { -0.3f, 0.0f, 0.0f }, { 0.3f, 0.0f, 0.0f }, 0.2f };
+		b3BoxHull box = b3MakeCubeHull( 0.3f );
+
+		b3BodyDef bodyDef = b3DefaultBodyDef();
+		bodyDef.type = b3_dynamicBody;
+		b3ShapeDef shapeDef = b3DefaultShapeDef();
+
+		int bodyGrid = VILLAGE_BODY_GRID;
+		float spacing = 1.6f;
+		float offset = 0.5f * spacing * ( 1 - bodyGrid );
+
+		for ( int i = 0; i < bodyGrid; ++i )
+		{
+			for ( int j = 0; j < bodyGrid; ++j )
+			{
+				int index = i * bodyGrid + j;
+
+				bodyDef.position = (b3Pos){ offset + spacing * i, RandomFloatRange( 2.0f, 6.0f ), offset + spacing * j };
+				bodyDef.linearVelocity = b3Vec3_zero;
+				bodyDef.angularVelocity = RandomVec3Uniform( -2.0f, 2.0f );
+
+				// Fast enough to need continuous collision against the compound
+				if ( index % 20 == 0 )
+				{
+					bodyDef.position.y = 20.0f;
+					bodyDef.linearVelocity = (b3Vec3){ 0.0f, -80.0f, 0.0f };
+				}
+
+				b3BodyId bodyId = b3CreateBody( worldId, &bodyDef );
+
+				switch ( index % 3 )
+				{
+					case 0:
+						b3CreateSphereShape( bodyId, &shapeDef, &sphere );
+						break;
+					case 1:
+						b3CreateCapsuleShape( bodyId, &shapeDef, &capsule );
+						break;
+					default:
+						b3CreateHullShape( bodyId, &shapeDef, &box.base );
+						break;
+				}
+			}
+		}
+	}
+}
+
+static float VillageCastCallback( b3ShapeId shapeId, b3Pos point, b3Vec3 normal, float fraction, uint64_t userMaterialId,
+								  int triangleIndex, int childIndex, void* context )
+{
+	(void)shapeId;
+	(void)userMaterialId;
+	(void)triangleIndex;
+	(void)childIndex;
+
+	// Clipping makes each report closer than the last, so the final one is the closest
+	VillageCast* cast = context;
+	cast->point = point;
+	cast->normal = normal;
+	cast->fraction = fraction;
+	cast->hit = true;
+	return fraction;
+}
+
+// A curtain of tilted sphere casts, one per meter, sweeps across the compound once per run.
+void StepVillage( b3WorldId worldId, int stepIndex )
+{
+	float halfSpan = g_villageData.halfSpan;
+	float t = (float)( stepIndex % VILLAGE_STEP_COUNT ) / (float)( VILLAGE_STEP_COUNT - 1 );
+	float x = -halfSpan + 2.0f * halfSpan * t;
+
+	b3CosSin tilt = b3ComputeCosSin( ( 20.0f / 180.0f ) * B3_PI );
+	b3Vec3 localTranslation = { VILLAGE_CAST_LENGTH * tilt.sine, -VILLAGE_CAST_LENGTH * tilt.cosine, 0.0f };
+
+	// The curtain is laid out in the compound frame
+	b3Quat q = g_villageData.rotation;
+	b3Vec3 translation = b3RotateVector( q, localTranslation );
+
+	b3Vec3 point = b3Vec3_zero;
+	b3ShapeProxy proxy = { &point, 1, VILLAGE_CAST_RADIUS };
+	b3QueryFilter filter = b3DefaultQueryFilter();
+
+	int castCount = (int)( 2.0f * halfSpan ) + 1;
+	assert( castCount <= VILLAGE_MAX_CASTS );
+
+	for ( int i = 0; i < castCount; ++i )
+	{
+		b3Vec3 localOrigin = { x, VILLAGE_CAST_HEIGHT, -halfSpan + (float)i };
+
+		VillageCast* cast = g_villageData.casts + i;
+		*cast = (VillageCast){ 0 };
+		cast->origin = b3ToPos( b3RotateVector( q, localOrigin ) );
+		cast->fraction = 1.0f;
+
+		b3World_CastShape( worldId, cast->origin, &proxy, translation, filter, VillageCastCallback, cast );
+	}
+
+	g_villageData.castTranslation = translation;
+	g_villageData.castCount = castCount;
+}
+
+VillageCurtain GetVillageCurtain( void )
+{
+	return (VillageCurtain){
+		.casts = g_villageData.casts,
+		.castCount = g_villageData.castCount,
+		.translation = g_villageData.castTranslation,
+		.radius = VILLAGE_CAST_RADIUS,
+	};
+}
+
+void DestroyVillage( void )
+{
+	b3DestroyCompound( g_villageData.compound );
+	memset( &g_villageData, 0, sizeof( g_villageData ) );
+}

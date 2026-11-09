@@ -13,6 +13,13 @@ option(OD_BUILD_DYNAMIC_MODULE "BUILD_DYNAMIC_MODULE" ON)
 option(OD_SUPPORT_OPENGL "SUPPORT_OPENGL" ON)
 option(OD_SUPPORT_WEBGPU "SUPPORT_WEBGPU" OFF)
 
+#set(OD_PHYSICS_BACKEND "BOX3D" CACHE STRING "Physics backend (JOLT or BOX3D)")
+#set_property(CACHE OD_PHYSICS_BACKEND PROPERTY STRINGS JOLT BOX3D)
+#string(TOUPPER "${OD_PHYSICS_BACKEND}" OD_PHYSICS_BACKEND)
+#if(NOT OD_PHYSICS_BACKEND STREQUAL "JOLT" AND NOT OD_PHYSICS_BACKEND STREQUAL "BOX3D")
+#    message(FATAL_ERROR "OD_PHYSICS_BACKEND must be JOLT or BOX3D")
+#endif()
+
 option(OD_USE_MSVC_RUNTIME_LIBRARY_DLL "Use MSVC Runtime Library Dll" ON)
 option(OD_USE_SANITIZE_ADDRESS "Use Sanitize Address" OFF)
 
@@ -145,8 +152,17 @@ add_subdirectory(Engine/ThirdParty/freetype)
 add_subdirectory(Engine/ThirdParty/recastnavigation)
 add_subdirectory(Engine/ThirdParty/efsw)
 
-add_compile_definitions(JPH_DEBUG_RENDERER)
-add_subdirectory(Engine/ThirdParty/JoltPhysics-5.3.0/Build)
+#if(OD_PHYSICS_BACKEND STREQUAL "JOLT")
+    add_compile_definitions(JPH_DEBUG_RENDERER)
+    add_subdirectory(Engine/ThirdParty/JoltPhysics-5.3.0/Build)
+#else()
+    # Box3D is embedded as a library; do not build its standalone targets.
+    set(BOX3D_SAMPLES OFF CACHE BOOL "" FORCE)
+    set(BOX3D_UNIT_TESTS OFF CACHE BOOL "" FORCE)
+    set(BOX3D_BENCHMARKS OFF CACHE BOOL "" FORCE)
+    set(BOX3D_DOCS OFF CACHE BOOL "" FORCE)
+    add_subdirectory(Engine/ThirdParty/box3d)
+#endif()
 
 set(MSDF_ATLAS_BUILD_STANDALONE OFF CACHE BOOL "" FORCE)
 set(MSDF_ATLAS_USE_VCPKG OFF CACHE BOOL "" FORCE)
@@ -326,6 +342,7 @@ target_include_directories(Engine PUBLIC
     Engine/ThirdParty/miniz/
     Engine/ThirdParty/physfs-release-3.2.0/src/
     Engine/ThirdParty/miniaudio/
+    Engine/ThirdParty/box3d/include/
 
     C:/VulkanSDK/1.4.357.0/Include/
 
@@ -349,7 +366,6 @@ target_link_libraries(Engine PUBLIC
     #soloud
     freetype
     DebugUtils Detour DetourCrowd DetourTileCache Recast
-    Jolt
     efsw
     msdf-atlas-gen
     unordered_dense
@@ -362,6 +378,14 @@ target_link_libraries(Engine PUBLIC
     #spirv-cross-core spirv-cross-c 
     #EASTL
 )
+
+#if(OD_PHYSICS_BACKEND STREQUAL "JOLT")
+    target_link_libraries(Engine PUBLIC Jolt)
+    #target_compile_definitions(Engine PUBLIC OD_PHYSICS_BACKEND_JOLT OD_PHYSICS_BACKEND_JOLT)
+#else()
+    target_link_libraries(Engine PUBLIC box3d::box3d)
+    #target_compile_definitions(Engine PUBLIC OD_PHYSICS_BACKEND_BOX3D UseBox3DPhysics)
+#endif()
 
 set(Vulkan_ROOT "C:/VulkanSDK/1.4.357.0")
 find_package(Vulkan REQUIRED)

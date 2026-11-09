@@ -1,7 +1,7 @@
 #include "OD/pch.h"
 #include "PhysicsSystem.h"
 
-#if defined(UseJoltPhysics)
+#if defined(OD_PHYSICS_BACKEND_JOLT)
 #include "OD/Core/Application.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Core/Time.h"

@@ -220,6 +220,11 @@ private:
         Gfx::Texture2D textureOverride = Gfx::InvalidID,
         bool useFrameLocalBuffer = false
     );
+    static Gfx::BindGroup BindMaterial2(
+        Material& mat,
+        Gfx::Texture2D textureOverride = Gfx::InvalidID,
+        bool useFrameLocalBuffer = false
+    );
 };
 
 void GraphicsModuleInit();

@@ -6,7 +6,7 @@
 #include <atomic>
 #endif
 
-namespace OD::MemoryTracker {
+namespace OD::MemoryTracker{
 
 #if defined(_MSC_VER) && defined(_DEBUG)
 namespace {
@@ -17,16 +17,16 @@ std::atomic<std::size_t> breakpointMinimumBytes{0};
 std::atomic<bool> started{false};
 
 int AllocationHook(int allocationType, void*, std::size_t size, int, long, const unsigned char*, int){
-    if (allocationType != _HOOK_ALLOC && allocationType != _HOOK_REALLOC)
+    if(allocationType != _HOOK_ALLOC && allocationType != _HOOK_REALLOC)
         return 1;
 
     const std::size_t breakpoint = breakpointMinimumBytes.load(std::memory_order_relaxed);
-    if (breakpoint != 0 && size >= breakpoint){
+    if(breakpoint != 0 && size >= breakpoint){
         //_CrtDbgBreak();
         int dammyStopCode = 200;
     }
 
-    if (trackingFrame.load(std::memory_order_relaxed)) {
+    if(trackingFrame.load(std::memory_order_relaxed)){
         frameAllocations.fetch_add(1, std::memory_order_relaxed);
         frameBytes.fetch_add(size, std::memory_order_relaxed);
     }
@@ -35,15 +35,15 @@ int AllocationHook(int allocationType, void*, std::size_t size, int, long, const
 }
 #endif
 
-void Start() {
+void Start(){
 #if defined(_MSC_VER) && defined(_DEBUG)
     bool expected = false;
-    if (started.compare_exchange_strong(expected, true))
+    if(started.compare_exchange_strong(expected, true))
         _CrtSetAllocHook(AllocationHook);
 #endif
 }
 
-void BeginFrame() {
+void BeginFrame(){
 #if defined(_MSC_VER) && defined(_DEBUG)
     Start();
     frameAllocations.store(0, std::memory_order_relaxed);
@@ -52,7 +52,7 @@ void BeginFrame() {
 #endif
 }
 
-FrameStats EndFrame() {
+FrameStats EndFrame(){
     FrameStats result;
 #if defined(_MSC_VER) && defined(_DEBUG)
     trackingFrame.store(false, std::memory_order_release);
@@ -62,7 +62,7 @@ FrameStats EndFrame() {
     return result;
 }
 
-void SetAllocationBreakpointSize(std::size_t minimumBytes) {
+void SetAllocationBreakpointSize(std::size_t minimumBytes){
 #if defined(_MSC_VER) && defined(_DEBUG)
     breakpointMinimumBytes.store(minimumBytes, std::memory_order_relaxed);
 #else

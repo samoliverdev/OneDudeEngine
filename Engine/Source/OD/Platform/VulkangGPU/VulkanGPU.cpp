@@ -1461,6 +1461,7 @@ void VulkanGPUDevice::_DestroyTexture2D(Texture2DData& data){
     data.sampler = VK_NULL_HANDLE;
     data.imageView = VK_NULL_HANDLE;
     data.image = VK_NULL_HANDLE;
+    data.allocation = VK_NULL_HANDLE;
 } 
 
 #pragma endregion
@@ -1589,10 +1590,11 @@ bool VulkanGPUDevice::_CreateBindGroup(BindGroupData& data, const BindGroupInfo&
                 imageInfo.sampler = textureData.sampler;
                 imageInfo.imageView = textureData.imageView;
                 imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                writes[i] = vkinit::write_descriptor_image(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                    data.descriptorSet, &imageInfo, info.entries[i].binding);
+                writes[i] = vkinit::write_descriptor_image(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, data.descriptorSet, &imageInfo, info.entries[i].binding);
             } else if(info.entries[i].framebuffer != InvalidID){
                 FramebufferData& framebufferData = framebufferPool.Get(info.entries[i].framebuffer);
+                Assert(framebufferData.layout.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY);
+
                 int attacment = info.entries[i].framebufferAttacement;
                 VkDescriptorImageInfo& imageInfo = imageInfos[i];
                 imageInfo.sampler = attacment < 0 ? framebufferData.depthAttachment.sampler : framebufferData.colorAttachments[attacment].sampler;
@@ -1608,14 +1610,32 @@ bool VulkanGPUDevice::_CreateBindGroup(BindGroupData& data, const BindGroupInfo&
                 Assert(false);
             }
         } else if(layoutData.info.entries[i].type == BindingType::TextureCube){
-            Assert(info.entries[i].cubemap != Gfx::InvalidID);
-            CubemapData& cube = cubemapPool.Get(info.entries[i].cubemap);
-            VkDescriptorImageInfo& imageInfo = imageInfos[i];
-            imageInfo.sampler = cube.sampler;
-            imageInfo.imageView = cube.imageView;
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            writes[i] = vkinit::write_descriptor_image(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                data.descriptorSet, &imageInfo, info.entries[i].binding);
+            if(info.entries[i].cubemap != Gfx::InvalidID){
+                Assert(info.entries[i].cubemap != Gfx::InvalidID);
+                CubemapData& cube = cubemapPool.Get(info.entries[i].cubemap);
+                VkDescriptorImageInfo& imageInfo = imageInfos[i];
+                imageInfo.sampler = cube.sampler;
+                imageInfo.imageView = cube.imageView;
+                imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                writes[i] = vkinit::write_descriptor_image(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, data.descriptorSet, &imageInfo, info.entries[i].binding);
+            } else if(info.entries[i].framebuffer != Gfx::InvalidID){
+                FramebufferData& framebufferData = framebufferPool.Get(info.entries[i].framebuffer);
+                Assert(framebufferData.layout.type == FramebufferAttachmentType::CUBEMAP);
+
+                const int attachment = info.entries[i].framebufferAttacement;
+                VkDescriptorImageInfo& imageInfo = imageInfos[i];
+                imageInfo.sampler = attachment < 0 ? framebufferData.depthAttachment.sampler : framebufferData.colorAttachments[attachment].sampler;
+                imageInfo.imageView = attachment < 0 ? framebufferData.depthAttachment.imageView : framebufferData.colorAttachments[attachment].imageView;
+                imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                writes[i] = vkinit::write_descriptor_image(
+                    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                    data.descriptorSet,
+                    &imageInfo,
+                    info.entries[i].binding
+                );
+            } else {
+                Assert(false);
+            }
         } else {
             Assert(false);
         }
@@ -1652,9 +1672,9 @@ uint64_t GetFramebufferLayoutHash(const FrameBufferLayout& layout){
     hash = HashCombineByte(hash, layout.samples);
 
     hash = HashCombineByte(hash, static_cast<uint8_t>(layout.layers));
-    hash = HashCombineByte(hash, static_cast<uint8_t>(layout.layers >> 8));
+    /*hash = HashCombineByte(hash, static_cast<uint8_t>(layout.layers >> 8));
     hash = HashCombineByte(hash, static_cast<uint8_t>(layout.layers >> 16));
-    hash = HashCombineByte(hash, static_cast<uint8_t>(layout.layers >> 24));
+    hash = HashCombineByte(hash, static_cast<uint8_t>(layout.layers >> 24));*/
 
     return hash;
 }
@@ -2261,6 +2281,7 @@ bool VulkanGPUDevice::RecreateSwapchain(){
 void VulkanGPUDevice::Cleanup(){
     if(!_isInitialized) return;
 
+    SyncSingleThreadData();
     glslang::FinalizeProcess();
     vkDeviceWaitIdle(_device);
 
@@ -2361,6 +2382,13 @@ void VulkanGPUDevice::_Init(){
     _windowExtent.height = Application::ScreenHeight();
 
     init_vulkan();
+    /*bufferPool.SetDestroyFunction([this](BufferData& data){ _DestroyBuffer(data); });
+    texture2DPool.SetDestroyFunction([this](Texture2DData& data){ _DestroyTexture2D(data); });
+    texture2DArrayPool.SetDestroyFunction([this](Texture2DArrayData& data){ _DestroyTexture2DArray(data); });
+    cubemapPool.SetDestroyFunction([this](CubemapData& data){ _DestroyCubemap(data); });
+    pipelinePool.SetDestroyFunction([this](PipelineData& data){ _DestroyPipeline(data); });
+    bindGroupLayoutPool.SetDestroyFunction([this](BindGroupLayoutData& data){ _DestroyBindGroupLayout(data); });
+    framebufferPool.SetDestroyFunction([this](FramebufferData& data){ _DestroyFramebuffer(data); });*/
     init_swapchain(presentMode);
     init_window_depth_buffer();
     init_commands();
@@ -2561,10 +2589,10 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
     if(framebufferWidth <= 0 || framebufferHeight <= 0)
         return;
 
-    {
+    /*{
         SimpleTimer timer([&](float t){ profilesGpu.push_back({"FenceWait", t}); });
         VK_CHECK(vkWaitForFences(_device, 1, &get_current_frame()._renderFence, true, 1000000000));
-    }
+    }*/
 
     SimpleTimer commandTimer([&](float t){ profilesGpu.push_back({"RecordAndPrepare", t}); });
 
@@ -2645,7 +2673,6 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
             }
             case ResourceCommands::Type::DestroyTexture2DArray:{
                 Assert(texture2DArrayPool.IsValid(cmd.destroyTexture2DArray.id));
-                _DestroyTexture2DArray(texture2DArrayPool.Get(cmd.destroyTexture2DArray.id));
                 texture2DArrayPool.AddDestroyedId(cmd.destroyTexture2DArray.id);
                 break;
             }
@@ -3462,7 +3489,7 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
         }
     }
 
-    for(const ResourceCommands::Command& cmd : frame.resourcePostCommands.commands){
+    /*for(const ResourceCommands::Command& cmd : frame.resourcePostCommands.commands){
         switch(cmd.type){
             case ResourceCommands::Type::DestroyBuffer:{
                 if(!bufferPool.IsValid(cmd.destroyBuffer.id)){
@@ -3471,61 +3498,49 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
                 }
 
                 Assert(bufferPool.IsValid(cmd.destroyBuffer.id));
-                auto& data = bufferPool.Get(cmd.destroyBuffer.id);
-                _DestroyBuffer(data);
                 bufferPool.AddDestroyedId(cmd.destroyBuffer.id);
                 break;
             }
 
             case ResourceCommands::Type::DestroyTexture2D:{
                 Assert(texture2DPool.IsValid(cmd.destroyTexture2D.id));
-                auto& data = texture2DPool.Get(cmd.destroyTexture2D.id);
-                _DestroyTexture2D(data);
                 texture2DPool.AddDestroyedId(cmd.destroyTexture2D.id);
                 break;
             }
 
             case ResourceCommands::Type::DestroyTexture2DArray:{
                 Assert(texture2DArrayPool.IsValid(cmd.destroyTexture2DArray.id));
-                _DestroyTexture2DArray(texture2DArrayPool.Get(cmd.destroyTexture2DArray.id));
                 texture2DArrayPool.AddDestroyedId(cmd.destroyTexture2DArray.id);
                 break;
             }
 
             case ResourceCommands::Type::DestroyCubemap:{
                 Assert(cubemapPool.IsValid(cmd.destroyCubemap.id));
-                _DestroyCubemap(cubemapPool.Get(cmd.destroyCubemap.id));
                 cubemapPool.AddDestroyedId(cmd.destroyCubemap.id);
                 break;
             }
 
             case ResourceCommands::Type::DestroyPipeline:{
                 Assert(pipelinePool.IsValid(cmd.destroyPipeline.id));
-                auto& data = pipelinePool.Get(cmd.destroyPipeline.id);
-                _DestroyPipeline(data);
                 pipelinePool.AddDestroyedId(cmd.destroyPipeline.id);
                 break;
             }
             
             case ResourceCommands::Type::DestroyBindGroupLayout:{
                 Assert(bindGroupLayoutPool.IsValid(cmd.destroyBindGroupLayout.id));
-                BindGroupLayoutData& data = bindGroupLayoutPool.Get(cmd.destroyBindGroupLayout.id);
-                _DestroyBindGroupLayout(data);
                 bindGroupLayoutPool.AddDestroyedId(cmd.destroyBindGroupLayout.id);
                 break;
             }
 
             case ResourceCommands::Type::DestroyFramebuffer:{
                 Assert(framebufferPool.IsValid(cmd.destroyFramebuffer.id));
-                auto& data = framebufferPool.Get(cmd.destroyFramebuffer.id);
-                _DestroyFramebuffer(data);
                 framebufferPool.AddDestroyedId(cmd.destroyFramebuffer.id);
                 break;
             }
             
             default: Assert(false);
         }
-    }
+    }*/
 
     /*for(auto& i: framebufferDeleteQueue){
         auto& data = framebufferPool.Get(i);
@@ -3607,9 +3622,94 @@ void VulkanGPUDevice::RunRender(RenderFrame& frame){
         bindGroupPool.AddDestroyedId(i);
     }
     frameBindGroups.clear();
+
+    {
+        SimpleTimer timer([&](float t){ profilesGpu.push_back({"FenceWait", t}); });
+        VK_CHECK(vkWaitForFences(_device, 1, &get_current_frame()._renderFence, true, 1000000000));
+    }
+
+    for(const ResourceCommands::Command& cmd : frame.resourcePostCommands.commands){
+        switch(cmd.type){
+            case ResourceCommands::Type::DestroyBuffer:{
+                if(!bufferPool.IsValid(cmd.destroyBuffer.id)){
+                    LogError("DestroyBuffer: Invalid id!");
+                    break;
+                }
+
+                Assert(bufferPool.IsValid(cmd.destroyBuffer.id));
+                auto& data = bufferPool.Get(cmd.destroyBuffer.id);
+                _DestroyBuffer(data);
+                bufferPool.AddDestroyedId(cmd.destroyBuffer.id);
+                break;
+            }
+
+            case ResourceCommands::Type::DestroyTexture2D:{
+                Assert(texture2DPool.IsValid(cmd.destroyTexture2D.id));
+                auto& data = texture2DPool.Get(cmd.destroyTexture2D.id);
+                _DestroyTexture2D(data);
+                texture2DPool.AddDestroyedId(cmd.destroyTexture2D.id);
+                break;
+            }
+
+            case ResourceCommands::Type::DestroyTexture2DArray:{
+                Assert(texture2DArrayPool.IsValid(cmd.destroyTexture2DArray.id));
+                _DestroyTexture2DArray(texture2DArrayPool.Get(cmd.destroyTexture2DArray.id));
+                texture2DArrayPool.AddDestroyedId(cmd.destroyTexture2DArray.id);
+                break;
+            }
+
+            case ResourceCommands::Type::DestroyCubemap:{
+                Assert(cubemapPool.IsValid(cmd.destroyCubemap.id));
+                _DestroyCubemap(cubemapPool.Get(cmd.destroyCubemap.id));
+                cubemapPool.AddDestroyedId(cmd.destroyCubemap.id);
+                break;
+            }
+
+            case ResourceCommands::Type::DestroyPipeline:{
+                Assert(pipelinePool.IsValid(cmd.destroyPipeline.id));
+                auto& data = pipelinePool.Get(cmd.destroyPipeline.id);
+                _DestroyPipeline(data);
+                pipelinePool.AddDestroyedId(cmd.destroyPipeline.id);
+                break;
+            }
+            
+            case ResourceCommands::Type::DestroyBindGroupLayout:{
+                Assert(bindGroupLayoutPool.IsValid(cmd.destroyBindGroupLayout.id));
+                BindGroupLayoutData& data = bindGroupLayoutPool.Get(cmd.destroyBindGroupLayout.id);
+                _DestroyBindGroupLayout(data);
+                bindGroupLayoutPool.AddDestroyedId(cmd.destroyBindGroupLayout.id);
+                break;
+            }
+
+            case ResourceCommands::Type::DestroyFramebuffer:{
+                Assert(framebufferPool.IsValid(cmd.destroyFramebuffer.id));
+                auto& data = framebufferPool.Get(cmd.destroyFramebuffer.id);
+                _DestroyFramebuffer(data);
+                framebufferPool.AddDestroyedId(cmd.destroyFramebuffer.id);
+                break;
+            }
+            
+            default: Assert(false);
+        }
+    }
 }
 
 void VulkanGPUDevice::SyncSingleThreadData(){
+    /*const bool hasPendingGpuDestruction =
+        bufferPool.HasPendingDestroyedIds() ||
+        texture2DPool.HasPendingDestroyedIds() ||
+        texture2DArrayPool.HasPendingDestroyedIds() ||
+        cubemapPool.HasPendingDestroyedIds() ||
+        pipelinePool.HasPendingDestroyedIds() ||
+        bindGroupLayoutPool.HasPendingDestroyedIds() ||
+        framebufferPool.HasPendingDestroyedIds();
+    if(hasPendingGpuDestruction && _device != VK_NULL_HANDLE){
+        // These resources may still be referenced by the most recently submitted frame.
+        VK_CHECK(vkDeviceWaitIdle(_device));
+    }*/
+
+    //VK_CHECK(vkDeviceWaitIdle(_device));
+
     bufferPool.SyncSingleThreadData();
     texture2DPool.SyncSingleThreadData();
     texture2DArrayPool.SyncSingleThreadData();

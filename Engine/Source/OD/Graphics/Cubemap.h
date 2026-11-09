@@ -33,9 +33,12 @@ public:
     virtual size_t VRamUsage() override { return vramUsage; }
     
 private:
-    bool mipmap;
-    size_t ramUsage;
-    size_t vramUsage;
+#ifdef TestNewGPU_API
+    bool LoadFromHDRFile(const char* hdri);
+#endif
+    bool mipmap = false;
+    size_t ramUsage = 0;
+    size_t vramUsage = 0;
     CubemapDataGL; 
     Gfx::Cubemap tex = Gfx::InvalidID;
 };

@@ -209,7 +209,17 @@ Ref<Cubemap> Cubemap::CreateFromFile(const char* right, const char* left, const 
 
 Ref<Cubemap> Cubemap::CreateFromFileHDR(const char* hdri){
 #ifdef TestNewGPU_API
-    if(gfxDevice == nullptr) return nullptr;
+    Ref<Cubemap> out = CreateRef<Cubemap>();
+    if(!out->LoadFromHDRFile(hdri)) return nullptr;
+    return out;
+#else
+    return graphicsDevice->CubemapCreateFromFileHDR(hdri);
+#endif
+}
+
+#ifdef TestNewGPU_API
+bool Cubemap::LoadFromHDRFile(const char* hdri){
+    if(gfxDevice == nullptr || hdri == nullptr) return false;
 
     int width = 0;
     int height = 0;
@@ -220,7 +230,7 @@ Ref<Cubemap> Cubemap::CreateFromFileHDR(const char* hdri){
     float* data = stbi_loadf(hdri, &width, &height, &channels, 4);
     if(data == nullptr){
         LogError("Failed to load HDR image: {}", hdri);
-        return nullptr;
+        return false;
     }
 
     Gfx::Texture2DInfo sourceInfo{};
@@ -232,9 +242,12 @@ Ref<Cubemap> Cubemap::CreateFromFileHDR(const char* hdri){
     sourceInfo.mipmap = false;
     sourceInfo.mipLevels = 1;
     const auto sourceTexture = gfxDevice->CreateTexture2D(sourceInfo);
+    if(sourceTexture == Gfx::InvalidID){
+        stbi_image_free(data);
+        return false;
+    }
     gfxDevice->UploadTexture2D(sourceTexture, data, static_cast<size_t>(width) * static_cast<size_t>(height) * 4 * sizeof(float));
     stbi_image_free(data);
-    if(sourceTexture == Gfx::InvalidID) return nullptr;
 
     constexpr uint32_t size = 512;
     constexpr uint32_t mipLevels = 10;
@@ -247,16 +260,27 @@ Ref<Cubemap> Cubemap::CreateFromFileHDR(const char* hdri){
     destinationInfo.mipmap = true;
     destinationInfo.mipLevels = mipLevels;
 
-    Ref<Cubemap> out = CreateRef<Cubemap>();
-    out->tex = gfxDevice->CreateCubemap(destinationInfo);
-    if(out->tex == Gfx::InvalidID) return nullptr;
-    out->mipmap = true;
+    const Gfx::Cubemap newTexture = gfxDevice->CreateCubemap(destinationInfo);
+    if(newTexture == Gfx::InvalidID){
+        gfxDevice->DestroyTexture2D(sourceTexture);
+        return false;
+    }
+
+    size_t newVramUsage = 0;
+    for(uint32_t mip = 0; mip < mipLevels; ++mip){
+        const size_t mipSize = std::max(1u, size >> mip);
+        newVramUsage += mipSize * mipSize * 6 * 4 * sizeof(uint16_t);
+    }
 
     const auto framebuffer = IblCreateFramebuffer(gfxDevice, size, mipLevels);
     const auto cube = IblCreateCube(gfxDevice);
     const auto layout = IblCreateLayout(gfxDevice, Gfx::BindingType::Texture2D, sizeof(IblEnvironmentUniform));
     const auto source = IblLoadShader("Engine/Shaders/EquirectangularToCubemap.glsl");
-    if(source.empty()) return nullptr;
+    if(source.empty()){
+        gfxDevice->DestroyCubemap(newTexture);
+        gfxDevice->DestroyTexture2D(sourceTexture);
+        return false;
+    }
     const auto pipeline = IblCreatePipeline(gfxDevice, source, layout, IblFramebufferLayout());
     const auto projection = IblCaptureProjection();
     const auto views = IblCaptureViews();
@@ -281,15 +305,18 @@ Ref<Cubemap> Cubemap::CreateFromFileHDR(const char* hdri){
             commands->EndFramebuffer();
         }
     }
-    commands->CopyTextureCubemap(framebuffer, 0, out->tex);
-    return out;
-#else
-    return graphicsDevice->CubemapCreateFromFileHDR(hdri);
-#endif
+    commands->CopyTextureCubemap(framebuffer, 0, newTexture);
+    gfxDevice->DestroyTexture2D(sourceTexture);
 
-    Assert(false && "Not Work for now");
-    return nullptr;
+    const Gfx::Cubemap previousTexture = tex;
+    tex = newTexture;
+    mipmap = true;
+    ramUsage = 0; // The decoded HDR source is released after upload.
+    vramUsage = newVramUsage;
+    if(previousTexture != Gfx::InvalidID) gfxDevice->DestroyCubemap(previousTexture);
+    return true;
 }
+#endif
 
 Ref<Cubemap> Cubemap::CreateIrradianceMapFromCubeMap(const Ref<Cubemap>& cubemap){
 #ifdef TestNewGPU_API
@@ -485,8 +512,14 @@ Ref<Cubemap> Cubemap::CreatePrefilterMapFromCubeMap(const Ref<Cubemap>& cubemap)
 }
 
 bool Cubemap::LoadFromFile(const std::string& path){
-    this->path = path; 
+    #ifdef TestNewGPU_API
+    if(!LoadFromHDRFile(path.c_str())) return false;
+    this->path = path;
+    return true;
+    #else
+    this->path = path;
     return graphicsDevice->CubemapCreateFromFileHDR(*this, path.c_str());
+    #endif
 }
 
 std::vector<std::string> Cubemap::GetFileAssociations(){

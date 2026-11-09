@@ -18,6 +18,7 @@
     SupportInstancing true
     DrawType _ SKINNED INSTANCING INSTANCINGMATRIX43
     MultiCompile Forward Deferred
+    RenderPass Forward Deferred DeferredCopy
 
     CullFace BACK
     DepthTest LEQUAL
