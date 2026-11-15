@@ -1,5 +1,6 @@
 #pragma BeginPassDef
-    Name MainPass
+    Name DepthPass
+    RenderPass DirectionalShadow OtherShadow
     SupportInstancing false
     CullFace NONE
     DepthTest LESS
@@ -8,10 +9,6 @@
 
 #include Engine/ShaderLibrary/Base.glsl
 
-BeginUniform(3, 0, ShadowData)
-    Uniform mat4 lightSpaceMatrix;
-EndUniform()
-
 BeginUniform(0, 0, Main)
     Uniform float heightScale;
     Uniform vec2 heightmapTilling;// = vec2(1, 1);
@@ -19,10 +16,8 @@ BeginUniform(0, 0, Main)
 EndUniform()
 Texture2D(0, 1, heightMap, heightMapSampler)
 
-#define USE_PERDRAW
-uniform vec4 perDrawVector4_0;
 
-#if defined(VERTEX) && defined(MainPass)
+#if defined(VERTEX) && defined(DepthPass)
     #include Engine/ShaderLibrary/Vertex.glsl
 
     /*uniform mat4 lightSpaceMatrix;
@@ -32,11 +27,7 @@ uniform vec4 perDrawVector4_0;
     uniform vec2 heightmapOffset = vec2(0, 0);*/
 
     void main(){
-        #ifdef USE_PERDRAW
-        vec2 _heightmapOffset = vec2(perDrawVector4_0.x, perDrawVector4_0.y);
-        #else
         vec2 _heightmapOffset = heightmapOffset;
-        #endif
 
         mat4 targetModelMatrix = GetModelMatrix();
         vec3 localPos = GetLocalPos().xyz;
@@ -44,10 +35,10 @@ uniform vec4 perDrawVector4_0;
         float height = texture(heightMap, texCoord * heightmapTilling + _heightmapOffset).r; // uv + uvOffset
         localPos.y = height * heightScale;
 
-        gl_Position = lightSpaceMatrix * targetModelMatrix * vec4(localPos, 1.0);
+        gl_Position = projection * view * targetModelMatrix * vec4(localPos, 1.0);
     }
 #endif
 
-#if defined(FRAGMENT) && defined(MainPass)
+#if defined(FRAGMENT) && defined(DepthPass)
     void main(){}
 #endif

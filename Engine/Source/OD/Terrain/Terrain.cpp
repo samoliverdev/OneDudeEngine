@@ -136,6 +136,18 @@ void TerrainSystem::OnInit(Scene& inscene){
     scene = &inscene;
 }
 
+static void SetTerrainLayerTextures(Material& material, const TerrainComponent& terrain){
+    auto& resources = ResourceManager::Get();
+    auto white = resources.LoadByPath<Texture2D>("Engine/Textures/White.jpg");
+    material.SetTexture("splatmap", terrain.splatmap != nullptr ? terrain.splatmap : resources.LoadByPath<Texture2D>("Engine/Textures/Black.jpg"));
+    material.SetTexture("normalMap", terrain.layer0Normal != nullptr ? terrain.layer0Normal : resources.LoadByPath<Texture2D>("Engine/Textures/Normal.jpg"));
+    material.SetTexture("tex0", terrain.layer0 != nullptr ? terrain.layer0 : white);
+    material.SetTexture("tex1", terrain.layer1 != nullptr ? terrain.layer1 : white);
+    material.SetTexture("tex2", terrain.layer2 != nullptr ? terrain.layer2 : white);
+    material.SetTexture("tex3", terrain.layer3 != nullptr ? terrain.layer3 : white);
+    material.SetTexture("tex4", terrain.layer4 != nullptr ? terrain.layer4 : white);
+}
+
 void TerrainSystem::PostPhysicsUpdate(Scene& inscene){
     OD_PROFILE_SCOPE("TerrainSystem::Update");
     //OD_LOG_PROFILE("TerrainSystem::Update");
@@ -148,7 +160,7 @@ void TerrainSystem::PostPhysicsUpdate(Scene& inscene){
 
         if(terrain.heightmap == nullptr){
             DestroyTerrain(terrain);
-            return;
+            continue;
         }
 
         if(scene->IsValid(terrain.meshsRoot) == false || terrain.isDirt == true){
@@ -922,16 +934,11 @@ void TerrainSystem::UpdateTerrain(TerrainComponent& terrain){
         );
         meshComponent.material->SetTexture("heightMap", terrain.heightmapTex);
         meshComponent.material->SetFloat("heightScale", terrain.terrainHeight);
-        //meshComponent.customShadowPass->SetTexture("heightMap", terrain.heightmapTex);
-        //meshComponent.customShadowPass->SetFloat("heightScale", terrain.terrainHeight);,
+        meshComponent.material->SetVector2("texTilling", terrain.texTilling);
+        meshComponent.customShadowPass->SetTexture("heightMap", terrain.heightmapTex);
+        meshComponent.customShadowPass->SetFloat("heightScale", terrain.terrainHeight);
 
-        meshComponent.material->SetTexture("splatmap", terrain.splatmap);
-        meshComponent.material->SetTexture("tex0", terrain.layer0);
-        if(terrain.layer0Normal != nullptr) meshComponent.material->SetTexture("normalMap", terrain.layer0Normal);//TODO: Finish this design
-        meshComponent.material->SetTexture("tex1", terrain.layer1);
-        meshComponent.material->SetTexture("tex2", terrain.layer2);
-        meshComponent.material->SetTexture("tex3", terrain.layer3);
-        meshComponent.material->SetTexture("tex4", terrain.layer4);
+        SetTerrainLayerTextures(*meshComponent.material, terrain);
     }
 
     scene->GetComponent<TransformComponent>(terrain.meshsRoot).LocalScale(
@@ -995,17 +1002,10 @@ void TerrainSystem::LoadCood(TerrainComponent& terrain, IVector2 coord){
     MeshRendererComponent& terrainMeshRenderer = scene->AddComponent<MeshRendererComponent>(chunkData.entity);
     terrainMeshRenderer.UpdateAABB();
 
-    #if 1 //EnableExperimentalPerDrawCustomData
     if(terrain.mat == nullptr){
         terrain.mat = ResourceManager::Get().Create<Material>(ResourceManager::Get().LoadByPath<Shader>("Engine/Shaders/Terrain.glsl"));
         terrain.mat->SetTexture("mainTex", ResourceManager::Get().LoadByPath<Texture2D>("Engine/Textures/White.jpg"));
-        terrain.mat->SetTexture("splatmap", terrain.splatmap);
-        terrain.mat->SetTexture("tex0", terrain.layer0);
-        if(terrain.layer0Normal != nullptr) terrain.mat->SetTexture("normalMap", terrain.layer0Normal);
-        terrain.mat->SetTexture("tex1", terrain.layer1);
-        terrain.mat->SetTexture("tex2", terrain.layer2);
-        terrain.mat->SetTexture("tex3", terrain.layer3);
-        terrain.mat->SetTexture("tex4", terrain.layer4);
+        SetTerrainLayerTextures(*terrain.mat, terrain);
         terrain.mat->SetVector4("color", Vector4(1, 1, 1, 1));
         terrain.mat->SetTexture("heightMap", terrain.heightmapTex);
         terrain.mat->SetVector2("heightmapTilling", Vector2(offset, offset));
@@ -1019,36 +1019,12 @@ void TerrainSystem::LoadCood(TerrainComponent& terrain, IVector2 coord){
     }
 
     Vector2 uvCoord = Vector2(coord.x * offset, coord.y * offset);
-    terrainMeshRenderer.useCustomData = true;
-    terrainMeshRenderer.customData = Vector4(uvCoord.x, uvCoord.y, 0, 0);
-    terrainMeshRenderer.material = terrain.mat;
-    terrainMeshRenderer.customShadowPass = terrain.matShadow;
-    #else
-
-    terrainMeshRenderer.material = ResourceManager::Get().Create<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/Terrain.glsl"));
-    terrainMeshRenderer.material->SetTexture("mainTex", AssetManager::Get().LoadAsset<Texture2D>("Engine/Textures/White.jpg"));
-    terrainMeshRenderer.material->SetTexture("splatmap", terrain.splatmap);
-    terrainMeshRenderer.material->SetTexture("tex0", terrain.layer0);
-    terrainMeshRenderer.material->SetTexture("normalMap", terrain.layer0Normal);
-    terrainMeshRenderer.material->SetTexture("tex1", terrain.layer1);
-    terrainMeshRenderer.material->SetTexture("tex2", terrain.layer2);
-    terrainMeshRenderer.material->SetTexture("tex3", terrain.layer3);
-    terrainMeshRenderer.material->SetTexture("tex4", terrain.layer4);
-    terrainMeshRenderer.material->SetVector4("color", Vector4(1, 1, 1, 1));
-
-    terrainMeshRenderer.material->SetTexture("heightMap", terrain.heightmapTex);
-    //terrainMeshRenderer.material->SetTexture("heightMapNormal", terrain.normalTex);
-    terrainMeshRenderer.material->SetVector2("heightmapTilling", Vector2(offset, offset));
-    terrainMeshRenderer.material->SetVector2("texTilling", terrain.texTilling);
-    terrainMeshRenderer.material->SetVector2("heightmapOffset", Vector2(coord.x * offset, coord.y * offset));
-    terrainMeshRenderer.material->SetFloat("heightScale", terrain.terrainHeight);
-
-    terrainMeshRenderer.customShadowPass = ResourceManager::Get().Create<Material>(AssetManager::Get().LoadAsset<Shader>("Engine/Shaders/TerrainShadow.glsl"));
-    terrainMeshRenderer.customShadowPass->SetTexture("heightMap", terrain.heightmapTex);
-    terrainMeshRenderer.customShadowPass->SetVector2("heightmapTilling", Vector2(offset, offset));
-    terrainMeshRenderer.customShadowPass->SetVector2("heightmapOffset", Vector2(coord.x * offset, coord.y * offset));
-    terrainMeshRenderer.customShadowPass->SetFloat("heightScale", terrain.terrainHeight);
-    #endif
+    // Each chunk needs its own offset; the renderer no longer submits the
+    // experimental perDrawVector4_0 uniform used by the old shared material.
+    terrainMeshRenderer.material = ResourceManager::Get().Create<Material>(*terrain.mat);
+    terrainMeshRenderer.material->SetVector2("heightmapOffset", uvCoord);
+    terrainMeshRenderer.customShadowPass = ResourceManager::Get().Create<Material>(*terrain.matShadow);
+    terrainMeshRenderer.customShadowPass->SetVector2("heightmapOffset", uvCoord);
 
     terrain.loadedChunks[coord] = chunkData;
 }

@@ -507,6 +507,9 @@ void RenderContext::CleanSSS(){
 }
 
 void RenderContext::DrawSSS(Vector3 _lightDir, SSS_Settings settings){
+    #ifdef TestNewGPU_API
+    return;
+    #endif
     /*auto cam = GetCamera();
     
     Graphics::BeginFramebuffer(*screenSpaceShadowOutput, true, {1, 1, 1, 1}, 0, 0);

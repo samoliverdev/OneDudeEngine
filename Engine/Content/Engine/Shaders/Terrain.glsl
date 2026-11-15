@@ -15,7 +15,7 @@
     Texture2D maskMap White
     Float occlusion 1 0 1
     Float metallic 0 0 1
-    Float smoothness 0.5 0.0 1.0
+    Float roughness 0.5 0.0 1.0
     Float cutoff 0.5 0 1
 #pragma EndProperties
 
@@ -25,6 +25,7 @@
     MultiCompile _ SKINNED
     MultiCompile Opaque Blend
     MultiCompile Forward Deferred
+    RenderPass Forward Deferred DeferredCopy
     CullFace BACK
     DepthTest LESS
     Blend Off
@@ -33,8 +34,7 @@
 #include Engine/ShaderLibrary/Base.glsl
 #include Engine/ShaderLibrary/Vertex.glsl
 
-#include Engine/ShaderLibrary/UniformsDef.glsl
-#include Engine/ShaderLibrary/TexturesDef.glsl
+#include Engine/ShaderLibrary/PipelineDataDef.glsl
 
 BeginUniform(0, 0, Main)
     Uniform vec3 viewPos;
@@ -49,13 +49,10 @@ BeginUniform(0, 0, Main)
     Uniform vec4 emissionColor;// = vec4(0,0,0,0);
     Uniform float occlusion;// = 1;
     Uniform float metallic;// = 0;
-    Uniform float smoothness;// = 0.5;
+    Uniform float roughness;// = 0.5;
     Uniform float cutoff;// = 0.5;
 EndUniform()
 
-#define USE_PERDRAW
-uniform vec4 perDrawVector4_0;
-uniform int perDrawInt_1;
 
 Texture2D(0, 6, heightMap, heightMapSampler)
 Texture2D(0, 7, heightMapNormal, heightMapNormalSampler)
@@ -83,6 +80,7 @@ Texture2D(0, 19, maskMap, maskMapSampler)
         flat vec2 uvOffset_;
         mat3 TBN;
         mat4 targetModelMatrix;
+        flat vec4 perInstanceData;
     } vsOut;
 
     /*uniform sampler2D heightMap;
@@ -115,11 +113,7 @@ Texture2D(0, 19, maskMap, maskMapSampler)
     }
 
     void main(){
-        #ifdef USE_PERDRAW
-        vec2 _heightmapOffset = vec2(perDrawVector4_0.x, perDrawVector4_0.y);
-        #else
         vec2 _heightmapOffset = heightmapOffset;
-        #endif
 
         mat4 targetModelMatrix = GetModelMatrix();
         vec3 localPos = GetLocalPos().xyz;
@@ -137,6 +131,7 @@ Texture2D(0, 19, maskMap, maskMapSampler)
         float height = texture(heightMap, uv * heightmapTilling + _heightmapOffset).r; // uv + uvOffset
         localPos.y = height * heightScale;
 
+        vsOut.perInstanceData = GetPerInstanceData();
         vsOut.targetModelMatrix = targetModelMatrix;
         vsOut.pos = localPos;
         vsOut.normal = _normal;
@@ -157,9 +152,7 @@ Texture2D(0, 19, maskMap, maskMapSampler)
     #include Engine/ShaderLibrary/Surface.glsl
     #include Engine/ShaderLibrary/Shadows.glsl
     #include Engine/ShaderLibrary/Light.glsl
-    #include Engine/ShaderLibrary/BRDF.glsl
-    #include Engine/ShaderLibrary/GI.glsl
-    #include Engine/ShaderLibrary/Lighting.glsl
+    #include Engine/ShaderLibrary/PBR.glsl
 
     in VsOut{
         vec3 pos;
@@ -171,6 +164,7 @@ Texture2D(0, 19, maskMap, maskMapSampler)
         flat vec2 uvOffset_;
         mat3 TBN;
         mat4 targetModelMatrix;
+        flat vec4 perInstanceData;
     } fsIn;
 
     /*uniform vec3 viewPos;
@@ -195,7 +189,7 @@ Texture2D(0, 19, maskMap, maskMapSampler)
     uniform sampler2D maskMap;
     uniform float occlusion = 1;
     uniform float metallic = 0;
-    uniform float smoothness = 0.5;
+    uniform float roughness = 0.5;
     uniform float cutoff  = 0.5;*/
 
     #ifdef Deferred
@@ -296,24 +290,16 @@ Texture2D(0, 19, maskMap, maskMapSampler)
 
     float GetMetallic(vec2 baseUV){
         float _metallic = metallic;
-        _metallic *= GetMask(baseUV).r;
+        _metallic *= GetMask(baseUV).b;
         return _metallic;
     }
 
-    float GetSmoothness(vec2 baseUV){
-        float _smoothness = smoothness;
-        _smoothness *= GetMask(baseUV).a;
-        return _smoothness;
+    float GetRoughness(vec2 baseUV){
+        return clamp(roughness, 0.025, 1.0) * GetMask(baseUV).g;
     }
 
     float GetOcclusion(vec2 baseUV){
-        return 1.0;
-        //return GetMask(baseUV).g;
-
-        /*float strength = occlusion;
-        float _occlusion = GetMask(baseUV).g;
-        _occlusion = mix(_occlusion, 1.0, strength);
-        return _occlusion;*/
+        return mix(1.0, GetMask(baseUV).r, occlusion);
     }
 
     vec3 GetNormal(mat3 TBN, vec2 uv){
@@ -383,11 +369,7 @@ Texture2D(0, 19, maskMap, maskMapSampler)
     }
 
     void main(){
-        #ifdef USE_PERDRAW
-        vec2 _heightmapOffset = vec2(perDrawVector4_0.x, perDrawVector4_0.y);
-        #else
         vec2 _heightmapOffset = heightmapOffset;
-        #endif
 
         vec4 splatmap = texture(splatmap, fsIn.texCoord * heightmapTilling + _heightmapOffset);
 
@@ -395,6 +377,7 @@ Texture2D(0, 19, maskMap, maskMapSampler)
 
         //vec4 base = texture(mainTex, fsIn.texCoord + uvOffset);
         vec4 base = GetBaseColor(baseUV, splatmap);
+        if(base.a < cutoff) discard;
 
         //float height = texture(heightMap, fsIn.texCoord + fsIn.uvOffset_).r * 1;
         //base = vec4(height, height, height, 1);
@@ -406,39 +389,28 @@ Texture2D(0, 19, maskMap, maskMapSampler)
         //surface.normal = NormalStrength(filterNormalLod(fsIn.texCoord * heightmapTilling + heightmapOffset), 1);
         //surface.normal = NormalStrength(GetNormal(fsIn.TBN, fsIn.texCoord * heightmapTilling + heightmapOffset), 1);
         surface.normal = getNormalFromMap2(fsIn.texCoord * heightmapTilling + _heightmapOffset, baseUV, fsIn.pos, fsIn.targetModelMatrix);
-        surface.viewDirection = normalize(viewPos - fsIn.worldPos);
+        surface.viewDirection = normalize(invView[3].xyz - fsIn.worldPos);
         surface.depth = -(view * vec4(fsIn.worldPos, 1)).z;
         surface.color = base.rgb;
         surface.alpha = base.a;
         surface.occlusion = GetOcclusion(fsIn.texCoord);
         surface.metallic = GetMetallic(fsIn.texCoord);
-        surface.smoothness = GetSmoothness(fsIn.texCoord);
+        surface.roughness = GetRoughness(fsIn.texCoord);
+        surface.clearCoat = 0.0;
+        surface.clearCoatRoughness = 0.025;
 
         #ifdef Deferred
         
-        /*gPosition = surface.position;
-        gNormal = surface.normal;
-        gAlbedoSpec.rgb = surface.color.rgb;
-        //gAlbedoSpec.a = surface.smoothness;
-        gEmission.rgb = GetEmission(baseUV);
-        gOther.r = surface.smoothness;
-        gOther.g = surface.metallic;
-        gOther.b = surface.occlusion;*/
-
-        gNormal = vec3(pack_normal_octahedron(surface.normal), 0);
-        gAlbedoSpec = vec4(surface.color.rgb, 1);
-        gOther = vec4(surface.smoothness, surface.metallic, surface.occlusion, perDrawInt_1);
+        gNormal = vec3(pack_normal_octahedron(surface.normal), surface.clearCoat);
+        gAlbedoSpec = vec4(surface.color.rgb, surface.clearCoatRoughness);
+        gOther = vec4(surface.roughness, surface.metallic, surface.occlusion, fsIn.perInstanceData.w);
         gEmission = GetEmission(baseUV);
         
         #else
 
-        BRDF brdf = GetBRDF(surface);
-        GI gi = GetGI(surface, brdf);
-        vec3 color = GetLighting(surface, brdf, gi);
+        vec3 color = GetFinalColor(surface);
         color += GetEmission(fsIn.texCoord);
         fragColor = vec4(color, surface.alpha);
-
-        if(base.a < cutoff) discard;
 
         #endif
     }

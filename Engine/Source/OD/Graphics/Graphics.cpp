@@ -1095,83 +1095,86 @@ Gfx::BindGroup Graphics::BindMaterial2(Material& mat, Gfx::Texture2D textureOver
     }
 
     const bool updateUniformData = mat.isDirtyUniformData;
-    if(updateUniformData) for(const auto& i: mat.maps){
-        const MaterialMap& map = i.second;
-        if(map.hasBufferData == false) continue;
-        if(map.type == MaterialMap::Type::None) continue;
+    if(updateUniformData){
+        for(const auto& i: mat.maps){
+            const MaterialMap& map = i.second;
+            if(map.hasBufferData == false) continue;
+            if(map.type == MaterialMap::Type::None) continue;
 
-        if(map.type == MaterialMap::Type::Int){
-            Assert(map.bufferSize >= sizeof(int));
-            memcpy((char*)mat.materialBufferData + map.bufferPos, &map.valueInt, sizeof(int));
-        } else if(map.type == MaterialMap::Type::Float){
-            Assert(map.bufferSize >= sizeof(float));
-            memcpy((char*)mat.materialBufferData + map.bufferPos, &map.valueFloat, sizeof(float));
-        } else if(map.type == MaterialMap::Type::Vector2){
-            //#ifdef GLM_FORCE_ALIGNED
-                Assert(map.bufferSize >= (sizeof(float) * 2));
-                memcpy((char*)mat.materialBufferData + map.bufferPos, &map.vec.vector.x, sizeof(float) * 2);
-            /*#else
-                Assert(m.size >= sizeof(Vector2));
-                memcpy((char*)material.glData.mainUniformData + m.pos, &map.vec.vector, sizeof(Vector2));
-            #endif*/
-        } else if(map.type == MaterialMap::Type::Vector3){
-            //#ifdef GLM_FORCE_ALIGNED
-                Vector3 v = Vector3(map.vec.vector.x, map.vec.vector.y, map.vec.vector.z);
+            if(map.type == MaterialMap::Type::Int){
+                Assert(map.bufferSize >= sizeof(int));
+                memcpy((char*)mat.materialBufferData + map.bufferPos, &map.valueInt, sizeof(int));
+            } else if(map.type == MaterialMap::Type::Float){
+                Assert(map.bufferSize >= sizeof(float));
+                memcpy((char*)mat.materialBufferData + map.bufferPos, &map.valueFloat, sizeof(float));
+            } else if(map.type == MaterialMap::Type::Vector2){
+                //#ifdef GLM_FORCE_ALIGNED
+                    Assert(map.bufferSize >= (sizeof(float) * 2));
+                    memcpy((char*)mat.materialBufferData + map.bufferPos, &map.vec.vector.x, sizeof(float) * 2);
+                /*#else
+                    Assert(m.size >= sizeof(Vector2));
+                    memcpy((char*)material.glData.mainUniformData + m.pos, &map.vec.vector, sizeof(Vector2));
+                #endif*/
+            } else if(map.type == MaterialMap::Type::Vector3){
+                //#ifdef GLM_FORCE_ALIGNED
+                    Vector3 v = Vector3(map.vec.vector.x, map.vec.vector.y, map.vec.vector.z);
+                    if(map.vec.vectorIsColor) v = ToLinear(v);
+                    Assert(map.bufferSize >= (sizeof(float) * 3));
+                    memcpy((char*)mat.materialBufferData + map.bufferPos, &v.x, sizeof(float) * 3);
+                /*#else
+                    Assert(m.size >= sizeof(Vector3));
+                    memcpy((char*)material.glData.mainUniformData + m.pos, &map.vec.vector, sizeof(Vector3));
+                #endif*/
+            } else if(map.type == MaterialMap::Type::Vector4){
+                Vector4 v = map.vec.vector;
                 if(map.vec.vectorIsColor) v = ToLinear(v);
-                Assert(map.bufferSize >= (sizeof(float) * 3));
-                memcpy((char*)mat.materialBufferData + map.bufferPos, &v.x, sizeof(float) * 3);
-            /*#else
-                Assert(m.size >= sizeof(Vector3));
-                memcpy((char*)material.glData.mainUniformData + m.pos, &map.vec.vector, sizeof(Vector3));
-            #endif*/
-        } else if(map.type == MaterialMap::Type::Vector4){
-            Vector4 v = map.vec.vector;
-            if(map.vec.vectorIsColor) v = ToLinear(v);
-            Assert(map.bufferSize >= sizeof(Vector4));
-            memcpy((char*)mat.materialBufferData + map.bufferPos, &v, sizeof(Vector4));
-        } else if(map.type == MaterialMap::Type::Matrix4){
-            Assert(map.bufferSize >= sizeof(Matrix4));
-            memcpy((char*)mat.materialBufferData + map.bufferPos, &map.matrix, sizeof(Matrix4));
-        } else if(map.type == MaterialMap::Type::FloatList){
-            Assert(map.list != nullptr);
-            Assert(map.listCount > 0);
+                Assert(map.bufferSize >= sizeof(Vector4));
+                memcpy((char*)mat.materialBufferData + map.bufferPos, &v, sizeof(Vector4));
+            } else if(map.type == MaterialMap::Type::Matrix4){
+                Assert(map.bufferSize >= sizeof(Matrix4));
+                memcpy((char*)mat.materialBufferData + map.bufferPos, &map.matrix, sizeof(Matrix4));
+            } else if(map.type == MaterialMap::Type::FloatList){
+                Assert(map.list != nullptr);
+                Assert(map.listCount > 0);
 
-            //Assert(m.size >= sizeof(float) * map.listCount);
-            //memcpy((char*)material.glData.mainUniformData + m.pos, static_cast<float*>(map.list), sizeof(float) * map.listCount);
-            int stride = map.bufferArrayStride > 0 ?map.bufferArrayStride: 16; // fallback seguro
-            char* base = (char*)mat.materialBufferData + map.bufferPos;
-            float* src = static_cast<float*>(map.list);
-            for(int j = 0; j < map.listCount; ++j){
-                memcpy(base + j * stride, &src[j], sizeof(float));
-            }
-        } else if(map.type == MaterialMap::Type::Vector4List){
-            Assert(map.list != nullptr);
-            Assert(map.listCount > 0);
+                //Assert(m.size >= sizeof(float) * map.listCount);
+                //memcpy((char*)material.glData.mainUniformData + m.pos, static_cast<float*>(map.list), sizeof(float) * map.listCount);
+                int stride = map.bufferArrayStride > 0 ?map.bufferArrayStride: 16; // fallback seguro
+                char* base = (char*)mat.materialBufferData + map.bufferPos;
+                float* src = static_cast<float*>(map.list);
+                for(int j = 0; j < map.listCount; ++j){
+                    memcpy(base + j * stride, &src[j], sizeof(float));
+                }
+            } else if(map.type == MaterialMap::Type::Vector4List){
+                Assert(map.list != nullptr);
+                Assert(map.listCount > 0);
 
-            //Assert(m.size >= sizeof(Vector4) * map.listCount);
-            //memcpy((char*)material.glData.mainUniformData + m.pos, static_cast<Vector4*>(map.list), sizeof(Vector4) * map.listCount);
-            int stride = map.bufferArrayStride > 0 ? map.bufferArrayStride : sizeof(Vector4);
-            char* base = (char*)mat.materialBufferData + map.bufferPos;
-            Vector4* src = static_cast<Vector4*>(map.list);
-            for(int j = 0; j < map.listCount; ++j){
-                memcpy(base + j * stride, &src[j], sizeof(Vector4));
+                //Assert(m.size >= sizeof(Vector4) * map.listCount);
+                //memcpy((char*)material.glData.mainUniformData + m.pos, static_cast<Vector4*>(map.list), sizeof(Vector4) * map.listCount);
+                int stride = map.bufferArrayStride > 0 ? map.bufferArrayStride : sizeof(Vector4);
+                char* base = (char*)mat.materialBufferData + map.bufferPos;
+                Vector4* src = static_cast<Vector4*>(map.list);
+                for(int j = 0; j < map.listCount; ++j){
+                    memcpy(base + j * stride, &src[j], sizeof(Vector4));
+                }
+            } else if(map.type == MaterialMap::Type::Matrix4List){
+                Assert(map.list != nullptr);
+                Assert(map.listCount > 0);
+                
+                //Assert(m.size >= sizeof(Matrix4) * map.listCount);
+                //memcpy((char*)material.glData.mainUniformData + m.pos, static_cast<Matrix4*>(map.list), sizeof(Matrix4) * map.listCount);
+                int stride = map.bufferArrayStride > 0 ? map.bufferArrayStride : sizeof(Matrix4); // normalmente 64
+                char* base = (char*)mat.materialBufferData + map.bufferPos;
+                Matrix4* src = static_cast<Matrix4*>(map.list);
+                for(int j = 0; j < map.listCount; ++j){
+                    memcpy(base + j * stride, &src[j], sizeof(Matrix4));
+                }
+            } else {
+                Assert(false && "Type Not Supported in A UnifomBuffer");
             }
-        } else if(map.type == MaterialMap::Type::Matrix4List){
-            Assert(map.list != nullptr);
-            Assert(map.listCount > 0);
-            
-            //Assert(m.size >= sizeof(Matrix4) * map.listCount);
-            //memcpy((char*)material.glData.mainUniformData + m.pos, static_cast<Matrix4*>(map.list), sizeof(Matrix4) * map.listCount);
-            int stride = map.bufferArrayStride > 0 ? map.bufferArrayStride : sizeof(Matrix4); // normalmente 64
-            char* base = (char*)mat.materialBufferData + map.bufferPos;
-            Matrix4* src = static_cast<Matrix4*>(map.list);
-            for(int j = 0; j < map.listCount; ++j){
-                memcpy(base + j * stride, &src[j], sizeof(Matrix4));
-            }
-        } else {
-            Assert(false && "Type Not Supported in A UnifomBuffer");
         }
     }
+    
     Gfx::Buffer materialBuffer = mat.materialBuffer;
     if(updateUniformData){
 #ifdef MaterialBindTest
@@ -1549,7 +1552,7 @@ void Graphics::DrawMeshSkinned(Mesh& mesh, Material& mat, Matrix4 model, Matrix4
         curMat = &mat;
         curMat->isDirty = false;
         curShader = curMat->currentShader[curMat->currentPass].drawTypes[(int)Shader::DrawType::SkinnedDraw].get();
-        curBindGroup = BindMaterial(*curMat);
+        curBindGroup = BindMaterial2(*curMat);
     }
 
     if(mat.currentShader[mat.currentPass].drawTypes[(int)Shader::DrawType::SkinnedDraw]->_pipelines[curFramebufferRenderPassIndex] == Gfx::InvalidID){

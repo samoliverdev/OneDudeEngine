@@ -21,6 +21,7 @@ Gfx::ImageFormat GetImageFormat(TextureFormat f){
         case TextureFormat::RGB: return Gfx::ImageFormat::R8G8B8_UNORM;
         case TextureFormat::RGB8: return Gfx::ImageFormat::R8G8B8_UNORM;
         case TextureFormat::RGBA: return Gfx::ImageFormat::R8G8B8A8_UNORM;
+        case TextureFormat::RGBA8: return Gfx::ImageFormat::R8G8B8A8_UNORM;
     }
 
     Assert(false);
@@ -33,6 +34,7 @@ size_t GetFormatSize(TextureFormat f){
         case TextureFormat::RGB: return sizeof(uint8_t)*3;
         case TextureFormat::RGB8: return sizeof(uint8_t)*3;
         case TextureFormat::RGBA: return sizeof(uint8_t)*4;
+        case TextureFormat::RGBA8: return sizeof(uint8_t)*4;
     }
 
     Assert(false);
