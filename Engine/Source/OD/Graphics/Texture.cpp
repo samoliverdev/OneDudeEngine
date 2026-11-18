@@ -6,6 +6,9 @@
 #include "OD/Core/Package.h"
 #include "Graphics.h"
 #include "GraphicsDevice.h"
+#ifdef OPENGL_SUPPORT
+#include "OD/Platform/OpenGL/OpenGLGraphicsDevice.h"
+#endif
 #include "OD/Serialization/SerializationExtra.h"
 #include <stb/stb_image.h>
 #include <stb/stb_image_write.h>
@@ -783,6 +786,19 @@ bool Texture2D::Save(const std::string& outPath, SaveType type){
 
     //Destroy(*this);
     //Reload();
+}
+
+bool Texture2D::UpdateRegion(int x,int y,int w,int h,const void* data,TextureDataType type){
+    if(!data||x<0||y<0||w<=0||h<=0||uint64_t(x)+w>width||uint64_t(y)+h>height) return false;
+#ifdef TestNewGPU_API
+    return false;
+#else
+#ifdef OPENGL_SUPPORT
+    if(auto* device=dynamic_cast<OpenGLGraphicsDevice*>(graphicsDevice))
+        return device->Texture2DUpdateRegion(*this,x,y,w,h,data,type);
+#endif
+    return false;
+#endif
 }
 
 bool Texture2D::GetPixelData(std::vector<uint8_t>& outData){

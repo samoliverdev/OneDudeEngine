@@ -17,10 +17,22 @@
 #include "OD/RenderPipeline/StandRenderPipeline.h"
 #include "OD/RenderPipeline/ModelRendererComponent.h"
 #include "OD/Utils/File.h"
+#include "OD/TerrainSystem/TerrainEditor.h"
 #include <imgui/imgui_internal.h>
 #include <ImGuizmo/ImGuizmo.h>
 
 namespace OD{
+
+static void UndoEditorSelection(Editor& editor,bool redo){
+    auto scene=SceneManager::Get().GetActiveScene();
+    Entity e=editor.GetSelectionEntity();
+    if(scene&&TerrainEditor::IsEditing(*scene,e)){
+        auto& data=scene->GetComponent<TerrainDataComponent>(e);
+        if(redo) data.Redo();else data.Undo();
+    }else{
+        if(redo) UndoManager::Get().Redo();else UndoManager::Get().Undo();
+    }
+}
 
 struct MenuNode{
     std::function<void()> command = nullptr;
@@ -329,10 +341,10 @@ void Editor::OnUpdate(float deltaTime){
     }
 
     if(Input::IsKey(KeyCode::Control) && Input::IsKeyDown(KeyCode::Z)){
-        UndoManager::Get().Undo();
+        UndoEditorSelection(*this,false);
     }
     if(Input::IsKey(KeyCode::Control) && Input::IsKeyDown(KeyCode::Y)){
-        UndoManager::Get().Redo();
+        UndoEditorSelection(*this,true);
     }
     if(Input::IsKey(KeyCode::Control) && Input::IsKeyDown(KeyCode::D)){
         Ref<Scene> scene = SceneManager::Get().GetActiveScene();
@@ -654,8 +666,8 @@ void Editor::DrawMainMenuBar(){
             if(ImGui::MenuItem("Save", "Ctrl+S")) SaveScene();
             if(ImGui::MenuItem("Save As", "Ctrl+Shift+S")) SaveAsScene();
             if(ImGui::MenuItem("Exit", "Alt+F4")) Application::Quit(); 
-            if(ImGui::MenuItem("Undo", "Ctrl+Z")) UndoManager::Get().Undo();
-            if(ImGui::MenuItem("Redo", "Ctrl+Y")) UndoManager::Get().Redo();
+            if(ImGui::MenuItem("Undo", "Ctrl+Z")) UndoEditorSelection(*this,false);
+            if(ImGui::MenuItem("Redo", "Ctrl+Y")) UndoEditorSelection(*this,true);
 
             ImGui::EndMenu();
         }

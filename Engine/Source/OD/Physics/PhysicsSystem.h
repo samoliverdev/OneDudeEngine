@@ -956,6 +956,9 @@ private:
     void AddJoint(Scene* scene, Entity entity, JointComponent& c, TransformComponent& t, InfoComponent& info);
     void RemoveJoint(Entity entity, JointComponent& c);
     void SetJointsAsDirtyIfBodyIsDirty(Entity e);
+#if defined(OD_PHYSICS_BACKEND_JOLT)
+    void SyncHeightmapColliders();
+#endif
 
 
     //#if defined(UseBulletPhysics)
@@ -993,7 +996,7 @@ public:
 #endif
 };
 
-void PhysicsModuleInit();
-void PhysicsModuleShutdown();
+OD_API void PhysicsModuleInit();
+OD_API void PhysicsModuleShutdown();
 
 }

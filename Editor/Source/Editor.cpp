@@ -2,7 +2,7 @@
 #include "OD/Core/Module.h"
 #include "OD/Core/Application.h"
 #include "OD/Core/Project.h"
-#include <OD/Serialization/SerializationFull.h>
+#include <OD/Serialization/SerializationExtra.h>
 #include <OD/Editor/Editor.h>
 #include <OD/Scene/SceneManager.h>
 #include <OD/Graphics/Graphics.h>
@@ -412,7 +412,7 @@ class Editor: public OD::Module{
     void ReloadProjectDLL(){
         using namespace OD;
 
-        SceneManager::Get().GetActiveScene()->Save("tempHotReload.scene");
+        SceneManager::Get().GetActiveScene()->Save("tempHotReload.scene",EntityNull);
         //SceneManager::Get().DestroyActiveScene();
         SceneManager::Get().NewScene();
 
@@ -484,7 +484,7 @@ class Editor: public OD::Module{
     void AddDefaultScene(){
         using namespace OD;
 
-        Scene* scene = OD::SceneManager::Get().NewScene();
+        auto scene = OD::SceneManager::Get().NewScene();
 
         Entity env = scene->AddEntity("Env");
         scene->AddComponent<EnvironmentComponent>(env).settings.ambient = Color{0.11f, 0.16f, 0.25f, 1};

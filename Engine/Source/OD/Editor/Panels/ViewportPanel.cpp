@@ -5,6 +5,7 @@
 #include "OD/RenderPipeline/StandRenderPipeline.h"
 #include "OD/RenderPipeline/ModelRendererComponent.h"
 #include "OD/Gfx/Gfx.h"
+#include "OD/TerrainSystem/TerrainEditor.h"
 
 namespace OD{
 
@@ -146,7 +147,7 @@ void ViewportPanel::OnGui(){
 
     // The Gfx path does not implement integer framebuffer readback yet.
 #ifndef TestNewGPU_API
-    if(Input::IsMouseButtonDown(MouseButton::Left) && editor->gizmoInteractionState.isOver == false && sceneRunning == false && ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows)){
+    if(Input::IsMouseButtonDown(MouseButton::Left) && editor->gizmoInteractionState.isOver == false && sceneRunning == false && ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows) && !TerrainEditor::IsEditing(*scene,editor->GetSelectionEntity())){
         int entityId = renderPipeline->ReadEntityId(mouseX, mouseY) - 1;
     
         ImVec2 _mousePos = ImGui::GetMousePos();
@@ -203,6 +204,10 @@ void ViewportPanel::OnGui(){
         ImGui::Image(textureId, size, uv0, uv1);
     }
 
+    ImVec2 terrainImageMin=ImGui::GetItemRectMin(),terrainImageMax=ImGui::GetItemRectMax();
+    TerrainEditor::DrawViewport(*scene,editor->GetSelectionEntity(),editor->EditorCam().cam,
+        Vector2(terrainImageMin.x,terrainImageMin.y),Vector2(terrainImageMax.x,terrainImageMax.y),flipImage);
+
     if(ImGui::BeginDragDropTarget()){
         const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ContentBrowserPanelFile");
 
@@ -247,7 +252,7 @@ void ViewportPanel::OnGui(){
 
     //_framebuffer->Resize((int)viewportPanelSize.x, (int)viewportPanelSize.y);
 
-    editor->DrawGizmos();
+    if(!TerrainEditor::IsEditing(*scene,editor->GetSelectionEntity())) editor->DrawGizmos();
 
     ImGui::End();
     ImGui::PopStyleVar();

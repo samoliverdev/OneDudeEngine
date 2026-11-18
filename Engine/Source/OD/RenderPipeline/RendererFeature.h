@@ -12,6 +12,7 @@ namespace OD{
 
 class RenderContext;
 class Framebuffer;
+struct Camera;
 
 enum class RenderPassEvent{
     None = 0,
@@ -91,6 +92,14 @@ public:
     virtual void OnGui(){}
 
     virtual Type GetTypeId() const = 0;
+};
+
+// Optional interface for geometry whose LOD depends on the actual pass camera.
+// Kept separate to preserve the existing RendererFeature virtual interface.
+class OD_API CameraRenderDataFeature {
+public:
+    virtual ~CameraRenderDataFeature()=default;
+    virtual void OnCollectCameraRenderData(Scene&,RenderContext&,const Camera&,std::vector<RenderData>&)=0;
 };
 
 template<typename T>

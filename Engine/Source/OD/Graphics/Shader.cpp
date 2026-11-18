@@ -147,7 +147,6 @@ bool Shader::LoadFromFile(const std::string& path){
 
         if(isComplete == false){
             LogError("Error To Compile Shader: {}", path);
-            Assert(false);
             Destroy();
             return false;
         } 
@@ -710,13 +709,14 @@ void Shader::AddShaderVaring(std::string key, const std::set<std::string>& keywo
         shaderSourceData.baseSource.erase(0, passDefine.size());
         }
         #else
-        graphicsDevice->SubShaderCreateFromBaseSource(
+        bool compiled=graphicsDevice->SubShaderCreateFromBaseSource(
             *shader,
             shaderSourceData.baseSource, 
             _enabledKeywords, 
             shaderSourceData.passes[pass].pipeline,
             errors
         );
+        if(!compiled) isComplete=false;
         #endif
 
         if(shader == nullptr){

@@ -1159,7 +1159,12 @@ void Scene::_AddEntityPrefab(entt::registry& registry, std::vector<entt::entity>
 }
 
 void Scene::Save(const char* path, Entity root){
-    std::ofstream os(path);
+    const std::string savedPath=path?path:"";
+    if(savedPath.empty() || savedPath[0]=='#') return;
+    
+    std::ofstream os(savedPath);
+    if(!os){LogError("Could not save scene: {}",savedPath);return;}
+    {
     //os << std::setprecision(std::numeric_limits<float>::max_digits10);
     ODOutputArchive archive(os, cereal::JSONOutputArchive::Options(9)); //TODO: Add this option for all cereal::JSONOutputArchive usages in all the engine
 
@@ -1213,6 +1218,10 @@ void Scene::Save(const char* path, Entity root){
     for(auto i: SceneManager::Get().coreComponentsSerializer){
         i.second.snapshotOut(archive, entities, registry, std::string(i.first));
     }
+    }
+    os.flush();
+    if(!os.good()){LogError("Could not finish saving scene: {}",savedPath);return;}
+    if(root==EntityNull) this->path=savedPath;
 }
 
 void Scene::_LoadTransform(ODInputArchive& archive, std::unordered_map<entt::entity,entt::entity>& loadLookup, entt::registry& registry, std::string componentName, bool handleRootPrefab){

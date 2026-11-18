@@ -1,4 +1,5 @@
 #include "OD/pch.h"
+#include "OD/TerrainSystem/TerrainNavigation.h"
 #include "Navmesh.h"
 #include "OD/Graphics/Mesh.h"
 #include "OD/Graphics/Model.h"
@@ -319,6 +320,9 @@ void Navmesh::Cleanup(BakeData& data){
 }
 
 void Navmesh::RasterizeScene(BakeData& data, Scene& scene, AABB& bounds){
+    RasterizeTerrainNavigation(scene,bounds,mask,[&](const Matrix4& matrix,Ref<Mesh>& mesh){
+        RasterizeMesh(data,matrix,mesh);
+    });
 	auto meshView = scene.GetRegistry().view<MeshRendererComponent, TransformComponent, InfoComponent>(entt::exclude<NavmeshSkipTag>);
     for(auto e: meshView){
 		auto& info = meshView.get<InfoComponent>(e);

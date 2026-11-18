@@ -93,6 +93,7 @@ public:
     virtual bool Texture2DIsValid(Texture2D& tex) override;
     virtual void* Texture2DRenderId(Texture2D& tex) override;
     virtual bool Texture2DGetPixelData(Texture2D& tex, std::vector<uint8_t>& outData) override;
+    bool Texture2DUpdateRegion(Texture2D& tex,int x,int y,int w,int h,const void* data,TextureDataType type);
 
     virtual bool Texture2DArrayCreate(Texture2DArray& tex, const std::vector<std::string>& filePaths) override; 
     virtual void Texture2DArrayDestroy(Texture2DArray& tex) override;

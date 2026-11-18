@@ -2,6 +2,7 @@
 #include <OD/Base.h>
 #include <OD/Core/Module.h>
 #include <OD/Core/Application.h>
+#include <OD/Core/Project.h>
 #include <stdio.h>
 #include <filesystem>
 
@@ -38,6 +39,7 @@ int main(int argc, char** argv){
 
     // IMPORTANT: skip engine boot when CMake is discovering tests
     if(::testing::GTEST_FLAG(list_tests) ||
+        ::testing::GTEST_FLAG(filter).find("TerrainSystemDataTest.") != std::string::npos ||
         ::testing::GTEST_FLAG(filter).find("RenderDataCullingTest.") != std::string::npos ||
         ::testing::GTEST_FLAG(filter).find("StandingRagdollTest.") != std::string::npos ||
         ::testing::GTEST_FLAG(filter).find("StandingRagdollStrengthTest.") != std::string::npos ||
@@ -48,12 +50,19 @@ int main(int argc, char** argv){
 
     printf("Booting engine for tests...\n");
 
-    if(!OD::Application::Create(CreateMainModule(), GetStartAppConfig(), RESOURCES_PATH "")){
+    bool terrainGraphics=::testing::GTEST_FLAG(filter).find("TerrainSystemRenderTest.") != std::string::npos;
+    std::string testProjectPath=terrainGraphics?TERRAIN_TEST_PROJECT_PATH:RESOURCES_PATH;
+    if(terrainGraphics) std::filesystem::current_path(testProjectPath);
+    auto customProject=terrainGraphics?OD::CreateRef<OD::Project>():nullptr;
+    if(!OD::Application::Create(CreateMainModule(), GetStartAppConfig(), testProjectPath.c_str(),{},customProject)){
         printf("Application failed to create!.\n");
         return 1;
     }
 
     int result = RUN_ALL_TESTS();
+
+    // Application::Exit terminates with zero; preserve a failing test result for CTest.
+    if(result != 0) return result;
 
     // optional cleanup
     OD::Application::Exit();

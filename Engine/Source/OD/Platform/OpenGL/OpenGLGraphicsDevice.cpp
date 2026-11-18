@@ -4422,6 +4422,8 @@ bool OpenGLGraphicsDevice::Texture2DCreate(Texture2D& tex, void* data, int width
         case GL_RGB32F:                             bytesPerPixel = 12; break;
         case GL_RGBA32F:                            bytesPerPixel = 16; break;
         case GL_R8:                                 bytesPerPixel = 1; break;
+          case GL_R16F:                               bytesPerPixel = 2; break;
+          case GL_R32F:                               bytesPerPixel = 4; break;
         case GL_RG16F:                              bytesPerPixel = 4; break;
         case GL_R11F_G11F_B10F:                     bytesPerPixel = 4; break;
         default:
@@ -4461,7 +4463,34 @@ void* OpenGLGraphicsDevice::Texture2DRenderId(Texture2D& tex){
     return (void*)(intptr_t)tex.glData.id;
 }
 
-bool OpenGLGraphicsDevice::Texture2DGetPixelData(Texture2D& tex, std::vector<uint8_t>& outData){ 
+bool OpenGLGraphicsDevice::Texture2DUpdateRegion(Texture2D& tex,int x,int y,int w,int h,const void* data,TextureDataType type){
+    if(!Texture2DIsValid(tex)) return false;
+    GLenum format=GL_RGBA;
+    switch(tex.settings.textureFormat){
+        case TextureFormat::RED16F:case TextureFormat::RED32F:
+            if(type!=TextureDataType::Float) return false;
+            format=GL_RED;break;
+        case TextureFormat::RGBA:case TextureFormat::RGBA8:
+            if(type!=TextureDataType::UnsignedByte) return false;
+            format=GL_RGBA;break;
+        default:return false;
+    }
+    GLint binding=0,alignment=0,rowLength=0,skipRows=0,skipPixels=0,buffer=0;
+    glGetIntegerv(GL_TEXTURE_BINDING_2D,&binding);glGetIntegerv(GL_UNPACK_ALIGNMENT,&alignment);
+    glGetIntegerv(GL_UNPACK_ROW_LENGTH,&rowLength);glGetIntegerv(GL_UNPACK_SKIP_ROWS,&skipRows);
+    glGetIntegerv(GL_UNPACK_SKIP_PIXELS,&skipPixels);glGetIntegerv(GL_PIXEL_UNPACK_BUFFER_BINDING,&buffer);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER,0);glBindTexture(GL_TEXTURE_2D,tex.glData.id);
+    glPixelStorei(GL_UNPACK_ALIGNMENT,1);glPixelStorei(GL_UNPACK_ROW_LENGTH,0);
+    glPixelStorei(GL_UNPACK_SKIP_ROWS,0);glPixelStorei(GL_UNPACK_SKIP_PIXELS,0);
+    glTexSubImage2D(GL_TEXTURE_2D,0,x,y,w,h,format,type==TextureDataType::Float?GL_FLOAT:GL_UNSIGNED_BYTE,data);
+    if(tex.settings.mipmap) glGenerateMipmap(GL_TEXTURE_2D);
+    glPixelStorei(GL_UNPACK_ALIGNMENT,alignment);glPixelStorei(GL_UNPACK_ROW_LENGTH,rowLength);
+    glPixelStorei(GL_UNPACK_SKIP_ROWS,skipRows);glPixelStorei(GL_UNPACK_SKIP_PIXELS,skipPixels);
+    glBindTexture(GL_TEXTURE_2D,GLuint(binding));glBindBuffer(GL_PIXEL_UNPACK_BUFFER,GLuint(buffer));
+    glCheckError();return true;
+}
+
+bool OpenGLGraphicsDevice::Texture2DGetPixelData(Texture2D& tex, std::vector<uint8_t>& outData){
     if(Texture2DIsValid(tex) == false) return false;
 
     if(!(tex.settings.textureFormat == TextureFormat::RGBA || tex.settings.textureFormat == TextureFormat::RGB)){
@@ -5413,11 +5442,12 @@ bool OpenGLGraphicsDevice::SubShaderCreateFromBaseSource(
             glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength);
             glCheckError();
 
-            std::vector<GLchar> infoLog(maxLength);
+            std::vector<GLchar> infoLog(std::max(1,maxLength));
             glGetShaderInfoLog(shader, maxLength, &maxLength, &infoLog[0]);
             glCheckError();
 
             glDeleteShader(shader);
+            shader=0;
             glCheckError();
 
             errors.push_back(std::string(&infoLog[0]));
@@ -5442,10 +5472,12 @@ bool OpenGLGraphicsDevice::SubShaderCreateFromBaseSource(
     GLenum glShaderIDs[2] = {0, 0};
     //int glShaderIDIndex = 0;
 
-    if(CompileShader(source, vertexToInsert, GL_VERTEX_SHADER, program, glShaderIDs[0]) == false) return false;
-    if(CompileShader(source, fragToInsert, GL_FRAGMENT_SHADER, program, glShaderIDs[1]) == false) return false;
-    
-    shader.glData.id = program;
+    if(!CompileShader(source,vertexToInsert,GL_VERTEX_SHADER,program,glShaderIDs[0])){
+        glDeleteProgram(program);return false;
+    }
+    if(!CompileShader(source,fragToInsert,GL_FRAGMENT_SHADER,program,glShaderIDs[1])){
+        glDeleteShader(glShaderIDs[0]);glDeleteProgram(program);return false;
+    }
 
     // Link our program
     glLinkProgram(program);
@@ -5462,7 +5494,7 @@ bool OpenGLGraphicsDevice::SubShaderCreateFromBaseSource(
         glCheckError();
 
         // The maxLength includes the NULL character
-        std::vector<GLchar> infoLog(maxLength);
+        std::vector<GLchar> infoLog(std::max(1,maxLength));
         glGetProgramInfoLog(program, maxLength, &maxLength, &infoLog[0]);
         glCheckError();
 
@@ -5477,17 +5509,19 @@ bool OpenGLGraphicsDevice::SubShaderCreateFromBaseSource(
 
         printf("%s", infoLog.data());
         LogError("Shader link failure!");// LogError("Shader link failure! %s", shader.path.c_str());
-        Assert(false && "Shader link failure!");
+        errors.emplace_back(infoLog.data());
         return false;
     }
 
     for(auto id: glShaderIDs){
         if(id == 0) continue;
         glDetachShader(program, id);
+        glDeleteShader(id);
         glCheckError();
     }
 
     glCheckError();
+    shader.glData.id=program;
 
     GLint count;
     GLint size; // size of the variable

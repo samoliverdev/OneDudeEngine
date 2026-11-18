@@ -768,7 +768,7 @@ void CameraRenderer::RenderPassNew(CameraRenderPass& inpass, RenderContext* rend
 
         CameraRenderer::Type type = renderingPath == RenderingPath::Deferred ?  CameraRenderer::Type::Deferred : CameraRenderer::Type::Forward;
 
-        context->RenderDataLoopNew2([&](RenderData& data){
+        auto collectForPass=[&](RenderData& data){
             /*if(pass.collectSettings.collectStatic == false && data.HasFlag(RenderData::Flag::IsStatic) == true) return; 
             if(pass.collectSettings.collectDynamic == false && data.HasFlag(RenderData::Flag::IsStatic) == false) return; 
             
@@ -795,7 +795,14 @@ void CameraRenderer::RenderPassNew(CameraRenderPass& inpass, RenderContext* rend
             if(pass.settings.drawShadow){
                 shadows.AddRenderData(data);
             } 
-        });
+        };
+        context->RenderDataLoopNew2(collectForPass);
+        std::vector<RenderData> cameraFeatureData;
+        for(auto* feature:passCtx->cachedRenderFeatures){
+            if(feature->enable) if(auto* cameraFeature=dynamic_cast<CameraRenderDataFeature*>(feature))
+                cameraFeature->OnCollectCameraRenderData(*scene,*context,camera,cameraFeatureData);
+        }
+        for(auto& data:cameraFeatureData) collectForPass(data);
     }
 
     shadows.Render();

@@ -495,6 +495,9 @@ endif()
 # Enable Disable Tests
 if(On) 
     enable_testing()
+    add_executable(TerrainSystemCpuTests Tests/TerrainSystemCpuTests.cpp)
+    target_include_directories(TerrainSystemCpuTests PRIVATE Engine/Source)
+    add_test(NAME TerrainSystemCpuTests COMMAND TerrainSystemCpuTests)
     project(Tests)
 
     add_subdirectory(Tests/googletest EXCLUDE_FROM_ALL)
@@ -508,6 +511,7 @@ if(On)
     target_include_directories(Tests PRIVATE Engine/Source/)
     target_link_libraries(Tests Engine)
     target_compile_definitions(Tests PRIVATE RESOURCES_PATH="${DEFAULT_PROJECT_PATH}")
+    target_compile_definitions(Tests PRIVATE TERRAIN_TEST_PROJECT_PATH="${CMAKE_CURRENT_BINARY_DIR}/terrain-system-runtime/")
 
     #target_include_directories(Tests PUBLIC Engine/Source/)
     target_link_libraries(Tests GTest::GTest Engine)
@@ -521,4 +525,9 @@ if(On)
         COMMENT "Copying Engine Content"
     )
     add_dependencies(Tests CopyEngineContentToTest)
+    # Graphics acceptance tests must not overwrite the Sandbox project's settings.
+    add_custom_target(CopyTerrainTestRuntimeContent
+        COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Content/ ${CMAKE_CURRENT_BINARY_DIR}/terrain-system-runtime/Content
+    )
+    add_dependencies(Tests CopyTerrainTestRuntimeContent)
 endif()

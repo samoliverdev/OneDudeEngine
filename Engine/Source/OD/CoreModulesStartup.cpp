@@ -15,6 +15,7 @@
 #include "OD/Navmesh/Navmesh.h"
 #include "OD/LuaScripting/LuaScripts.h"
 #include "OD/Terrain/Terrain.h"
+#include "OD/TerrainSystem/TerrainComponents.h"
 
 namespace OD{
 
@@ -172,6 +173,7 @@ void CoreModulesInit(){
     NavmeshModuleInit();
     
     TerrainModuleInit();
+    TerrainSystemModuleInit();
 
     ScriptModuleInit();
     LuaScriptModuleInit();

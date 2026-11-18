@@ -4125,7 +4125,75 @@ int PhysicsSystem::ExecutionSortPriority(SystemType type){
 	return 1; 
 };
 
+// Synchronize heightfields before the next simulation step, including newly built terrain tiles.
+void PhysicsSystem::SyncHeightmapColliders(){
+	BodyInterface& bodyInterface=physicsWorld->physicsSystem.GetBodyInterface();
+	//TODO: Update This, make handle dirty and organaze the code
+	auto heightView = scene->GetRegistry().view<HeightmapColliderComponent, TransformComponent, InfoComponent>();
+	for(auto e : heightView){
+		auto& rb = heightView.get<HeightmapColliderComponent>(e);
+		auto& transform = heightView.get<TransformComponent>(e);
+		auto& info = heightView.get<InfoComponent>(e);
+
+		if(rb.data == nullptr){
+			rb.data = new PhysicObject();
+			// Create heightfield shape
+			uint32 sampleCount = rb.width; // width == length, pois é quadrado
+			JPH::Vec3 offset = JPH::Vec3(
+				0, // para centralizar em X
+				0,
+				0 // para centralizar em -Z
+			);
+			//TODO: Review this later, maybe disable the scaling, or add a option, Warning: and this can cause bug, check later
+			JPH::Vec3 scale = ToJolt(transform.Scale());// Aplica escala do Transform
+			//JPH::Vec3 scale = JPH::Vec3::sReplicate(1.0f);
+
+			JPH::HeightFieldShapeSettings heightFieldSettings(
+				rb.heights.data(),   // float* inSamples
+				offset,              // Vec3Arg inOffset
+				scale,               // Vec3Arg inScale
+				sampleCount,         // uint32 inSampleCount
+				nullptr,             // material indices (optional)
+				JPH::PhysicsMaterialList() // default material list
+			);
+
+			// opcional: ajustar block size ou bits por sample para performance
+			heightFieldSettings.mBlockSize = 4;
+			heightFieldSettings.mBitsPerSample = 8;
+			heightFieldSettings.mMinHeightValue = rb.minHeight;
+			heightFieldSettings.mMaxHeightValue = rb.maxHeight;
+
+			JPH::ShapeSettings::ShapeResult shapeResult = heightFieldSettings.Create();
+			if(shapeResult.HasError()){
+				Assert(false);
+				continue;
+			}
+
+			RefConst<Shape> finalShape = shapeResult.Get();
+
+			// Create body
+			JPH::BodyCreationSettings bodySettings(
+				finalShape,
+				ToJolt(transform.Position()),
+				ToJolt(transform.Rotation()),
+				JPH::EMotionType::Static, // Heightfields are usually static
+				info.layer // Your custom collision layer
+			);
+
+			bodySettings.mUserData=EncodeUserData(uint32_t(e),-1);
+			rb.data->bodyID = bodyInterface.CreateAndAddBody(bodySettings, JPH::EActivation::DontActivate);
+		} else {
+			bodyInterface.SetPosition(rb.data->bodyID, ToJolt(transform.Position()), EActivation::Activate);
+            bodyInterface.SetRotation(rb.data->bodyID, ToJolt(transform.Rotation()), EActivation::Activate);
+
+			// For scale, you must recreate the shape with new scale (Jolt doesn't support dynamic scaling).
+		}
+	}
+
+}
+
 void PhysicsSystem::PrePhysicsUpdate(Scene& inscene){
+	SyncHeightmapColliders();
 	//return;
 	OD_PROFILE_SCOPE("PhysicsSystem::PrePhysicsUpdate");
 
@@ -5038,66 +5106,6 @@ void PhysicsSystem::_PostPhysicsUpdate(bool onlyPostSync, bool canInterpolate){
 		}
 	}
 
-	//TODO: Update This, make handle dirty and organaze the code
-	auto heightView = scene->GetRegistry().view<HeightmapColliderComponent, TransformComponent, InfoComponent>();
-	for(auto e : heightView){
-		auto& rb = heightView.get<HeightmapColliderComponent>(e);
-		auto& transform = heightView.get<TransformComponent>(e);
-		auto& info = heightView.get<InfoComponent>(e);
-
-		if(rb.data == nullptr){
-			rb.data = new PhysicObject();
-			// Create heightfield shape
-			uint32 sampleCount = rb.width; // width == length, pois é quadrado
-			JPH::Vec3 offset = JPH::Vec3(
-				0, // para centralizar em X
-				0,
-				0 // para centralizar em -Z
-			);
-			//TODO: Review this later, maybe disable the scaling, or add a option, Warning: and this can cause bug, check later
-			JPH::Vec3 scale = ToJolt(transform.Scale());// Aplica escala do Transform
-			//JPH::Vec3 scale = JPH::Vec3::sReplicate(1.0f);
-
-			JPH::HeightFieldShapeSettings heightFieldSettings(
-				rb.heights.data(),   // float* inSamples
-				offset,              // Vec3Arg inOffset
-				scale,               // Vec3Arg inScale
-				sampleCount,         // uint32 inSampleCount
-				nullptr,             // material indices (optional)
-				JPH::PhysicsMaterialList() // default material list
-			);
-
-			// opcional: ajustar block size ou bits por sample para performance
-			heightFieldSettings.mBlockSize = 4;
-			heightFieldSettings.mBitsPerSample = 8;
-			heightFieldSettings.mMinHeightValue = rb.minHeight;
-			heightFieldSettings.mMaxHeightValue = rb.maxHeight;
-
-			JPH::ShapeSettings::ShapeResult shapeResult = heightFieldSettings.Create();
-			if(shapeResult.HasError()){
-				Assert(false);
-				continue;
-			}
-
-			RefConst<Shape> finalShape = shapeResult.Get();
-
-			// Create body
-			JPH::BodyCreationSettings bodySettings(
-				finalShape,
-				ToJolt(transform.Position()),
-				ToJolt(transform.Rotation()),
-				JPH::EMotionType::Static, // Heightfields are usually static
-				info.layer // Your custom collision layer
-			);
-
-			rb.data->bodyID = bodyInterface.CreateAndAddBody(bodySettings, JPH::EActivation::DontActivate);
-		} else {
-			bodyInterface.SetPosition(rb.data->bodyID, ToJolt(transform.Position()), EActivation::Activate);
-            bodyInterface.SetRotation(rb.data->bodyID, ToJolt(transform.Rotation()), EActivation::Activate);
-
-			// For scale, you must recreate the shape with new scale (Jolt doesn't support dynamic scaling).
-		}
-	}
 
 	auto jointView = scene->GetRegistry().view<JointComponent, TransformComponent, InfoComponent>();
 	for(auto [entity, joint, trans, info]: jointView.each()){

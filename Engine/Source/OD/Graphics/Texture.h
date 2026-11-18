@@ -113,6 +113,8 @@ public:
     bool Save(const std::string& outPath, SaveType type) override;
 
     bool GetPixelData(std::vector<uint8_t>& outData);
+    // Packed mip-zero pixels. Returns false if this backend/format cannot update a region.
+    bool UpdateRegion(int x,int y,int regionWidth,int regionHeight,const void* data,TextureDataType type);
 
     static void CreateLuaBind(sol::state& lua);
 
