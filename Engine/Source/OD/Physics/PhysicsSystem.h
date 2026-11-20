@@ -843,6 +843,19 @@ private:
     class VehiclePhysicData* data = nullptr;
 };
 
+// Add to a static or kinematic body in Jolt to suppress impacts at or above minClosingSpeed.
+// SandboxGame then ragdolls characters or releases props as dynamic bodies using velocityTransfer.
+struct OD_API YieldOnImpact{
+    float minClosingSpeed = 7.0f;
+    float velocityTransfer = 0.75f;
+
+    template <class Archive>
+    void serialize(Archive& ar){
+        ArchiveDumpNVP(ar, minClosingSpeed);
+        ArchiveDumpNVP(ar, velocityTransfer);
+    }
+};
+
 struct OD_API Collision{
     Vector3 relativeVelocity;
     Vector3 normal;
@@ -855,6 +868,8 @@ struct OD_API Collision{
     float penetrationDepth;
     bool body1IsSensor;
     bool body2IsSensor;
+    Entity yieldingEntity = EntityNull;
+    Vector3 impactVelocity = Vector3Zero;
 };
 
 using OnCollisionCallback = void(*)(Scene&, const Collision&);

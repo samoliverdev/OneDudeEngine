@@ -1,5 +1,6 @@
 #pragma once
 #include <OD/Core/Math.h>
+#include <OD/Scene/ECS.h>
 
 namespace OD{
     class Scene;
@@ -42,7 +43,7 @@ public:
     float isNotOnGroundTimer = -1;
     
     void OnStart(RigidbodyComponent& rb);
-    void OnFixedUpdate(Scene& scene, TransformComponent trans, RigidbodyComponent& rb);
+    void OnFixedUpdate(Scene& scene, Entity entity, TransformComponent trans, RigidbodyComponent& rb);
 
     float GetAxisHorizontal();
     float GetAxisVertical();

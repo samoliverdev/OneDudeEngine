@@ -22,11 +22,26 @@ public:
         return false;
     }
 
-    void Clear(){ images.clear(); }
+    void* Texture(uint32_t texture){
+        textures.push_back(texture);
+        return &textures.back();
+    }
+
+    bool FindTexture(void* id, uint32_t& texture) const{
+        for(const auto& entry : textures){
+            if(id != &entry) continue;
+            texture = entry;
+            return true;
+        }
+        return false;
+    }
+
+    void Clear(){ images.clear(); textures.clear(); }
 
 private:
     struct Image{ uint32_t framebuffer, attachment; };
     std::deque<Image> images; // Appending must not invalidate previously returned IDs.
+    std::deque<uint32_t> textures;
 };
 
 }

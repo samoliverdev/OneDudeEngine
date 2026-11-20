@@ -34,10 +34,10 @@
 #include <taskflow/taskflow.hpp>
 #include <sol/sol.hpp>
 
-#include "Core/Math.h"
-#include "Serialization/Serialization.h"
+//#include "Core/Math.h"
+//#include "Serialization/Serialization.h"
 //#include "Serialization/SerializationFull.h"
-#include "Scene/ECS.h"
+//#include "Scene/ECS.h"
 
 //#include "Defines.h"
 #endif

@@ -20,16 +20,16 @@ BeginUniform(0, 0, Main)
     Uniform vec4 layerRoughness;
     Uniform vec4 layerNormalStrength;
 EndUniform()
-Texture2D(0, 1, heightMap, heightMapSampler)
-Texture2D(0, 2, paintMap, paintMapSampler)
-Texture2D(0, 3, albedo0, albedo0Sampler)
-Texture2D(0, 4, albedo1, albedo1Sampler)
-Texture2D(0, 5, albedo2, albedo2Sampler)
-Texture2D(0, 6, albedo3, albedo3Sampler)
-Texture2D(0, 7, normal0, normal0Sampler)
-Texture2D(0, 8, normal1, normal1Sampler)
-Texture2D(0, 9, normal2, normal2Sampler)
-Texture2D(0, 10, normal3, normal3Sampler)
+Texture2D(0, 10, heightMap, heightMapSampler)
+Texture2D(0, 11, paintMap, paintMapSampler)
+Texture2D(0, 12, albedo0, albedo0Sampler)
+Texture2D(0, 13, albedo1, albedo1Sampler)
+Texture2D(0, 14, albedo2, albedo2Sampler)
+Texture2D(0, 15, albedo3, albedo3Sampler)
+Texture2D(0, 16, normal0, normal0Sampler)
+Texture2D(0, 17, normal1, normal1Sampler)
+Texture2D(0, 18, normal2, normal2Sampler)
+Texture2D(0, 19, normal3, normal3Sampler)
 
 // CPU sample (0,0) and (columns-1,rows-1) coincide with the terrain boundaries.
 float TerrainHeight(vec2 uv){

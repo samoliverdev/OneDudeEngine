@@ -31,6 +31,7 @@ TEST(GfxFramebuffer, ValidatesSharedMipCountAgainstExtentAndSamples)
     EXPECT_FALSE(Gfx::IsValidFramebufferCreateInfo(info));
 }
 
+#ifndef TEST_NEW_CMD
 TEST(GfxFramebuffer, ResourceCommandsPreserveSharedMipCount)
 {
     Gfx::FrameBufferCreateInfo info{};
@@ -42,7 +43,9 @@ TEST(GfxFramebuffer, ResourceCommandsPreserveSharedMipCount)
     ASSERT_EQ(commands.commands.size(), 1u);
     EXPECT_EQ(commands.commands.front().createFramebuffer.info.mipLevels, 5u);
 }
+#endif
 
+#ifndef TEST_NEW_CMD
 TEST(GfxImGui, RecordsSnapshotOwnershipInRenderFrame)
 {
     Gfx::RenderFrame frame;
@@ -61,7 +64,9 @@ TEST(GfxImGui, RecordsSnapshotOwnershipInRenderFrame)
     EXPECT_EQ(frame.imguiSnapshots.size(), 1u);
     EXPECT_EQ(frame.imguiSnapshots.front().data, snapshot);
 }
+#endif
 
+#ifndef TEST_NEW_CMD
 TEST(GfxImGui, InsertsRenderBeforeFramebufferEnd)
 {
     Gfx::RenderFrame frame;
@@ -74,6 +79,7 @@ TEST(GfxImGui, InsertsRenderBeforeFramebufferEnd)
     EXPECT_EQ(frame.renderCommands.commands[1].type, Gfx::CommandBuffer::Type::RenderImGui);
     EXPECT_EQ(frame.renderCommands.commands[2].type, Gfx::CommandBuffer::Type::EndFramebuffer);
 }
+#endif
 
 TEST(GfxReflection, ReflectsShaderVariableTypes)
 {
@@ -148,6 +154,7 @@ TEST(GfxReflection, DetectsSampler2DArray)
     EXPECT_EQ(reflection.bindings.front().type, Gfx::BindingType::Texture2DArray);
 }
 
+#ifndef TEST_NEW_CMD
 TEST(GfxFramebuffer, RecordsAttachmentLayerAndMip)
 {
     Gfx::CommandBuffer commands;
@@ -163,7 +170,9 @@ TEST(GfxFramebuffer, RecordsAttachmentLayerAndMip)
     EXPECT_FALSE(begin.beginFramebuffer.clean);
     EXPECT_EQ(begin.beginFramebuffer.clearFlags, Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth);
 }
+#endif
 
+#ifndef TEST_NEW_CMD
 TEST(GfxFramebuffer, DefaultsToCleaningAttachments)
 {
     Gfx::CommandBuffer commands;
@@ -173,6 +182,7 @@ TEST(GfxFramebuffer, DefaultsToCleaningAttachments)
     ASSERT_EQ(commands.commands.size(), 1u);
     EXPECT_TRUE(commands.commands.front().beginFramebuffer.clean);
 }
+#endif
 
 TEST(GfxFramebuffer, TestsClearFlags)
 {
@@ -180,6 +190,7 @@ TEST(GfxFramebuffer, TestsClearFlags)
     EXPECT_FALSE(Gfx::HasFlag(Gfx::ClearFlags::Color, Gfx::ClearFlags::Stencil));
 }
 
+#ifndef TEST_NEW_CMD
 TEST(GfxFramebuffer, RecordsBlitCommand)
 {
     Gfx::CommandBuffer commands;
@@ -193,7 +204,9 @@ TEST(GfxFramebuffer, RecordsBlitCommand)
     EXPECT_EQ(blit.blitFramebuffer.dst, 22u);
     EXPECT_EQ(blit.blitFramebuffer.srcPass, 3);
 }
+#endif
 
+#ifndef TEST_NEW_CMD
 TEST(GfxFramebuffer, RecordsCopyTextureCommands)
 {
     Gfx::CommandBuffer commands;
@@ -208,7 +221,9 @@ TEST(GfxFramebuffer, RecordsCopyTextureCommands)
     commands.CopyTexture(11, -1, 23);
     EXPECT_EQ(commands.commands.front().copyTexture2D.attachment, -1);
 }
+#endif
 
+#ifndef TEST_NEW_CMD
 TEST(GfxFramebuffer, RecordsCopyCubemapCommand)
 {
     Gfx::CommandBuffer commands;
@@ -218,7 +233,9 @@ TEST(GfxFramebuffer, RecordsCopyCubemapCommand)
     EXPECT_EQ(commands.commands.front().copyCubemap.src, 11u);
     EXPECT_EQ(commands.commands.front().copyCubemap.dst, 24u);
 }
+#endif
 
+#ifndef TEST_NEW_CMD
 TEST(GfxCubemap, RecordsUploadCommand)
 {
     Gfx::ResourceCommands commands;
@@ -231,6 +248,7 @@ TEST(GfxCubemap, RecordsUploadCommand)
     EXPECT_EQ(commands.commands.front().uploadCubemap.size, pixels.size());
     EXPECT_NE(commands.commands.front().uploadCubemap.data, pixels.data());
 }
+#endif
 
 TEST(GfxTextureSampling, CreateInfosExposeIndependentSamplingDefaults)
 {

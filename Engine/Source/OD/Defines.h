@@ -3,6 +3,7 @@
 //#define FINAL_BUILD
 
 //#define TestNewGPU_API
+#define TEST_NEW_CMD
 
 #ifdef _WIN32
     #define EXPORT_FN __declspec(dllexport)

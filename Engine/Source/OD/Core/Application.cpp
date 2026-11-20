@@ -96,8 +96,6 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
     width = appConfig.startWidth;
     heigth = appConfig.startHeight;
 
-    //gpuRendererContext.multithread = true;
-
     Graphics::SelectGraphicsDevice();
 
     if(Platform::SystemStartup(appConfig) == false) return false;
@@ -105,7 +103,7 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
     ////////////////////////////////
     #ifdef TestNewGPU_API
     gpuDevice = dynamic_cast<Gfx::Device*>(Graphics::GetGraphicsDevice());
-    gpuDevice->Init(true);
+    gpuDevice->Init(Gfx::RenderingMode::Immediate); //appConfig.renderingMode);
     #endif
     ////////////////////////////////
 

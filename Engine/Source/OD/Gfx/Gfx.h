@@ -3,6 +3,12 @@
 #include "OD/Base.h"
 #include "OD/Core/Math.h"
 #include "OD/Gfx/ImGuiImages.h"
+#include "OD/Gfx/RenderingMode.h"
+#include <unordered_map>
+#include <unordered_set>
+#ifdef TEST_NEW_CMD
+#include "OD/Gfx/FastCommandBuffer.h"
+#endif
 #include <thread>
 #include <mutex>
 
@@ -113,7 +119,8 @@ enum class ImageFormat{
     R8G8B8A8_SRGB,
     RGB11B10F, RGB16F, RGBA16F, RGB32F, RGBA32F, RED_INTEGER,
     DEPTH24_STENCIL8, DEPTH32F_STENCIL8, DEPTH_COMPONENT16,
-    DEPTH_COMPONENT24, DEPTH_COMPONENT32, DEPTH_COMPONENT32F
+    DEPTH_COMPONENT24, DEPTH_COMPONENT32, DEPTH_COMPONENT32F,
+    R32F
 };
 
 struct OD_API Texture2DInfo{
@@ -630,9 +637,12 @@ private:
     size_t blockSize = DefaultBlockSize;
 };
 
-//TODO: Update to use a variable-size command stream, for usage less memory in std::vector<X> commands;
 struct OD_API ResourceCommands{
+#ifdef TEST_NEW_CMD
+    enum class Type : uint16_t{
+#else
     enum class Type{
+#endif
         CreatePipeline,
         DestroyPipeline,
 
@@ -678,7 +688,7 @@ struct OD_API ResourceCommands{
 
             struct{
                 Pipeline id;
-                char* source;
+                const char* source;
                 PipelineInfo info;
             } createPipeline;
 
@@ -687,7 +697,7 @@ struct OD_API ResourceCommands{
             } destroyPipeline;
 
             struct {
-                BindGroupLayout id; BindGroupLayoutInfo* info;
+                BindGroupLayout id; const BindGroupLayoutInfo* info;
             } createBindGroupLayout;
 
             struct {
@@ -708,10 +718,11 @@ struct OD_API ResourceCommands{
                 const void* data;
                 size_t size;
                 int mipLevel;
+                const void* staging;
             } uploadTexture2D;
 
             struct { Texture2DArray id; Texture2DArrayInfo info; } createTexture2DArray;
-            struct { Texture2DArray id; const void* data; size_t size; int arrayElement; int mipLevel; } uploadTexture2DArray;
+            struct { Texture2DArray id; const void* data; size_t size; int arrayElement; int mipLevel; const void* staging; } uploadTexture2DArray;
             struct { Texture2DArray id; } destroyTexture2DArray;
             
             struct {
@@ -723,6 +734,7 @@ struct OD_API ResourceCommands{
                 Buffer id;
                 const void* data;
                 size_t size;
+                const void* staging;
             } updateBuffer;
 
             struct {
@@ -739,6 +751,7 @@ struct OD_API ResourceCommands{
                 const void* data;
                 size_t size;
                 int mipLevel;
+                const void* staging;
             } uploadCubemap;
 
             struct {
@@ -747,6 +760,7 @@ struct OD_API ResourceCommands{
                 size_t size;
                 CubemapFace face;
                 int mipLevel;
+                const void* staging;
             } uploadCubemapFace;
 
             struct {
@@ -767,8 +781,50 @@ struct OD_API ResourceCommands{
         };
     };
 
+
+#ifdef TEST_NEW_CMD
+    using FastCommands = FCB::FastCommandBuffer<Type, 8>;
+    using ExecuteCommand = void (*)(void*, Type, const void*);
+
+    void SetImmediateExecutor(void* context, ExecuteCommand executor){
+        Assert(executeImmediate == nullptr && executor != nullptr && commands.GetUsedBytes() == 0);
+        if(executeImmediate == nullptr && commands.GetUsedBytes() == 0){
+            executorContext = context;
+            executeImmediate = executor;
+        }
+    }
+#else
+    using ExecuteCommand = void (*)(void*, const Command&);
+
+    void SetImmediateExecutor(void* context, ExecuteCommand executor){
+        Assert(executeImmediate == nullptr && executor != nullptr && commands.empty());
+        if(executeImmediate == nullptr && commands.empty()){
+            executorContext = context;
+            executeImmediate = executor;
+        }
+    }
+
+    bool ExecutesImmediately() const { return executeImmediate != nullptr; }
+
+    void Dispatch(const Command& cmd){
+        if(executeImmediate != nullptr){
+            executeImmediate(executorContext, cmd);
+        } else {
+            commands.push_back(cmd);
+        }
+    }
+#endif
+
+#ifdef TEST_NEW_CMD
+    bool ExecutesImmediately() const { return executeImmediate != nullptr; }
+#endif
+
     inline void Clear(){
+#ifdef TEST_NEW_CMD
+        commands.Reset();
+#else
         commands.clear();
+#endif
         smallUploads.Clear();
         renderUploads.Clear();
         resourceUploads.Clear();
@@ -776,124 +832,178 @@ struct OD_API ResourceCommands{
 
     inline void CreatePipeline(Pipeline id, const char* source, PipelineInfo info){
         size_t size = std::strlen(source) + 1;
-        char* copyData = static_cast<char*>(resourceUploads.AllocateData(size));
-        std::memcpy(copyData, source, size);
+        const auto* copyData = ExecutesImmediately() ? source : CopyUpload(resourceUploads, source, size);
 
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::CreatePipeline, &Command::createPipeline>(id, copyData, info);
+#else
         Command cmd{};
         cmd.type = Type::CreatePipeline;
         cmd.createPipeline.id = id;
-        cmd.createPipeline.source = copyData; //source;
+        cmd.createPipeline.source = copyData;
         cmd.createPipeline.info = info;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
     inline void DestroyPipeline(Pipeline id){
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::DestroyPipeline, &Command::destroyPipeline>(id);
+#else
         Command cmd{};
         cmd.type = Type::DestroyPipeline;
         cmd.destroyPipeline.id = id;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
     inline void CreateBuffer(Buffer id, size_t size, BufferUsage usage, BufferMemory memory = BufferMemory::GPUOnly){
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::CreateBuffer, &Command::createBuffer>(id, usage, memory, size);
+#else
         Command cmd{};
         cmd.type = Type::CreateBuffer;
         cmd.createBuffer.usage = usage;
         cmd.createBuffer.id = id;
         cmd.createBuffer.size = size;
         cmd.createBuffer.memory = memory;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
-    inline void UpdatedBuffer(Buffer id, const void* data, size_t size){
-        void* copyData = renderUploads.AllocateData(size);
-        std::memcpy(copyData, data, size);
+    inline void UpdatedBuffer(Buffer id, const void* data, size_t size, const void* staging = nullptr){
+        const auto* copyData = (ExecutesImmediately() || staging != nullptr) ? data : CopyUpload(renderUploads, data, size);
 
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::UpdateBuffer, &Command::updateBuffer>(id, copyData, size, staging);
+#else
         Command cmd{};
         cmd.type = Type::UpdateBuffer;
         cmd.updateBuffer.id = id;
         cmd.updateBuffer.data = copyData;
         cmd.updateBuffer.size = size;
-        commands.push_back(cmd);
+        cmd.updateBuffer.staging = staging;
+        Dispatch(cmd);
+#endif
     }
 
     inline void DestroyBuffer(Buffer id){
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::DestroyBuffer, &Command::destroyBuffer>(id);
+#else
         Command cmd{};
         cmd.type = Type::DestroyBuffer;
         cmd.destroyBuffer.id = id;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
     inline void CreateTexture2D(Texture2D id, Texture2DInfo& info){
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::CreateTexture2D, &Command::createTexture2D>(id, info);
+#else
         Command cmd{};
         cmd.type = Type::CreateTexture2D;
         cmd.createTexture2D.id = id;
         cmd.createTexture2D.info = info;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
-    inline void UploadTexture2D(Texture2D id, const void* data, size_t size, int mipLevel = 0){
-        void *copyData = resourceUploads.AllocateData(size);
-        std::memcpy(copyData, data, size);
+    inline void UploadTexture2D(Texture2D id, const void* data, size_t size, int mipLevel = 0, const void* staging = nullptr){
+        const auto* copyData = (ExecutesImmediately() || staging != nullptr) ? data : CopyUpload(resourceUploads, data, size);
 
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::UploadTexture2D, &Command::uploadTexture2D>(id, copyData, size, mipLevel, staging);
+#else
         Command cmd{};
         cmd.type = Type::UploadTexture2D;
         cmd.uploadTexture2D.id = id;
         cmd.uploadTexture2D.data = copyData;
         cmd.uploadTexture2D.size = size;
         cmd.uploadTexture2D.mipLevel = mipLevel;
-        commands.push_back(cmd);
+        cmd.uploadTexture2D.staging = staging;
+        Dispatch(cmd);
+#endif
     }
 
     inline void DestroyTexture2D(Texture2D id){
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::DestroyTexture2D, &Command::destroyTexture2D>(id);
+#else
         Command cmd{};
         cmd.type = Type::DestroyTexture2D;
         cmd.destroyTexture2D.id = id;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
     inline void CreateTexture2DArray(Texture2DArray id, Texture2DArrayInfo& info){
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::CreateTexture2DArray, &Command::createTexture2DArray>(id, info);
+#else
         Command cmd{}; cmd.type = Type::CreateTexture2DArray;
         cmd.createTexture2DArray.id = id; cmd.createTexture2DArray.info = info;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
-    inline void UploadTexture2DArray(Texture2DArray id, const void* data, size_t size, int arrayElement, int mipLevel){
-        void* copyData = resourceUploads.AllocateData(size);
-        std::memcpy(copyData, data, size);
+    inline void UploadTexture2DArray(Texture2DArray id, const void* data, size_t size, int arrayElement, int mipLevel, const void* staging = nullptr){
+        const auto* copyData = (ExecutesImmediately() || staging != nullptr) ? data : CopyUpload(resourceUploads, data, size);
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::UploadTexture2DArray, &Command::uploadTexture2DArray>(id, copyData, size, arrayElement, mipLevel, staging);
+#else
         Command cmd{}; cmd.type = Type::UploadTexture2DArray;
         cmd.uploadTexture2DArray.id = id; cmd.uploadTexture2DArray.data = copyData;
         cmd.uploadTexture2DArray.size = size; cmd.uploadTexture2DArray.arrayElement = arrayElement;
-        cmd.uploadTexture2DArray.mipLevel = mipLevel; commands.push_back(cmd);
+        cmd.uploadTexture2DArray.mipLevel = mipLevel;
+        cmd.uploadTexture2DArray.staging = staging;
+        Dispatch(cmd);
+#endif
     }
 
     inline void DestroyTexture2DArray(Texture2DArray id){
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::DestroyTexture2DArray, &Command::destroyTexture2DArray>(id);
+#else
         Command cmd{}; cmd.type = Type::DestroyTexture2DArray; cmd.destroyTexture2DArray.id = id;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
     inline void CreateCubemap(Cubemap id, CubemapInfo& info){
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::CreateCubemap, &Command::createCubemap>(id, info);
+#else
         Command cmd{};
         cmd.type = Type::CreateCubemap;
         cmd.createCubemap.id = id;
         cmd.createCubemap.info = info;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
-    inline void UploadCubemap(Cubemap id, const void* data, size_t size, int mipLevel = 0){
-        void* copyData = resourceUploads.AllocateData(size);
-        std::memcpy(copyData, data, size);
+    inline void UploadCubemap(Cubemap id, const void* data, size_t size, int mipLevel = 0, const void* staging = nullptr){
+        const auto* copyData = (ExecutesImmediately() || staging != nullptr) ? data : CopyUpload(resourceUploads, data, size);
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::UploadCubemap, &Command::uploadCubemap>(id, copyData, size, mipLevel, staging);
+#else
         Command cmd{};
         cmd.type = Type::UploadCubemap;
         cmd.uploadCubemap.id = id;
         cmd.uploadCubemap.data = copyData;
         cmd.uploadCubemap.size = size;
         cmd.uploadCubemap.mipLevel = mipLevel;
-        commands.push_back(cmd);
+        cmd.uploadCubemap.staging = staging;
+        Dispatch(cmd);
+#endif
     }
 
-    inline void UploadCubemap(Cubemap id, const void* data, size_t size, CubemapFace face, int mipLevel = 0){
-        void* copyData = resourceUploads.AllocateData(size);
-        std::memcpy(copyData, data, size);
+    inline void UploadCubemap(Cubemap id, const void* data, size_t size, CubemapFace face, int mipLevel = 0, const void* staging = nullptr){
+        const auto* copyData = (ExecutesImmediately() || staging != nullptr) ? data : CopyUpload(resourceUploads, data, size);
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::UploadCubemapFace, &Command::uploadCubemapFace>(id, copyData, size, face, mipLevel, staging);
+#else
         Command cmd{};
         cmd.type = Type::UploadCubemapFace;
         cmd.uploadCubemapFace.id = id;
@@ -901,86 +1011,183 @@ struct OD_API ResourceCommands{
         cmd.uploadCubemapFace.size = size;
         cmd.uploadCubemapFace.face = face;
         cmd.uploadCubemapFace.mipLevel = mipLevel;
-        commands.push_back(cmd);
+        cmd.uploadCubemapFace.staging = staging;
+        Dispatch(cmd);
+#endif
     }
 
     inline void DestroyCubemap(Cubemap id){
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::DestroyCubemap, &Command::destroyCubemap>(id);
+#else
         Command cmd{};
         cmd.type = Type::DestroyCubemap;
         cmd.destroyCubemap.id = id;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
     inline void CreateBindGroupLayout(BindGroupLayout id, BindGroupLayoutInfo& info){
-        BindGroupLayoutInfo* copyData = smallUploads.Allocate<BindGroupLayoutInfo>();
-        std::memcpy(copyData, &info, sizeof(BindGroupLayoutInfo));
+        const BindGroupLayoutInfo* copyData = &info;
+        if(!ExecutesImmediately()){
+            auto* owned = smallUploads.Allocate<BindGroupLayoutInfo>();
+            ::new(static_cast<void*>(owned)) BindGroupLayoutInfo(info);
+            copyData = owned;
+        }
         
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::CreateBindGroupLayout, &Command::createBindGroupLayout>(id, copyData);
+#else
         Command cmd{};
         cmd.type = Type::CreateBindGroupLayout;
         cmd.createBindGroupLayout.id = id;
         cmd.createBindGroupLayout.info = copyData;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
     inline void DestroyBindGroupLayout(BindGroupLayout id){
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::DestroyBindGroupLayout, &Command::destroyBindGroupLayout>(id);
+#else
         Command cmd{};
         cmd.type = Type::DestroyBindGroupLayout;
         cmd.destroyBindGroupLayout.id = id;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
     inline void CreateBindGroup(BindGroup id, BindGroupInfo& info){
-        //BindGroupInfo* copyData = uploadBuffer.Allocate<BindGroupInfo>();
-        //std::memcpy(copyData, &info, sizeof(BindGroupInfo));
-        BindingEntry* entries = smallUploads.Allocate<BindingEntry>(info.entriesCount);
-        std::memcpy(entries, info.entries, sizeof(BindingEntry) * info.entriesCount);
+        auto* entries = info.entries;
+        if(!ExecutesImmediately() && info.entriesCount != 0){
+            auto* owned = smallUploads.Allocate<BindingEntry>(info.entriesCount);
+            std::memcpy(owned, info.entries, sizeof(BindingEntry) * info.entriesCount);
+            entries = owned;
+        }
         
+#ifdef TEST_NEW_CMD
+        auto recordedInfo = info;
+        recordedInfo.entries = entries;
+        DispatchFast<Type::CreateBindGroup, &Command::createBindGroup>(id, recordedInfo);
+#else
         Command cmd{};
         cmd.type = Type::CreateBindGroup;
         cmd.createBindGroup.id = id;
         cmd.createBindGroup.info = info;
         cmd.createBindGroup.info.entries = entries;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
     inline void CreateFrameBindGroup(BindGroup id, BindGroupInfo& info){
-        //BindGroupInfo* copyData = uploadBuffer.Allocate<BindGroupInfo>();
-        //std::memcpy(copyData, &info, sizeof(BindGroupInfo));
-        BindingEntry* entries = smallUploads.Allocate<BindingEntry>(info.entriesCount);
-        std::memcpy(entries, info.entries, sizeof(BindingEntry) * info.entriesCount);
+        auto* entries = info.entries;
+        if(!ExecutesImmediately() && info.entriesCount != 0){
+            auto* owned = smallUploads.Allocate<BindingEntry>(info.entriesCount);
+            std::memcpy(owned, info.entries, sizeof(BindingEntry) * info.entriesCount);
+            entries = owned;
+        }
         
+#ifdef TEST_NEW_CMD
+        auto recordedInfo = info;
+        recordedInfo.entries = entries;
+        DispatchFast<Type::CreateFrameBindGroup, &Command::createFrameBindGroup>(id, recordedInfo);
+#else
         Command cmd{};
         cmd.type = Type::CreateFrameBindGroup;
         cmd.createFrameBindGroup.id = id;
         cmd.createFrameBindGroup.info = info;
         cmd.createFrameBindGroup.info.entries = entries;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
     inline void CreateFramebuffer(Framebuffer framebuffer, FrameBufferCreateInfo& info){
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::CreateFramebuffer, &Command::createFramebuffer>(framebuffer, info);
+#else
         Command cmd{};
         cmd.type = Type::CreateFramebuffer;
         cmd.createFramebuffer.framebuffer = framebuffer;
         cmd.createFramebuffer.info = info;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
     inline void DestroyFramebuffer(Texture2D id){
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::DestroyFramebuffer, &Command::destroyFramebuffer>(id);
+#else
         Command cmd{};
         cmd.type = Type::DestroyFramebuffer;
         cmd.destroyFramebuffer.id = id;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
+#ifdef TEST_NEW_CMD
+    FastCommands commands;
+#else
     std::vector<Command> commands;
+#endif
+
     UploadBuffer smallUploads{64 * 1024}; // 64 KB
     UploadBuffer renderUploads{256 * 1024};  // 256 KB
     UploadBuffer resourceUploads{1024 * 1024}; // 1 MB
+private:
+    template<typename Arena, typename T>
+    static const T* CopyUpload(Arena& arena, const T* data, size_t size){
+        if(size == 0) return nullptr;
+        auto* copy = static_cast<T*>(arena.AllocateData(size));
+        std::memcpy(copy, data, size);
+        return copy;
+    }
+
+#ifdef TEST_NEW_CMD
+    template<Type Tag, auto Member, typename... Args>
+    void DispatchFast(Args&&... args){
+        using Payload = std::remove_reference_t<decltype(std::declval<Command&>().*Member)>;
+        if(executeImmediate != nullptr){
+            const Payload payload{std::forward<Args>(args)...};
+            executeImmediate(executorContext, Tag, &payload);
+        } else {
+            commands.Emplace<Tag, Payload>(std::forward<Args>(args)...);
+        }
+    }
+#endif
+    void* executorContext = nullptr;
+    ExecuteCommand executeImmediate = nullptr;
 };
 
-//TODO: Update to use a variable-size command stream, for usage less memory in std::vector<X> commands;
 struct OD_API CommandBuffer{
+#ifdef TEST_NEW_CMD
+    CommandBuffer() = default;
+    CommandBuffer(const CommandBuffer&) = default;
+    CommandBuffer& operator=(const CommandBuffer&) = default;
+
+    CommandBuffer(CommandBuffer&& other) noexcept
+        : commands(std::move(other.commands)),
+          windowEnd(std::exchange(other.windowEnd, NoWindowEnd)),
+          waitingForWindowEnd(std::exchange(other.waitingForWindowEnd, false)),
+          framebufferUses(std::move(other.framebufferUses)),
+          framebufferPassOpen(std::exchange(other.framebufferPassOpen, false)){}
+
+    CommandBuffer& operator=(CommandBuffer&& other) noexcept{
+        if(this != &other){
+            commands = std::move(other.commands);
+            windowEnd = std::exchange(other.windowEnd, NoWindowEnd);
+            waitingForWindowEnd = std::exchange(other.waitingForWindowEnd, false);
+            framebufferUses = std::move(other.framebufferUses);
+            framebufferPassOpen = std::exchange(other.framebufferPassOpen, false);
+        }
+        return *this;
+    }
+#endif
+
+#ifdef TEST_NEW_CMD
+    enum class Type : uint16_t{
+#else
     enum class Type{
+#endif
         Clear,
         Viewport,
         Scissor,
@@ -1009,6 +1216,14 @@ struct OD_API CommandBuffer{
         Type type;
 
         union{
+#ifdef TEST_NEW_CMD
+            struct {} endFramebuffer;
+#endif
+
+            struct {
+                bool preserveColor;
+            } beginWindowFramebuffer;
+
             struct {
                 uint32_t x, y, w, h;
             } viewport;
@@ -1083,115 +1298,222 @@ struct OD_API CommandBuffer{
         };
     };
 
+
+#ifdef TEST_NEW_CMD
+    using FastCommands = FCB::FastCommandBuffer<Type, 8>;
+    using ExecuteCommand = void (*)(void*, Type, const void*);
+
+    void SetImmediateExecutor(void* context, ExecuteCommand executor){
+        Assert(executeImmediate == nullptr && executor != nullptr && commands.GetUsedBytes() == 0);
+        if(executeImmediate == nullptr && commands.GetUsedBytes() == 0){
+            executorContext = context;
+            executeImmediate = executor;
+        }
+    }
+#else
+    using ExecuteCommand = void (*)(void*, const Command&);
+
+    void SetImmediateExecutor(void* context, ExecuteCommand executor){
+        Assert(executeImmediate == nullptr && executor != nullptr && commands.empty());
+        if(executeImmediate == nullptr && commands.empty()){
+            executorContext = context;
+            executeImmediate = executor;
+        }
+    }
+
+    bool ExecutesImmediately() const { return executeImmediate != nullptr; }
+
+    void Dispatch(const Command& cmd){
+        if(executeImmediate != nullptr){
+            executeImmediate(executorContext, cmd);
+        } else {
+            commands.push_back(cmd);
+        }
+    }
+#endif
+
+#ifdef TEST_NEW_CMD
+    bool ExecutesImmediately() const { return executeImmediate != nullptr; }
+#endif
+
     inline void ClearCmds(){
+        framebufferUses.clear();
+        framebufferPassOpen = false;
+#ifdef TEST_NEW_CMD
+        commands.Reset();
+        windowEnd = NoWindowEnd;
+        waitingForWindowEnd = false;
+#else
         commands.clear();
+#endif
     }
 
     inline void Clean(ClearFlags flags, const ClearValue& clearValue){
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::Clear, &Command::clear>(flags, clearValue);
+#else
         Command cmd{};
         cmd.type = Type::Clear;
         cmd.clear.flags = flags;
         cmd.clear.clearValue = clearValue;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
     inline void Viewport(uint32_t x, uint32_t y, uint32_t w, uint32_t h){
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::Viewport, &Command::viewport>(x, y, w, h);
+#else
         Command cmd{};
         cmd.type = Type::Viewport;
         cmd.viewport.x = x;
         cmd.viewport.y = y;
         cmd.viewport.w = w;
         cmd.viewport.h = h;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
     inline void Scissor(uint32_t x, uint32_t y, int32_t w, int32_t h){
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::Scissor, &Command::scissor>(x, y, w, h);
+#else
         Command cmd{};
         cmd.type = Type::Scissor;
         cmd.scissor.x = x;
         cmd.scissor.y = y;
         cmd.scissor.w = w;
         cmd.scissor.h = h;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
     inline void SetPipeline(Pipeline pipeline){
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::SetPipeline, &Command::setPipeline>(pipeline);
+#else
         Command cmd{};
         cmd.type = Type::SetPipeline;
         cmd.setPipeline.id = pipeline;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
     inline void SetVertexBuffer(uint32_t slot, Buffer buffer){
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::SetVertexBuffer, &Command::setVertexBuffer>(slot, buffer);
+#else
         Command cmd{};
         cmd.type = Type::SetVertexBuffer;
         cmd.setVertexBuffer.slot = slot;
         cmd.setVertexBuffer.buffer = buffer;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
     inline void SetIndexBuffer(Buffer buffer){
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::SetIndexBuffer, &Command::setIndexBuffer>(buffer);
+#else
         Command cmd{};
         cmd.type = Type::SetIndexBuffer;
         cmd.setIndexBuffer.buffer = buffer;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
     
     inline void SetBindGroup(uint8_t slot, BindGroup group){
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::SetBindGroup, &Command::setBindGroup>(slot, group);
+#else
         Command cmd{};
         cmd.type = Type::SetBindGroup;
         cmd.setBindGroup.slot = slot;
         cmd.setBindGroup.group = group;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
     inline void Draw(uint32_t vertexCount){
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::Draw, &Command::draw>(vertexCount);
+#else
         Command cmd{};
         cmd.type = Type::Draw;
         cmd.draw.vertexCount = vertexCount;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
     inline void DrawIndexed(uint32_t indexCount){
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::DrawIndexed, &Command::drawIndexed>(indexCount);
+#else
         Command cmd{};
         cmd.type = Type::DrawIndexed;
         cmd.drawIndexed.indexCount = indexCount;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
     inline void DrawInstanced(uint32_t vertexCount, uint32_t count){
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::DrawInstanced, &Command::drawInstanced>(vertexCount, count);
+#else
         Command cmd{};
         cmd.type = Type::DrawInstanced;
         cmd.drawInstanced.vertexCount = vertexCount;
         cmd.drawInstanced.count = count;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
     inline void DrawIndexedInstanced(uint32_t indexCount, uint32_t count){
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::DrawIndexedInstanced, &Command::drawIndexedInstanced>(indexCount, count);
+#else
         Command cmd{};
         cmd.type = Type::DrawIndexedInstanced;
         cmd.drawIndexedInstanced.indexCount = indexCount;
         cmd.drawIndexedInstanced.count = count;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
     inline void RenderImGui(uint32_t snapshotIndex){
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::RenderImGui, &Command::renderImGui>(snapshotIndex);
+#else
         Command cmd{};
         cmd.type = Type::RenderImGui;
         cmd.renderImGui.snapshotIndex = snapshotIndex;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
-    inline void BeginWindowFramebuffer(){
+    inline void BeginWindowFramebuffer(bool preserveColor = false){
+        framebufferPassOpen = true;
+#ifdef TEST_NEW_CMD
+        waitingForWindowEnd = true;
+        windowEnd = NoWindowEnd;
+        DispatchFast<Type::BeginWindowFramebuffer, &Command::beginWindowFramebuffer>(preserveColor);
+#else
         Command cmd{};
         cmd.type = Type::BeginWindowFramebuffer;
-        commands.push_back(cmd);
+        cmd.beginWindowFramebuffer.preserveColor = preserveColor;
+        Dispatch(cmd);
+#endif
     }
 
     inline void BeginFramebuffer(
         Framebuffer framebuffer, uint32_t layer = 0, uint32_t mip = 0,
         bool clean = true, ClearFlags clearFlags = ClearFlags::Color | ClearFlags::Depth,ClearValue clearValue = {}
     ){
+        TrackFramebufferUse(framebuffer);
+        framebufferPassOpen = true;
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::BeginFramebuffer, &Command::beginFramebuffer>(framebuffer, layer, mip, clean, clearFlags, clearValue);
+#else
         Command cmd{};
         cmd.type = Type::BeginFramebuffer;
         cmd.beginFramebuffer.framebuffer = framebuffer;
@@ -1200,43 +1522,116 @@ struct OD_API CommandBuffer{
         cmd.beginFramebuffer.clean = clean;
         cmd.beginFramebuffer.clearFlags = clearFlags;
         cmd.beginFramebuffer.clearValue = clearValue;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
     inline void EndFramebuffer(){
+#ifdef TEST_NEW_CMD
+        if(waitingForWindowEnd){
+            windowEnd = commands.GetUsedBytes();
+            waitingForWindowEnd = false;
+        }
+        DispatchFast<Type::EndFramebuffer, &Command::endFramebuffer>();
+#else
         Command cmd{};
         cmd.type = Type::EndFramebuffer;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
+        framebufferPassOpen = false;
     }
 
     inline void BlitFramebuffer(Framebuffer src, Framebuffer dst = InvalidID, int srcPass = 0){
+        TrackFramebufferUse(src);
+        TrackFramebufferUse(dst);
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::BlitFramebuffer, &Command::blitFramebuffer>(src, dst, srcPass);
+#else
         Command cmd{};
         cmd.type = Type::BlitFramebuffer;
         cmd.blitFramebuffer.src = src;
         cmd.blitFramebuffer.dst = dst;
         cmd.blitFramebuffer.srcPass = srcPass;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
     inline void CopyTexture(Framebuffer src, int attachment, Texture2D dst){
+        TrackFramebufferUse(src);
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::CopyTexture2D, &Command::copyTexture2D>(src, attachment, dst);
+#else
         Command cmd{};
         cmd.type = Type::CopyTexture2D;
         cmd.copyTexture2D.src = src;
         cmd.copyTexture2D.attachment = attachment;
         cmd.copyTexture2D.dst = dst;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
     inline void CopyTextureCubemap(Framebuffer src, int attachment, Cubemap dst){
+        TrackFramebufferUse(src);
+#ifdef TEST_NEW_CMD
+        DispatchFast<Type::CopyCubemap, &Command::copyCubemap>(src, attachment, dst);
+#else
         Command cmd{};
         cmd.type = Type::CopyCubemap;
         cmd.copyCubemap.src = src;
         cmd.copyCubemap.attachment = attachment;
         cmd.copyCubemap.dst = dst;
-        commands.push_back(cmd);
+        Dispatch(cmd);
+#endif
     }
 
+#ifdef TEST_NEW_CMD
+    bool InsertImGuiBeforeWindowEnd(uint32_t snapshotIndex){
+        if(ExecutesImmediately() || windowEnd == NoWindowEnd) return false;
+
+        const size_t tailBytes = commands.GetUsedBytes() - windowEnd;
+        commands.Insert<Type::RenderImGui, decltype(Command::renderImGui)>(windowEnd, snapshotIndex);
+        windowEnd = commands.GetUsedBytes() - tailBytes;
+        return true;
+    }
+
+#endif
+
+    void TrackFramebufferUse(Framebuffer framebuffer){
+        if(framebuffer != InvalidID) framebufferUses.insert(framebuffer);
+    }
+
+    bool HasFramebufferUse(Framebuffer framebuffer) const{
+        return framebufferUses.find(framebuffer) != framebufferUses.end();
+    }
+
+    bool HasOpenFramebufferPass() const { return framebufferPassOpen; }
+
+#ifdef TEST_NEW_CMD
+    FastCommands commands;
+#else
     std::vector<Command> commands;
+#endif
+
+private:
+#ifdef TEST_NEW_CMD
+    template<Type Tag, auto Member, typename... Args>
+    void DispatchFast(Args&&... args){
+        using Payload = std::remove_reference_t<decltype(std::declval<Command&>().*Member)>;
+        if(executeImmediate != nullptr){
+            const Payload payload{std::forward<Args>(args)...};
+            executeImmediate(executorContext, Tag, &payload);
+        } else {
+            commands.Emplace<Tag, Payload>(std::forward<Args>(args)...);
+        }
+    }
+    static constexpr size_t NoWindowEnd = std::numeric_limits<size_t>::max();
+    size_t windowEnd = NoWindowEnd;
+    bool waitingForWindowEnd = false;
+#endif
+    std::unordered_set<Framebuffer> framebufferUses;
+    bool framebufferPassOpen = false;
+    void* executorContext = nullptr;
+    ExecuteCommand executeImmediate = nullptr;
 };
 
 struct OD_API RenderFrame{
@@ -1248,13 +1643,36 @@ struct OD_API RenderFrame{
     ResourceCommands resourceCommands = {};
     ResourceCommands resourcePostCommands = {};
     CommandBuffer renderCommands = {};
+    std::unordered_map<Framebuffer, FrameBufferCreateInfo> framebufferResizes;
     std::vector<ImGuiSnapshot> imguiSnapshots;
     ImGuiImages imguiImages;
+
+    bool TrackFramebufferBindings(const BindGroupInfo& info){
+        bool usesFramebuffer = false;
+        for(uint32_t i = 0; i < info.entriesCount; ++i){
+            const auto framebuffer = info.entries[i].framebuffer;
+            if(framebuffer != InvalidID){
+                renderCommands.TrackFramebufferUse(framebuffer);
+                usesFramebuffer = true;
+            }
+        }
+        return usesFramebuffer;
+    }
 
     inline void RecordImGuiDrawData(void* data, ImGuiDrawDataDestroyFunction destroy){
         const uint32_t snapshotIndex = static_cast<uint32_t>(imguiSnapshots.size());
         imguiSnapshots.push_back({data, destroy});
 
+        if(renderCommands.ExecutesImmediately()) return;
+
+#ifdef TEST_NEW_CMD
+        if(!renderCommands.InsertImGuiBeforeWindowEnd(snapshotIndex)){
+            // An editor may only render to offscreen targets.
+            renderCommands.BeginWindowFramebuffer();
+            renderCommands.RenderImGui(snapshotIndex);
+            renderCommands.EndFramebuffer();
+        }
+#else
         auto insertAt = renderCommands.commands.end();
         for(auto it = renderCommands.commands.end(); it != renderCommands.commands.begin();){
             --it;
@@ -1279,6 +1697,17 @@ struct OD_API RenderFrame{
         command.type = CommandBuffer::Type::RenderImGui;
         command.renderImGui.snapshotIndex = snapshotIndex;
         renderCommands.commands.insert(insertAt, command);
+#endif
+    }
+
+    void DrawImGuiOverlay(){
+        if(imguiSnapshots.empty()) return;
+
+        renderCommands.BeginWindowFramebuffer(true);
+        for(uint32_t index = 0; index < imguiSnapshots.size(); ++index){
+            renderCommands.RenderImGui(index);
+        }
+        renderCommands.EndFramebuffer();
     }
 
     inline void Clear(){
@@ -1291,6 +1720,7 @@ struct OD_API RenderFrame{
         resourceCommands.Clear();
         resourcePostCommands.Clear();
         renderCommands.ClearCmds();
+        framebufferResizes.clear();
     }
 };
 
@@ -1305,7 +1735,15 @@ public:
 
     virtual bool SupportMultithread(){ return false; }
 
-    virtual void Init(bool multithread){}
+    void Init(RenderingMode mode){
+        Assert(!initialized);
+        if(initialized) return;
+        renderingMode = mode;
+        initialized = true;
+        InitializeRendering();
+    }
+
+    RenderingMode GetRenderingMode() const { return renderingMode; }
     virtual void Shut(){}
     virtual void StartRender(){}
     virtual void UpdateRender(){}
@@ -1318,6 +1756,7 @@ public:
     virtual void ImGuiShutdown(){}
     // Frame-local ImTextureID. Obtain again each UI frame; never dereference it.
     virtual void* ImGuiFramebufferColorAttachment(Framebuffer framebuffer, uint32_t attachment){ return nullptr; }
+    virtual void* ImGuiTexture2D(Texture2D texture){ return nullptr; }
     virtual bool ImGuiFramebufferNeedsVerticalFlip() const { return true; }
 
     virtual ResourceStats GetBufferStats(Buffer id){ return {}; }
@@ -1350,9 +1789,19 @@ public:
     virtual BindGroup CreateFrameBindGroup(BindGroupInfo& info){ return InvalidID; }
 
     virtual Framebuffer CreateFramebuffer(FrameBufferCreateInfo& info){ return InvalidID; }
+    // Returns false when the caller needs a separate target for the new size.
+    virtual bool ResizeFramebuffer(Framebuffer framebuffer, const FrameBufferCreateInfo& info){ return false; }
     virtual void DestroyFramebuffer(Framebuffer destroy){}
 
     virtual std::vector<Profile> GetProfiles(){ return {}; }
+
+protected:
+    virtual void InitializeRendering(){}
+    bool IsThreaded() const { return renderingMode == RenderingMode::Threaded; }
+
+private:
+    RenderingMode renderingMode = RenderingMode::Threaded;
+    bool initialized = false;
 };
 
 }

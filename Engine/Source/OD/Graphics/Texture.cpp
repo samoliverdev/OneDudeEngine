@@ -21,6 +21,7 @@ extern Gfx::Device* gfxDevice;
 Gfx::ImageFormat GetImageFormat(TextureFormat f){
     switch(f){
         case TextureFormat::RED8: return Gfx::ImageFormat::R8_UNORM;
+        case TextureFormat::RED32F: return Gfx::ImageFormat::R32F;
         case TextureFormat::RGB: return Gfx::ImageFormat::R8G8B8_UNORM;
         case TextureFormat::RGB8: return Gfx::ImageFormat::R8G8B8_UNORM;
         case TextureFormat::RGBA: return Gfx::ImageFormat::R8G8B8A8_UNORM;
@@ -34,6 +35,7 @@ Gfx::ImageFormat GetImageFormat(TextureFormat f){
 size_t GetFormatSize(TextureFormat f){
     switch(f){
         case TextureFormat::RED8: return sizeof(uint8_t);
+        case TextureFormat::RED32F: return sizeof(float);
         case TextureFormat::RGB: return sizeof(uint8_t)*3;
         case TextureFormat::RGB8: return sizeof(uint8_t)*3;
         case TextureFormat::RGBA: return sizeof(uint8_t)*4;
@@ -77,6 +79,7 @@ Ref<Texture2D> Texture2D::CreateFromRaw(void* data, int width, int height, Textu
     info.width = width;
     info.height = height;
     info.format = GetImageFormat(settings.textureFormat);
+    if(info.format == Gfx::ImageFormat::R32F) info.mipmap = settings.mipmap;
     tex->tex = gfxDevice->CreateTexture2D(info);
     if(tex->tex == Gfx::InvalidID) return nullptr;
     gfxDevice->UploadTexture2D(tex->tex, data, height * width * GetFormatSize(settings.textureFormat));
@@ -676,8 +679,17 @@ void Texture2D::OnGui(){
 
     ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 
-    float aspect = width / height;
-    ImGui::Image(RenderId(), ImVec2(viewportPanelSize.x, viewportPanelSize.x * aspect), ImVec2(0, 1), ImVec2(1, 0));
+    if(width > 0 && height > 0 && viewportPanelSize.x > 0){
+#ifdef TestNewGPU_API
+        auto* preview = gfxDevice != nullptr && tex != Gfx::InvalidID ? gfxDevice->ImGuiTexture2D(tex) : nullptr;
+#else
+        auto* preview = RenderId();
+#endif
+        if(preview != nullptr){
+            const float aspect = static_cast<float>(height) / width;
+            ImGui::Image(preview, ImVec2(viewportPanelSize.x, viewportPanelSize.x * aspect), ImVec2(0, 1), ImVec2(1, 0));
+        }
+    }
 
     ImGui::Spacing();
 

@@ -3,6 +3,7 @@
 #include <OD/Core/Time.h>
 #include <OD/Scene/Scene.h>
 #include <OD/Physics/PhysicsSystem.h>
+#include <cmath>
 
 namespace Standard{
 
@@ -24,7 +25,7 @@ float CharacterMovement::GetAxisVertical(){
     return math::clamp(x - y, -1.0f, 1.0f);
 }
 
-void CharacterMovement::OnFixedUpdate(Scene& scene, TransformComponent trans, RigidbodyComponent& rb){
+void CharacterMovement::OnFixedUpdate(Scene& scene, Entity entity, TransformComponent trans, RigidbodyComponent& rb){
     if(enable == false) return; 
 
     PhysicsSystem* physics = scene.GetSystem<PhysicsSystem>();
@@ -40,11 +41,14 @@ void CharacterMovement::OnFixedUpdate(Scene& scene, TransformComponent trans, Ri
     }*/
 
     int groundRaysCount = 0;
+    const LayerMask groundLayers{AllLayersMask};
     auto CastGroundRay = [&](Vector3 pos, Vector3 dir){
         RayResult hit;
-        if(physics->Raycast(pos, dir, hit)){
+        if(physics->RaycastIgnoreEntity(pos, dir, hit, groundLayers, entity, true)){
+            const float normalLengthSquared = math::length2(hit.hitNormal);
+            if(!std::isfinite(normalLengthSquared) || normalLengthSquared <= 1e-12f) return;
             groundRaysCount += 1;
-            groundNormal = hit.hitNormal;
+            groundNormal = hit.hitNormal / std::sqrt(normalLengthSquared);
         }
     };
 
@@ -164,7 +168,9 @@ void CharacterMovement::OnFixedUpdate(Scene& scene, TransformComponent trans, Ri
     float kd = 1.0f;    // damping
     Vector3 deltaVel = velocity - rb.Velocity();
     Vector3 force = deltaVel * kp * rb.Mass() - rb.Velocity() * kd * rb.Mass();
-    if(enableMovement) rb.ApplyForce(force);
+    if(enableMovement && std::isfinite(force.x) && std::isfinite(force.y) && std::isfinite(force.z)){
+        rb.ApplyForce(force);
+    }
 
     /*// Clean Slide
     const float stopEpsilon = 0.05f;

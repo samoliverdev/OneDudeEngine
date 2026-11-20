@@ -262,6 +262,12 @@ file(GLOB_RECURSE ENGINE_SOURCE_FILES
     Engine/Source/*.cpp
 )
 set(ENGINE_SOURCE_FILES ${ENGINE_SOURCE_FILES} Engine/ThirdParty/tinygltf/tiny_gltf.cc)
+set_source_files_properties(
+    Engine/Source/OD/Physics/Box3DPhysicsSystem.cpp
+    Engine/Source/OD/Physics/JoltPhysicsSystem.cpp
+    PROPERTIES OBJECT_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/Engine/Source/OD/Physics/PhysicsSystem.h"
+)
+
 set(ENGINE_SOURCE_FILES ${ENGINE_SOURCE_FILES} Engine/ThirdParty/tinyobjloader/tiny_obj_loader.cc)
 set(ENGINE_SOURCE_FILES ${ENGINE_SOURCE_FILES}
     Engine/ThirdParty/imgui/imgui.cpp

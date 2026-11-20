@@ -15,7 +15,13 @@
 #define ENABLE_OPENL_ERROR 1
 
 namespace OD{
-namespace Gfx{  
+namespace Gfx{
+
+#ifdef TEST_NEW_CMD
+#define OD_GFX_COMMAND_FIELD(Buffer, command, field) Buffer::FastCommands::Read<decltype(Buffer::Command::field)>(payload)
+#else
+#define OD_GFX_COMMAND_FIELD(Buffer, command, field) ((command).field)
+#endif
 
 #define DONT_DEFERRED_RESOURCE_CREATION
 
@@ -217,10 +223,10 @@ bool OpenglGPUDevice::_CreatePipeline(PipelineData& data, const char* _source, c
 
     data.info = info;
 
-    //std::string source = std::string(cmd.createPipeline.source);
+    //std::string source = std::string(cmd.createPipeline().source);
 
     //std::vector<ShaderBinding> bindings;
-    std::string source = _source; //ProcessShaderSource(cmd.createPipeline.source, bindings);
+    std::string source = _source; //ProcessShaderSource(cmd.createPipeline().source, bindings);
     //auto out = ProcessShaderSource(source, bindings);
     //LogInfo("-----------------\n{}-------------------\n", out);
 
@@ -304,7 +310,6 @@ bool OpenglGPUDevice::_CreatePipeline(PipelineData& data, const char* _source, c
     glGetProgramiv(data.program, GL_LINK_STATUS, &success);
     Assert(success);
 
-    glUseProgram(data.program);
     glDeleteShader(vertexShader);
     glDeleteShader(fragShader); 
 
@@ -339,19 +344,19 @@ bool OpenglGPUDevice::_CreatePipeline(PipelineData& data, const char* _source, c
 
     /*for(int i = 0; i < bindings.size(); i++){
         if(bindings[i].type == ShaderBindingType::UniformBuffer){
-            GLuint blockIndex = glGetUniformBlockIndex(pipelinePool.Get(cmd.createPipeline.id).program, bindings[i].name.c_str());
+            GLuint blockIndex = glGetUniformBlockIndex(pipelinePool.Get(cmd.createPipeline().id).program, bindings[i].name.c_str());
             glCheckError();
 
             Assert(blockIndex != GL_INVALID_INDEX);
-            pipelinePool.Get(cmd.createPipeline.id).groupsLookUp[bindings[i].set].bindingsLookUp[bindings[i].binding] = blockIndex;
+            pipelinePool.Get(cmd.createPipeline().id).groupsLookUp[bindings[i].set].bindingsLookUp[bindings[i].binding] = blockIndex;
         }
 
         if(bindings[i].type == ShaderBindingType::Sampler2D){
-            GLint uniformLoc = glGetUniformLocation(pipelinePool.Get(cmd.createPipeline.id).program, bindings[i].name.c_str());
+            GLint uniformLoc = glGetUniformLocation(pipelinePool.Get(cmd.createPipeline().id).program, bindings[i].name.c_str());
             glCheckError();
 
             Assert(uniformLoc >= 0);
-            pipelinePool.Get(cmd.createPipeline.id).groupsLookUp[bindings[i].set].bindingsLookUp[bindings[i].binding] = uniformLoc;
+            pipelinePool.Get(cmd.createPipeline().id).groupsLookUp[bindings[i].set].bindingsLookUp[bindings[i].binding] = uniformLoc;
         }
     }*/
     
@@ -399,8 +404,8 @@ bool OpenglGPUDevice::_CreateBuffer(BufferData& data, size_t size, BufferUsage u
 
 void OpenglGPUDevice::_UpdatedBuffer(BufferData& data, const void* _data, size_t size){
     Assert(size <= data.size);
-    glBindBuffer(data.type, data.buffer);
-    glBufferData(data.type, size, _data, GetOpenGLBufferUsage(data.memory));
+    glBindBuffer(GL_COPY_WRITE_BUFFER, data.buffer);
+    glBufferData(GL_COPY_WRITE_BUFFER, size, _data, GetOpenGLBufferUsage(data.memory));
     glCheckError();
 }
 
@@ -411,11 +416,53 @@ void OpenglGPUDevice::_DestroyBuffer(BufferData& data){
 }
 #pragma endregion
 
+namespace {
+class RestoreTextureBinding{
+public:
+    RestoreTextureBinding(bool enabled, GLenum textureTarget, GLenum binding)
+        : target(textureTarget), restore(enabled){
+        if(restore) glGetIntegerv(binding, &texture);
+    }
+
+    ~RestoreTextureBinding(){
+        if(restore) glBindTexture(target, static_cast<GLuint>(texture));
+    }
+
+private:
+    GLenum target;
+    bool restore;
+    GLint texture = 0;
+};
+
+class RestoreFramebufferBindings{
+public:
+    explicit RestoreFramebufferBindings(bool enabled) : restore(enabled){
+        if(restore){
+            glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &readFramebuffer);
+            glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &drawFramebuffer);
+        }
+    }
+
+    ~RestoreFramebufferBindings(){
+        if(restore){
+            glBindFramebuffer(GL_READ_FRAMEBUFFER, static_cast<GLuint>(readFramebuffer));
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, static_cast<GLuint>(drawFramebuffer));
+        }
+    }
+
+private:
+    bool restore;
+    GLint readFramebuffer = 0;
+    GLint drawFramebuffer = 0;
+};
+}
+
 #pragma region Texture2D
 
 GLenum GetTextureDataType(ImageFormat f){
     switch(f){
         case ImageFormat::R8_UNORM: return GL_UNSIGNED_BYTE;
+        case ImageFormat::R32F: return GL_FLOAT;
 
         case ImageFormat::R8G8B8_UNORM: return GL_UNSIGNED_BYTE;
         case ImageFormat::R8G8B8_SRGB: return GL_UNSIGNED_BYTE;
@@ -443,6 +490,7 @@ GLenum GetTextureDataType(ImageFormat f){
 GLenum GetTextureInternalFormat(ImageFormat f){
     switch(f){
         case ImageFormat::R8_UNORM: return GL_R8;
+        case ImageFormat::R32F: return GL_R32F;
 
         case ImageFormat::R8G8B8_UNORM: return GL_RGB8;
         case ImageFormat::R8G8B8_SRGB: return GL_SRGB8;
@@ -470,6 +518,7 @@ GLenum GetTextureInternalFormat(ImageFormat f){
 GLint GetTextureFormat(ImageFormat f){
     switch(f){
         case ImageFormat::R8_UNORM: return GL_RED;
+        case ImageFormat::R32F: return GL_RED;
 
         case ImageFormat::R8G8B8_UNORM: return GL_RGB;
         case ImageFormat::R8G8B8_SRGB: return GL_RGB;
@@ -520,6 +569,7 @@ static uint32_t GetTextureMipLevels(uint32_t width, uint32_t height, bool mipmap
 
 
 bool OpenglGPUDevice::_CreateTexture2D(Texture2DData& texData, const Texture2DInfo& info){
+    RestoreTextureBinding restore(!IsThreaded(), GL_TEXTURE_2D, GL_TEXTURE_BINDING_2D);
     /*texData.info = info;
 
     glGenTextures(1, &texData.tex);  
@@ -569,6 +619,7 @@ bool OpenglGPUDevice::_CreateTexture2D(Texture2DData& texData, const Texture2DIn
 } 
 
 void OpenglGPUDevice::_UploadTexture2D(Texture2DData& texData, const void* data, size_t size, int mipLevel){
+    RestoreTextureBinding restore(!IsThreaded(), GL_TEXTURE_2D, GL_TEXTURE_BINDING_2D);
     const uint32_t mipLevels = GetTextureMipLevels(texData.info.width, texData.info.height, texData.info.mipmap, texData.info.mipLevels);
     if(mipLevel < 0 || static_cast<uint32_t>(mipLevel) >= mipLevels || size == 0) return;
     const uint32_t width = std::max(1u, texData.info.width >> mipLevel);
@@ -586,6 +637,7 @@ void OpenglGPUDevice::_DestroyTexture2D(Texture2DData& data){
 } 
 
 bool OpenglGPUDevice::_CreateTexture2DArray(Texture2DArrayData& data, const Texture2DArrayInfo& info){
+    RestoreTextureBinding restore(!IsThreaded(), GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BINDING_2D_ARRAY);
     if(info.width == 0 || info.height == 0 || info.arrayElements == 0) return false;
     if(info.mipLevels > GetTextureMipLevels(info.width, info.height, true)) return false;
     data.info = info;
@@ -607,6 +659,7 @@ bool OpenglGPUDevice::_CreateTexture2DArray(Texture2DArrayData& data, const Text
 }
 
 void OpenglGPUDevice::_UploadTexture2DArray(Texture2DArrayData& data, const void* bytes, size_t, int arrayElement, int mipLevel){
+    RestoreTextureBinding restore(!IsThreaded(), GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BINDING_2D_ARRAY);
     if(arrayElement < 0 || mipLevel < 0 || static_cast<uint32_t>(arrayElement) >= data.info.arrayElements || static_cast<uint32_t>(mipLevel) >= GetTextureMipLevels(data.info.width, data.info.height, data.info.mipmap, data.info.mipLevels)) return;
     glBindTexture(GL_TEXTURE_2D_ARRAY, data.tex);
     glTexSubImage3D(GL_TEXTURE_2D_ARRAY, mipLevel, 0, 0, arrayElement,
@@ -622,6 +675,7 @@ void OpenglGPUDevice::_DestroyTexture2DArray(Texture2DArrayData& data){
 }
 
 bool OpenglGPUDevice::_CreateCubemap(CubemapData& data, const CubemapInfo& info){
+    RestoreTextureBinding restore(!IsThreaded(), GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BINDING_CUBE_MAP);
     /*data.info = info;
     glGenTextures(1, &data.tex);
     glBindTexture(GL_TEXTURE_CUBE_MAP, data.tex);
@@ -658,6 +712,7 @@ bool OpenglGPUDevice::_CreateCubemap(CubemapData& data, const CubemapInfo& info)
 }
 
 void OpenglGPUDevice::_UploadCubemap(CubemapData& data, const void* rawData, size_t size, int mipLevel){
+    RestoreTextureBinding restore(!IsThreaded(), GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BINDING_CUBE_MAP);
     const uint32_t mipLevels = GetTextureMipLevels(data.info.width, data.info.height, data.info.mipmap, data.info.mipLevels);
     if(mipLevel < 0 || static_cast<uint32_t>(mipLevel) >= mipLevels || size == 0) return;
     const uint32_t width = std::max(1u, data.info.width >> mipLevel);
@@ -679,6 +734,7 @@ void OpenglGPUDevice::_UploadCubemap(CubemapData& data, const void* rawData, siz
 }
 
 void OpenglGPUDevice::_UploadCubemapFace(CubemapData& data, const void* rawData, size_t size, CubemapFace face, int mipLevel){
+    RestoreTextureBinding restore(!IsThreaded(), GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BINDING_CUBE_MAP);
     const uint32_t faceIndex = static_cast<uint32_t>(face);
     const uint32_t mipLevels = GetTextureMipLevels(data.info.width, data.info.height, data.info.mipmap, data.info.mipLevels);
     if(faceIndex >= 6 || mipLevel < 0 || static_cast<uint32_t>(mipLevel) >= mipLevels || size == 0) return;
@@ -789,6 +845,10 @@ bool OpenglGPUDevice::_CreateFramebuffer(FramebufferData& data, const FrameBuffe
     // Create framebuffer
     // ------------------------------------------------------------
     glGenFramebuffers(1, &data.framebuffer);
+    RestoreFramebufferBindings restoreFramebuffers(!IsThreaded());
+    RestoreTextureBinding restore2D(!IsThreaded(), GL_TEXTURE_2D, GL_TEXTURE_BINDING_2D);
+    RestoreTextureBinding restoreArray(!IsThreaded(), GL_TEXTURE_2D_ARRAY, GL_TEXTURE_BINDING_2D_ARRAY);
+    RestoreTextureBinding restoreCube(!IsThreaded(), GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BINDING_CUBE_MAP);
     glBindFramebuffer(GL_FRAMEBUFFER, data.framebuffer);
 
     const bool isArray = info.layout.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY;
@@ -1080,6 +1140,10 @@ void OpenglGPUDevice::SubmitImGuiDrawData(void* data, ImGuiDrawDataDestroyFuncti
     frame.RecordImGuiDrawData(data, destroy);
 }
 
+void* OpenglGPUDevice::ImGuiTexture2D(Texture2D texture){
+    return multithreadRendererContext.simulationFrame->imguiImages.Texture(texture);
+}
+
 void* OpenglGPUDevice::ImGuiFramebufferColorAttachment(Framebuffer framebuffer, uint32_t attachment){
     return multithreadRendererContext.simulationFrame->imguiImages.ColorAttachment(framebuffer, attachment);
 }
@@ -1090,12 +1154,10 @@ void OpenglGPUDevice::ImGuiShutdown(){
     ImGui_ImplOpenGL3_Shutdown();
 }
 
-void OpenglGPUDevice::Init(bool inmultithread){
-    multithread = inmultithread;
-
+void OpenglGPUDevice::InitializeRendering(){
     multithreadRendererContext.StartupFrames();
 
-    if(multithread){
+    if(IsThreaded()){
         multithreadRendererContext.init = [&](){ _Init(); }; //_Init;
         multithreadRendererContext.shut = [&](){ _Shut(); }; //_Shut;
         multithreadRendererContext.runRender = [&](RenderFrame& f){ 
@@ -1110,19 +1172,44 @@ void OpenglGPUDevice::Init(bool inmultithread){
         multithreadRendererContext.Init();
     } else {
         _Init();
+        auto& frame = *multithreadRendererContext.simulationFrame;
+#ifdef TEST_NEW_CMD
+        frame.renderCommands.SetImmediateExecutor(this, [](void* context, CommandBuffer::Type type, const void* payload){
+            auto& device = *static_cast<OpenglGPUDevice*>(context);
+            device.ExecuteRenderCommand(*device.multithreadRendererContext.simulationFrame, type, payload);
+        });
+#else
+        frame.renderCommands.SetImmediateExecutor(this, [](void* context, const CommandBuffer::Command& cmd){
+            auto& device = *static_cast<OpenglGPUDevice*>(context);
+            device.ExecuteRenderCommand(*device.multithreadRendererContext.simulationFrame, cmd);
+        });
+#endif
+#ifdef TEST_NEW_CMD
+        frame.resourceCommands.SetImmediateExecutor(this, [](void* context, ResourceCommands::Type type, const void* payload){
+            static_cast<OpenglGPUDevice*>(context)->ExecuteResourceCommand(type, payload);
+        });
+#else
+        frame.resourceCommands.SetImmediateExecutor(this, [](void* context, const ResourceCommands::Command& cmd){
+            static_cast<OpenglGPUDevice*>(context)->ExecuteResourceCommand(cmd);
+        });
+#endif
+        BeginRenderFrame();
     }
 }
 
 void OpenglGPUDevice::Shut(){
-    if(multithread){
+    if(IsThreaded()){
         multithreadRendererContext.Shut();
     } else {
+        auto& frame = *multithreadRendererContext.simulationFrame;
+        FinishRenderFrame(frame);
+        frame.Clear();
         _Shut();
     }
 }
 
 void OpenglGPUDevice::StartRender(){
-    if(multithread){
+    if(IsThreaded()){
         multithreadRendererContext.StartRender();
     } else {
         SyncSingleThreadData();
@@ -1130,7 +1217,7 @@ void OpenglGPUDevice::StartRender(){
 }
 
 void OpenglGPUDevice::UpdateRender(){
-    if(multithread){
+    if(IsThreaded()){
         {
         OD_PROFILE_SCOPE("OpenglGPUDevice::UpdateRender::WaitForRender");
         multithreadRendererContext.WaitForRender();
@@ -1151,8 +1238,12 @@ void OpenglGPUDevice::UpdateRender(){
             profilesGpu.push_back({"RunRender", t}); 
         });
         {
-        OD_PROFILE_SCOPE("OpenglGPUDevice::UpdateRender::RunRender");
-        RunRender(*multithreadRendererContext.simulationFrame);
+        OD_PROFILE_SCOPE("OpenglGPUDevice::UpdateRender::FinishRenderFrame");
+        auto& frame = *multithreadRendererContext.simulationFrame;
+        ApplyFramebufferResizes(frame);
+        frame.DrawImGuiOverlay();
+        FinishRenderFrame(frame);
+        BeginRenderFrame();
         }
         {
         OD_PROFILE_SCOPE("OpenglGPUDevice::UpdateRender::SimulationFrameClear");
@@ -1374,692 +1465,776 @@ inline void SetBlendFunc(BlendMode sfactor, BlendMode dfactor){
     glCheckError();
 }
 
-void OpenglGPUDevice::RunRender(RenderFrame& frame){
-    #undef max
-
-    Pipeline currentPipeline = INVALID_ID;
-    PipelineInfo currentPipelineInfo = {};
-
-    int curTextureIndex = 0;
-    GLuint uniformBindingPoints[4][MaxBindingsLookUp];
-    for(auto& group : uniformBindingPoints){
+void OpenglGPUDevice::BeginRenderFrame(){
+    renderState = {};
+    for(auto& group : renderState.uniformBindingPoints){
         for(auto& binding : group) binding = GL_INVALID_INDEX;
     }
+}
 
-    /*for(auto i: frameBindGroups){
-        bindGroupPool.AddDestroyedId(i);
-    }
-    frameBindGroups.clear();*/
+void OpenglGPUDevice::RunRender(RenderFrame& frame){
+    BeginRenderFrame();
+    ApplyFramebufferResizes(frame);
+#ifdef TEST_NEW_CMD
+    frame.resourceCommands.commands.ForEach([&](ResourceCommands::Type type, const void* payload){
+        ExecuteResourceCommand(type, payload);
+    });
+#else
+    for(const auto& cmd : frame.resourceCommands.commands) ExecuteResourceCommand(cmd);
+#endif
+    ReplayRenderCommands(frame, frame.renderCommands);
+    FinishRenderFrame(frame);
+}
 
-    for(const ResourceCommands::Command& cmd: frame.resourceCommands.commands){
-        switch(cmd.type){
-        case ResourceCommands::Type::CreateBuffer:{
-            Assert(bufferPool.IsValid(cmd.createBuffer.id));
-            auto& data = bufferPool.Get(cmd.createBuffer.id);
-            if(!_CreateBuffer(data, cmd.createBuffer.size, cmd.createBuffer.usage, cmd.createBuffer.memory)){
-                bufferPool.AddDestroyedId(cmd.createBuffer.id);
-            }
-            //bufferPool.gpuToCpuResourceStatesIds.push_back(cmd.createBuffer.id);
-            //bufferPool.gpuToCpuResourceStatesData.push_back({ResourceStatsType::Created});
-            break;
-        }
+void OpenglGPUDevice::ReplayRenderCommands(RenderFrame& frame, const CommandBuffer& commands){
+#ifdef TEST_NEW_CMD
+    commands.commands.ForEach([&](CommandBuffer::Type type, const void* payload){
+        ExecuteRenderCommand(frame, type, payload);
+    });
+#else
+    for(const auto& cmd : commands.commands) ExecuteRenderCommand(frame, cmd);
+#endif
+}
 
-        case ResourceCommands::Type::UpdateBuffer:{
-            Assert(bufferPool.IsValid(cmd.updateBuffer.id));
-            auto& data = bufferPool.Get(cmd.updateBuffer.id);
-            _UpdatedBuffer(data, cmd.updateBuffer.data, cmd.updateBuffer.size);
-            break;
+#ifdef TEST_NEW_CMD
+void OpenglGPUDevice::ExecuteResourceCommand(ResourceCommands::Type type, const void* payload){
+#else
+void OpenglGPUDevice::ExecuteResourceCommand(const ResourceCommands::Command& cmd){
+    const auto type = cmd.type;
+#endif
+    switch(type){
+    case ResourceCommands::Type::CreateBuffer:{
+        const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, createBuffer);
+        Assert(bufferPool.IsValid(command.id));
+        auto& data = bufferPool.Get(command.id);
+        if(!_CreateBuffer(data, command.size, command.usage, command.memory)){
+            bufferPool.AddDestroyedId(command.id);
         }
-
-        case ResourceCommands::Type::CreateTexture2D:{
-            Assert(texture2DPool.IsValid(cmd.createTexture2D.id));
-            auto& data = texture2DPool.Get(cmd.createTexture2D.id);
-            if(!_CreateTexture2D(data, cmd.createTexture2D.info)){
-                texture2DPool.AddDestroyedId(cmd.createTexture2D.id);
-            }
-            break;
-        }
-
-        case ResourceCommands::Type::UploadTexture2D:{
-            Assert(texture2DPool.IsValid(cmd.uploadTexture2D.id));
-            auto& data = texture2DPool.Get(cmd.uploadTexture2D.id);
-            _UploadTexture2D(data, cmd.uploadTexture2D.data, cmd.uploadTexture2D.size, cmd.uploadTexture2D.mipLevel);
-            break;
-        }
-
-        case ResourceCommands::Type::CreateTexture2DArray:{
-            Assert(texture2DArrayPool.IsValid(cmd.createTexture2DArray.id));
-            auto& data = texture2DArrayPool.Get(cmd.createTexture2DArray.id);
-            if(!_CreateTexture2DArray(data, cmd.createTexture2DArray.info)) texture2DArrayPool.AddDestroyedId(cmd.createTexture2DArray.id);
-            break;
-        }
-        case ResourceCommands::Type::UploadTexture2DArray:{
-            Assert(texture2DArrayPool.IsValid(cmd.uploadTexture2DArray.id));
-            auto& data = texture2DArrayPool.Get(cmd.uploadTexture2DArray.id);
-            _UploadTexture2DArray(data, cmd.uploadTexture2DArray.data, cmd.uploadTexture2DArray.size,
-                cmd.uploadTexture2DArray.arrayElement, cmd.uploadTexture2DArray.mipLevel);
-            break;
-        }
-
-        case ResourceCommands::Type::CreateCubemap:{
-            Assert(cubemapPool.IsValid(cmd.createCubemap.id));
-            auto& data = cubemapPool.Get(cmd.createCubemap.id);
-            if(!_CreateCubemap(data, cmd.createCubemap.info)) cubemapPool.AddDestroyedId(cmd.createCubemap.id);
-            break;
-        }
-        case ResourceCommands::Type::UploadCubemap:{
-            Assert(cubemapPool.IsValid(cmd.uploadCubemap.id));
-            _UploadCubemap(cubemapPool.Get(cmd.uploadCubemap.id), cmd.uploadCubemap.data, cmd.uploadCubemap.size, cmd.uploadCubemap.mipLevel);
-            break;
-        }
-        case ResourceCommands::Type::UploadCubemapFace:{
-            Assert(cubemapPool.IsValid(cmd.uploadCubemapFace.id));
-            _UploadCubemapFace(cubemapPool.Get(cmd.uploadCubemapFace.id), cmd.uploadCubemapFace.data,
-                cmd.uploadCubemapFace.size, cmd.uploadCubemapFace.face, cmd.uploadCubemapFace.mipLevel);
-            break;
-        }
- 
-        case ResourceCommands::Type::CreatePipeline:{
-            Assert(pipelinePool.IsValid(cmd.createPipeline.id));
-            auto& data = pipelinePool.Get(cmd.createPipeline.id);
-            if(!_CreatePipeline(data, cmd.createPipeline.source, cmd.createPipeline.info)){
-                pipelinePool.AddDestroyedId(cmd.createPipeline.id);
-            }
-            break;
-        }
-
-        case ResourceCommands::Type::CreateBindGroupLayout:{
-            Assert(bindGroupLayoutPool.IsValid(cmd.createBindGroupLayout.id));
-            BindGroupLayoutData& data = bindGroupLayoutPool.Get(cmd.createBindGroupLayout.id);
-            if(!_CreateBindGroupLayout(data, *cmd.createBindGroupLayout.info)){
-                bindGroupLayoutPool.AddDestroyedId(cmd.createBindGroupLayout.id);
-            }
-            break;
-        }
-
-        case ResourceCommands::Type::CreateBindGroup:{
-            Assert(bindGroupPool.IsValid(cmd.createBindGroup.id));
-            auto& data = bindGroupPool.Get(cmd.createBindGroup.id);
-            _CreateBindGroup(data, cmd.createBindGroup.info);
-            break;
-        }
-
-        case ResourceCommands::Type::CreateFrameBindGroup:{
-            Assert(bindGroupPool.IsValid(cmd.createFrameBindGroup.id));
-            auto& data = bindGroupPool.Get(cmd.createFrameBindGroup.id);
-            _CreateBindGroup(data, cmd.createFrameBindGroup.info);
-            frameBindGroups.push_back(cmd.createFrameBindGroup.id);
-            break;
-        }
-
-        case ResourceCommands::Type::CreateFramebuffer:{
-            Assert(framebufferPool.IsValid(cmd.createFramebuffer.framebuffer));
-            auto& data = framebufferPool.Get(cmd.createFramebuffer.framebuffer);
-            if(!_CreateFramebuffer(data, cmd.createFramebuffer.info)){
-                framebufferPool.AddDestroyedId(cmd.createFramebuffer.framebuffer);
-            }
-            break;
-        }
-
-        default: Assert(false);
-        }
+        //bufferPool.gpuToCpuResourceStatesIds.push_back(command.id);
+        //bufferPool.gpuToCpuResourceStatesData.push_back({ResourceStatsType::Created});
+        break;
     }
 
-    bool skipFramebufferPass = false;
-    for(const CommandBuffer::Command& cmd: frame.renderCommands.commands){
-        if(skipFramebufferPass){
-            if(cmd.type == CommandBuffer::Type::EndFramebuffer) skipFramebufferPass = false;
-            continue;
-        }
-        switch(cmd.type){
+    case ResourceCommands::Type::UpdateBuffer:{
+        const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, updateBuffer);
+        Assert(bufferPool.IsValid(command.id));
+        auto& data = bufferPool.Get(command.id);
+        _UpdatedBuffer(data, command.data, command.size);
+        break;
+    }
 
-        case CommandBuffer::Type::Clear:{
-            const auto& clear = cmd.clear;
+    case ResourceCommands::Type::CreateTexture2D:{
+        const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, createTexture2D);
+        Assert(texture2DPool.IsValid(command.id));
+        auto& data = texture2DPool.Get(command.id);
+        if(!_CreateTexture2D(data, command.info)){
+            texture2DPool.AddDestroyedId(command.id);
+        }
+        break;
+    }
+
+    case ResourceCommands::Type::UploadTexture2D:{
+        const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, uploadTexture2D);
+        Assert(texture2DPool.IsValid(command.id));
+        auto& data = texture2DPool.Get(command.id);
+        _UploadTexture2D(data, command.data, command.size, command.mipLevel);
+        break;
+    }
+
+    case ResourceCommands::Type::CreateTexture2DArray:{
+        const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, createTexture2DArray);
+        Assert(texture2DArrayPool.IsValid(command.id));
+        auto& data = texture2DArrayPool.Get(command.id);
+        if(!_CreateTexture2DArray(data, command.info)) texture2DArrayPool.AddDestroyedId(command.id);
+        break;
+    }
+    case ResourceCommands::Type::UploadTexture2DArray:{
+        const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, uploadTexture2DArray);
+        Assert(texture2DArrayPool.IsValid(command.id));
+        auto& data = texture2DArrayPool.Get(command.id);
+        _UploadTexture2DArray(data, command.data, command.size,
+            command.arrayElement, command.mipLevel);
+        break;
+    }
+
+    case ResourceCommands::Type::CreateCubemap:{
+        const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, createCubemap);
+        Assert(cubemapPool.IsValid(command.id));
+        auto& data = cubemapPool.Get(command.id);
+        if(!_CreateCubemap(data, command.info)) cubemapPool.AddDestroyedId(command.id);
+        break;
+    }
+    case ResourceCommands::Type::UploadCubemap:{
+        const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, uploadCubemap);
+        Assert(cubemapPool.IsValid(command.id));
+        _UploadCubemap(cubemapPool.Get(command.id), command.data, command.size, command.mipLevel);
+        break;
+    }
+    case ResourceCommands::Type::UploadCubemapFace:{
+        const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, uploadCubemapFace);
+        Assert(cubemapPool.IsValid(command.id));
+        _UploadCubemapFace(cubemapPool.Get(command.id), command.data,
+            command.size, command.face, command.mipLevel);
+        break;
+    }
+
+    case ResourceCommands::Type::CreatePipeline:{
+        const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, createPipeline);
+        Assert(pipelinePool.IsValid(command.id));
+        auto& data = pipelinePool.Get(command.id);
+        if(!_CreatePipeline(data, command.source, command.info)){
+            pipelinePool.AddDestroyedId(command.id);
+        }
+        break;
+    }
+
+    case ResourceCommands::Type::CreateBindGroupLayout:{
+        const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, createBindGroupLayout);
+        Assert(bindGroupLayoutPool.IsValid(command.id));
+        BindGroupLayoutData& data = bindGroupLayoutPool.Get(command.id);
+        if(!_CreateBindGroupLayout(data, *command.info)){
+            bindGroupLayoutPool.AddDestroyedId(command.id);
+        }
+        break;
+    }
+
+    case ResourceCommands::Type::CreateBindGroup:{
+        const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, createBindGroup);
+        Assert(bindGroupPool.IsValid(command.id));
+        auto& data = bindGroupPool.Get(command.id);
+        _CreateBindGroup(data, command.info);
+        break;
+    }
+
+    case ResourceCommands::Type::CreateFrameBindGroup:{
+        const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, createFrameBindGroup);
+        Assert(bindGroupPool.IsValid(command.id));
+        auto& data = bindGroupPool.Get(command.id);
+        _CreateBindGroup(data, command.info);
+        frameBindGroups.push_back(command.id);
+        break;
+    }
+
+    case ResourceCommands::Type::CreateFramebuffer:{
+        const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, createFramebuffer);
+        Assert(framebufferPool.IsValid(command.framebuffer));
+        auto& data = framebufferPool.Get(command.framebuffer);
+        if(!_CreateFramebuffer(data, command.info)){
+            framebufferPool.AddDestroyedId(command.framebuffer);
+        }
+        break;
+    }
+
+    default: Assert(false);
+    }
+}
+
+#ifdef TEST_NEW_CMD
+void OpenglGPUDevice::ExecuteRenderCommand(RenderFrame& frame, CommandBuffer::Type type, const void* payload){
+#else
+void OpenglGPUDevice::ExecuteRenderCommand(RenderFrame& frame, const CommandBuffer::Command& cmd){
+    const auto type = cmd.type;
+#endif
+    ApplyFramebufferResizes(frame);
+    auto& [currentPipeline, currentPipelineInfo, textureUnits, uniformBindingPoints, skipFramebufferPass] = renderState;
+    if(skipFramebufferPass){
+        if(type == CommandBuffer::Type::EndFramebuffer) skipFramebufferPass = false;
+        return;
+    }
+    switch(type){
+
+    case CommandBuffer::Type::Clear:{
+        const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, cmd, clear);
+        GLbitfield mask = 0;
+
+        if(HasFlag(command.flags, ClearFlags::Color)){
+            glClearColor(command.clearValue.color.r, command.clearValue.color.g, command.clearValue.color.b, command.clearValue.color.a);
+            mask |= GL_COLOR_BUFFER_BIT;
+        }
+
+        if(HasFlag(command.flags, ClearFlags::Depth)){
+            glClearDepth(command.clearValue.depth);
+            mask |= GL_DEPTH_BUFFER_BIT;
+        }
+
+        if(HasFlag(command.flags, ClearFlags::Stencil)){
+            glClearStencil(static_cast<GLint>(command.clearValue.stencil));
+            mask |= GL_STENCIL_BUFFER_BIT;
+        }
+
+        if(mask != 0) glClear(mask);
+
+        glCheckError();
+        break;
+    }
+
+    case CommandBuffer::Type::Viewport:{
+        const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, cmd, viewport);
+        glViewport(command.x, command.y, command.w, command.h);
+        glCheckError();
+        break;
+    }
+
+    case CommandBuffer::Type::Scissor:{
+        const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, cmd, scissor);
+        glScissor(command.x, command.y, command.w, command.h);
+        glCheckError();
+        break;
+    }
+
+    case CommandBuffer::Type::SetPipeline:{
+        const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, cmd, setPipeline);
+        PipelineData& pipeline = pipelinePool.Get(command.id);
+
+        // Restore the complete OpenGL state needed by this logical pipeline.
+        // Vulkan binds the pipeline and descriptor sets independently; OpenGL
+        // needs the program and VAO made current explicitly.
+        glBindVertexArray(globalVAO);
+
+        SetColorMask(pipeline.info.colorMask);
+        SetCullFace(pipeline.info.cullFace);
+        SetDepthTest(pipeline.info.depthTest);
+        SetDepthMask(pipeline.info.depthMask);
+        if(pipeline.info.blend){
+            SetBlend(true);
+
+            if(pipeline.info.srcBlend != pipeline.info.srcAlphaBlend || pipeline.info.dstBlend != pipeline.info.dstAlphaBlend){
+                glBlendFuncSeparate(
+                    BlendModeToGL(pipeline.info.srcBlend),
+                    BlendModeToGL(pipeline.info.dstBlend),
+                    BlendModeToGL(pipeline.info.srcAlphaBlend),
+                    BlendModeToGL(pipeline.info.dstAlphaBlend)
+                );
+                glCheckError();
+            } else {
+                SetBlendFunc(pipeline.info.srcBlend, pipeline.info.dstBlend);
+            }
+
+            glBlendEquation(BlendOpToGL(pipeline.info.opBlend));
+        } else {
+            SetBlend(false);
+        }
+
+        glUseProgram(pipeline.program);
+        currentPipeline = command.id;
+        currentPipelineInfo = pipeline.info;
+        glCheckError();
+
+        GLuint nextUniformBindingPoint = 0;
+        GLint nextTextureUnit = 0;
+        for(uint32_t groupIndex = 0; groupIndex < pipeline.info.bindGroupLayoutCount; ++groupIndex){
+            const BindGroupLayoutInfo& layout = bindGroupLayoutPool.Get(pipeline.info.bindGroupLayouts[groupIndex]).info;
+            for(uint32_t entryIndex = 0; entryIndex < layout.entriesCount; ++entryIndex){
+                const BindLayoutEntry& entry = layout.entries[entryIndex];
+                Assert(entry.binding < MaxBindingsLookUp);
+                if(entry.type == BindingType::UniformBuffer){
+                    uniformBindingPoints[groupIndex][entry.binding] = nextUniformBindingPoint++;
+                } else if(entry.type == BindingType::Texture2D ||
+                          entry.type == BindingType::Texture2DArray ||
+                          entry.type == BindingType::TextureCube){
+                    textureUnits[groupIndex][entry.binding] = nextTextureUnit++;
+                }
+            }
+        }
+        GLint maxUniformBindingPoints = 0;
+        glGetIntegerv(GL_MAX_UNIFORM_BUFFER_BINDINGS, &maxUniformBindingPoints);
+        Assert(nextUniformBindingPoint <= static_cast<GLuint>(maxUniformBindingPoints));
+
+        break;
+    }
+
+    case CommandBuffer::Type::SetVertexBuffer:{
+        const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, cmd, setVertexBuffer);
+        Assert(bufferPool.Get(command.buffer).usage == BufferUsage::Vertex);
+
+        glBindVertexArray(globalVAO);
+
+        const uint32_t slot = command.slot;
+        GLuint vbo = bufferPool.Get(command.buffer).buffer;
+        const MeshLayout& layout = currentPipelineInfo.vertexLayout;
+        const VertexBufferLayout& bufferLayout = layout.buffers[slot];
+
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+        for(uint32_t i = 0; i < layout.attributeCount; ++i){
+            const VertexAttribute& attribute = layout.attributes[i];
+            if(attribute.bufferSlot != slot) continue;
+
+            GLuint location = VertexSemanticToSlot(attribute.semantic); // GetVertexLocation(attribute.semantic);
+            ApplyVertexAttribute(location, attribute.format, attribute.offset, bufferLayout.stride);
+            glEnableVertexAttribArray(location);
+            glVertexAttribDivisor(location, bufferLayout.inputRate == VertexInputRate::Instance ? 1 : 0);
+        }
+
+        glCheckError();
+        break;
+    }
+
+    case CommandBuffer::Type::SetIndexBuffer:{
+        const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, cmd, setIndexBuffer);
+        Assert(bufferPool.Get(command.buffer).usage == BufferUsage::Index);
+
+        glBindVertexArray(globalVAO);
+
+        GLuint ebo = bufferPool.Get(command.buffer).buffer;
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+        break;
+    };
+
+    case CommandBuffer::Type::SetBindGroup:{
+        const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, cmd, setBindGroup);
+        //Assert(group < bindGroups.size());
+
+        const BindGroupData& bindGroup = bindGroupPool.Get(command.group);
+        const BindGroupLayoutData& bindGroupLayout = bindGroupLayoutPool.Get(bindGroup.layout);
+        const PipelineData& pipeline = pipelinePool.Get(currentPipeline);
+        Assert(command.slot < 4);
+
+        glUseProgram(pipeline.program);
+        glBindVertexArray(globalVAO);
+
+        for(int i = 0; i < bindGroup.entries.size(); i++){
+            if(bindGroupLayout.info.entries[i].type == BindingType::UniformBuffer){
+                const BindingEntry& binding = bindGroup.entries[i];
+                Assert(binding.buffer != InvalidID);
+
+                const BufferData& buffer = bufferPool.Get(binding.buffer);
+                Assert(buffer.usage == BufferUsage::Uniform);
+
+                Assert(buffer.buffer != InvalidID);
+                Assert(binding.dynamicOffset == false);
+
+                Assert(pipeline.info.bindGroupLayouts[command.slot] == bindGroup.layout);
+
+                GLuint blockIndex = pipeline.groupsLookUp[command.slot].bindingsLookUp[binding.binding].blockIndex;
+                if(blockIndex == GL_INVALID_INDEX) continue;
+                Assert(blockIndex != GL_INVALID_INDEX);
+                //Assert(pipeline.groupsLookUp[command.slot].bindingsLookUp[binding.binding].bufferSize <= buffer.size);
+
+                const GLuint bindingPoint = uniformBindingPoints[command.slot][binding.binding];
+                Assert(bindingPoint != GL_INVALID_INDEX);
+
+                glBindBufferRange(
+                    GL_UNIFORM_BUFFER,
+                    bindingPoint,
+                    buffer.buffer,
+                    static_cast<GLintptr>(binding.offset),
+                    static_cast<GLsizeiptr>(binding.size)
+                );
+                glCheckError();
+                glUniformBlockBinding(pipeline.program, blockIndex, bindingPoint);
+                glCheckError();
+            }
+
+            if(bindGroupLayout.info.entries[i].type == BindingType::Texture2D){
+                const BindingEntry& binding = bindGroup.entries[i];
+                const GLint textureUnit = textureUnits[command.slot][binding.binding];
+
+                if(binding.texture != InvalidID){
+                    const Texture2DData& tex = texture2DPool.Get(binding.texture);
+
+                    GLuint uniformLoc = pipeline.groupsLookUp[command.slot].bindingsLookUp[binding.binding].uniformLoc;
+                    Assert(uniformLoc >= 0);
+
+                    glActiveTexture(GL_TEXTURE0 + textureUnit);
+                    glBindTexture(GL_TEXTURE_2D, tex.tex);
+                    glUniform1i(uniformLoc, textureUnit); // set it manually
+                    glCheckError();
+
+                } else if(binding.framebuffer != InvalidID){
+                    const FramebufferData& tex = framebufferPool.Get(binding.framebuffer);
+
+                    GLuint uniformLoc = pipeline.groupsLookUp[command.slot].bindingsLookUp[binding.binding].uniformLoc;
+                    Assert(uniformLoc >= 0);
+
+                    glActiveTexture(GL_TEXTURE0 + textureUnit);
+                    glBindTexture(GL_TEXTURE_2D, binding.framebufferAttacement < 0 ? tex.depthAttachment : tex.colorAttachments[binding.framebufferAttacement]);
+                    glUniform1i(uniformLoc, textureUnit); // set it manually
+                    glCheckError();
+
+                } else {
+                    Assert(false);
+                }
+            }
+
+            if(bindGroupLayout.info.entries[i].type == BindingType::Texture2DArray){
+                const BindingEntry& binding = bindGroup.entries[i];
+                const GLint textureUnit = textureUnits[command.slot][binding.binding];
+                if(binding.textureArray != InvalidID){
+                    const Texture2DArrayData& tex = texture2DArrayPool.Get(binding.textureArray);
+                    GLuint uniformLoc = pipeline.groupsLookUp[command.slot].bindingsLookUp[binding.binding].uniformLoc;
+                    Assert(uniformLoc >= 0);
+                    glActiveTexture(GL_TEXTURE0 + textureUnit);
+                    glBindTexture(GL_TEXTURE_2D_ARRAY, tex.tex);
+                    glUniform1i(uniformLoc, textureUnit);
+                    glCheckError();
+                } else if(binding.framebuffer != InvalidID){
+                    const FramebufferData& tex = framebufferPool.Get(binding.framebuffer);
+
+                    GLuint uniformLoc = pipeline.groupsLookUp[command.slot].bindingsLookUp[binding.binding].uniformLoc;
+                    Assert(uniformLoc >= 0);
+
+                    glActiveTexture(GL_TEXTURE0 + textureUnit);
+                    glBindTexture(GL_TEXTURE_2D_ARRAY, binding.framebufferAttacement < 0 ? tex.depthAttachment : tex.colorAttachments[binding.framebufferAttacement]);
+                    glUniform1i(uniformLoc, textureUnit);
+                    glCheckError();
+
+                } else {
+                    Assert(false);
+                }
+            }
+
+            if(bindGroupLayout.info.entries[i].type == BindingType::TextureCube){
+                const BindingEntry& binding = bindGroup.entries[i];
+                const GLint textureUnit = textureUnits[command.slot][binding.binding];
+                if(binding.cubemap != InvalidID){
+                    const CubemapData& cube = cubemapPool.Get(binding.cubemap);
+                    GLuint uniformLoc = pipeline.groupsLookUp[command.slot].bindingsLookUp[binding.binding].uniformLoc;
+                    Assert(uniformLoc >= 0);
+
+                    glActiveTexture(GL_TEXTURE0 + textureUnit);
+                    glBindTexture(GL_TEXTURE_CUBE_MAP, cube.tex);
+                    glUniform1i(uniformLoc, textureUnit);
+                } else if(binding.framebuffer != InvalidID){
+                    const FramebufferData& tex = framebufferPool.Get(binding.framebuffer);
+
+                    GLuint uniformLoc = pipeline.groupsLookUp[command.slot].bindingsLookUp[binding.binding].uniformLoc;
+                    Assert(uniformLoc >= 0);
+
+                    glActiveTexture(GL_TEXTURE0 + textureUnit);
+                    glBindTexture(GL_TEXTURE_CUBE_MAP, binding.framebufferAttacement < 0 ? tex.depthAttachment : tex.colorAttachments[binding.framebufferAttacement]);
+                    glUniform1i(uniformLoc, textureUnit);
+                } else {
+                    Assert(false);
+                }
+            }
+        }
+        break;
+    }
+
+    case CommandBuffer::Type::Draw:{
+        const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, cmd, draw);
+        glDrawArrays(GL_TRIANGLES, 0, command.vertexCount);
+        glCheckError();
+        break;
+    }
+
+    case CommandBuffer::Type::DrawIndexed:{
+        const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, cmd, drawIndexed);
+        glDrawElements(GL_TRIANGLES, command.indexCount, GL_UNSIGNED_INT, nullptr);
+        glCheckError();
+        break;
+    }
+
+    case CommandBuffer::Type::DrawInstanced:{
+        const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, cmd, drawInstanced);
+        glDrawArraysInstanced(GL_TRIANGLES, 0, command.vertexCount, command.count);
+        break;
+    }
+
+    case CommandBuffer::Type::DrawIndexedInstanced:{
+        const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, cmd, drawIndexedInstanced);
+        glDrawElementsInstanced(GL_TRIANGLES, command.indexCount,  GL_UNSIGNED_INT, 0, command.count);
+        break;
+    }
+
+    case CommandBuffer::Type::BeginWindowFramebuffer:{
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glCheckError();
+        break;
+    }
+
+    case CommandBuffer::Type::BeginFramebuffer:{
+        const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, cmd, beginFramebuffer);
+        if(!framebufferPool.IsValid(command.framebuffer)){
+            LogWarning("Ignoring BeginFramebuffer for a destroyed framebuffer (id={})", command.framebuffer);
+            skipFramebufferPass = true;
+            break;
+        }
+        FramebufferData& data = framebufferPool.Get(command.framebuffer);
+
+        Assert(data.framebuffer > 0);
+        const bool isArray = data.layout.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY;
+        const bool isCube = data.layout.type == FramebufferAttachmentType::CUBEMAP;
+        const uint32_t layerCount = isCube ? 6u : isArray ? math::max<uint8_t>(1u, data.layout.layers) : 1u;
+        const uint32_t layer = command.layer;
+        const uint32_t mip = command.mip;
+        if(layer >= layerCount || mip >= data.info.mipLevels){
+            LogError("OpenGL framebuffer subresource index out of range: mip={}, layer={}", mip, layer);
+            skipFramebufferPass = true;
+            break;
+        }
+
+        glBindFramebuffer(GL_FRAMEBUFFER, data.framebuffer);
+        for(uint32_t i = 0; i < data.layout.colorAttachmentsCount; ++i){
+            if(isArray)
+                glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, data.colorAttachments[i], mip, layer);
+            else
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, isCube ? GL_TEXTURE_CUBE_MAP_POSITIVE_X + layer : GL_TEXTURE_2D, data.colorAttachments[i], mip);
+        }
+        if(data.depthAttachment != 0){
+            const bool hasStencil = data.layout.depthAttachment.format == FramebufferDepthTextureFormat::DEPTH24_STENCIL8 ||
+                data.layout.depthAttachment.format == FramebufferDepthTextureFormat::DEPTH32F_STENCIL8;
+            const GLenum attachment = hasStencil ? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT;
+            if(isArray)
+                glFramebufferTextureLayer(GL_FRAMEBUFFER, attachment, data.depthAttachment, mip, layer);
+            else
+                glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, isCube ? GL_TEXTURE_CUBE_MAP_POSITIVE_X + layer : GL_TEXTURE_2D, data.depthAttachment, mip);
+        }
+
+        if(command.clean){
+            const ClearValue& clear = command.clearValue;
             GLbitfield mask = 0;
 
-            if(HasFlag(clear.flags, ClearFlags::Color)){
-                glClearColor(clear.clearValue.color.r, clear.clearValue.color.g, clear.clearValue.color.b, clear.clearValue.color.a);
+            if(HasFlag(command.clearFlags, ClearFlags::Color)){
+                glClearColor(clear.color.x, clear.color.y, clear.color.z, clear.color.w);
                 mask |= GL_COLOR_BUFFER_BIT;
             }
-
-            if(HasFlag(clear.flags, ClearFlags::Depth)){
-                glClearDepth(clear.clearValue.depth);
+            if(HasFlag(command.clearFlags, ClearFlags::Depth)){
+                glClearDepth(clear.depth);
                 mask |= GL_DEPTH_BUFFER_BIT;
             }
-
-            if(HasFlag(clear.flags, ClearFlags::Stencil)){
-                glClearStencil(static_cast<GLint>(clear.clearValue.stencil));
+            if(HasFlag(command.clearFlags, ClearFlags::Stencil)){
+                glClearStencil(static_cast<GLint>(clear.stencil));
                 mask |= GL_STENCIL_BUFFER_BIT;
             }
-
-            if(mask != 0) glClear(mask);
-
-            glCheckError();
-            break;
+            if(mask != 0)
+                glClear(mask);
         }
 
-        case CommandBuffer::Type::Viewport:{
-            glViewport(cmd.viewport.x, cmd.viewport.y, cmd.viewport.w, cmd.viewport.h);
-            glCheckError();
-            break;
-        }
-
-        case CommandBuffer::Type::Scissor:{
-            glScissor(cmd.scissor.x, cmd.scissor.y, cmd.scissor.w, cmd.scissor.h);
-            glCheckError();
-            break;
-        }
-
-        case CommandBuffer::Type::SetPipeline:{
-            PipelineData& pipeline = pipelinePool.Get(cmd.setPipeline.id);
-
-            // Restore the complete OpenGL state needed by this logical pipeline.
-            // Vulkan binds the pipeline and descriptor sets independently; OpenGL
-            // needs the program and VAO made current explicitly.
-            glBindVertexArray(globalVAO);
-
-            SetColorMask(pipeline.info.colorMask);
-            SetCullFace(pipeline.info.cullFace);
-            SetDepthTest(pipeline.info.depthTest);
-            SetDepthMask(pipeline.info.depthMask);
-            if(pipeline.info.blend){
-                SetBlend(true);
-
-                if(pipeline.info.srcBlend != pipeline.info.srcAlphaBlend || pipeline.info.dstBlend != pipeline.info.dstAlphaBlend){
-                    glBlendFuncSeparate(
-                        BlendModeToGL(pipeline.info.srcBlend), 
-                        BlendModeToGL(pipeline.info.dstBlend), 
-                        BlendModeToGL(pipeline.info.srcAlphaBlend), 
-                        BlendModeToGL(pipeline.info.dstAlphaBlend)
-                    );
-                    glCheckError();
-                } else {
-                    SetBlendFunc(pipeline.info.srcBlend, pipeline.info.dstBlend);
-                }
-
-                glBlendEquation(BlendOpToGL(pipeline.info.opBlend));
-            } else {
-                SetBlend(false);
-            }
-
-            glUseProgram(pipeline.program);
-            currentPipeline = cmd.setPipeline.id;
-            currentPipelineInfo = pipeline.info;
-            glCheckError();
-
-            GLuint nextUniformBindingPoint = 0;
-            for(uint32_t groupIndex = 0; groupIndex < pipeline.info.bindGroupLayoutCount; ++groupIndex){
-                const BindGroupLayoutInfo& layout = bindGroupLayoutPool.Get(pipeline.info.bindGroupLayouts[groupIndex]).info;
-                for(uint32_t entryIndex = 0; entryIndex < layout.entriesCount; ++entryIndex){
-                    const BindLayoutEntry& entry = layout.entries[entryIndex];
-                    if(entry.type != BindingType::UniformBuffer) continue;
-
-                    Assert(entry.binding < MaxBindingsLookUp);
-                    uniformBindingPoints[groupIndex][entry.binding] = nextUniformBindingPoint++;
-                }
-            }
-            GLint maxUniformBindingPoints = 0;
-            glGetIntegerv(GL_MAX_UNIFORM_BUFFER_BINDINGS, &maxUniformBindingPoints);
-            Assert(nextUniformBindingPoint <= static_cast<GLuint>(maxUniformBindingPoints));
-
-            curTextureIndex = 0;
-            break;
-        }
-
-        case CommandBuffer::Type::SetVertexBuffer:{
-            Assert(bufferPool.Get(cmd.setVertexBuffer.buffer).usage == BufferUsage::Vertex);
-
-            glBindVertexArray(globalVAO);
-
-            const uint32_t slot = cmd.setVertexBuffer.slot;
-            GLuint vbo = bufferPool.Get(cmd.setVertexBuffer.buffer).buffer;
-            const MeshLayout& layout = currentPipelineInfo.vertexLayout;
-            const VertexBufferLayout& bufferLayout = layout.buffers[slot];
-
-            glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
-            for(uint32_t i = 0; i < layout.attributeCount; ++i){
-                const VertexAttribute& attribute = layout.attributes[i];
-                if(attribute.bufferSlot != slot) continue;
-
-                GLuint location = VertexSemanticToSlot(attribute.semantic); // GetVertexLocation(attribute.semantic);
-                ApplyVertexAttribute(location, attribute.format, attribute.offset, bufferLayout.stride);
-                glEnableVertexAttribArray(location);
-                glVertexAttribDivisor(location, bufferLayout.inputRate == VertexInputRate::Instance ? 1 : 0);
-            }
-
-            glCheckError();
-            break;
-        }
-
-        case CommandBuffer::Type::SetIndexBuffer:{
-            Assert(bufferPool.Get(cmd.setIndexBuffer.buffer).usage == BufferUsage::Index);
-
-            glBindVertexArray(globalVAO);
-
-            GLuint ebo = bufferPool.Get(cmd.setIndexBuffer.buffer).buffer;
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-            break;
-        };
-
-        case CommandBuffer::Type::SetBindGroup:{
-            //Assert(group < bindGroups.size());
-
-            const BindGroupData& bindGroup = bindGroupPool.Get(cmd.setBindGroup.group);
-            const BindGroupLayoutData& bindGroupLayout = bindGroupLayoutPool.Get(bindGroup.layout);
-            const PipelineData& pipeline = pipelinePool.Get(currentPipeline);
-            Assert(cmd.setBindGroup.slot < 4);
-
-            glUseProgram(pipeline.program);
-            glBindVertexArray(globalVAO);
-
-            for(int i = 0; i < bindGroup.entries.size(); i++){
-                if(bindGroupLayout.info.entries[i].type == BindingType::UniformBuffer){
-                    const BindingEntry& binding = bindGroup.entries[i];
-                    Assert(binding.buffer != InvalidID);
-
-                    const BufferData& buffer = bufferPool.Get(binding.buffer);
-                    Assert(buffer.usage == BufferUsage::Uniform);
-
-                    Assert(buffer.buffer != InvalidID);
-                    Assert(binding.dynamicOffset == false);
-
-                    Assert(pipeline.info.bindGroupLayouts[cmd.setBindGroup.slot] == bindGroup.layout);
-
-                    GLuint blockIndex = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].blockIndex;
-                    if(blockIndex == GL_INVALID_INDEX) continue;
-                    Assert(blockIndex != GL_INVALID_INDEX);
-                    //Assert(pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].bufferSize <= buffer.size);
-
-                    const GLuint bindingPoint = uniformBindingPoints[cmd.setBindGroup.slot][binding.binding];
-                    Assert(bindingPoint != GL_INVALID_INDEX);
-
-                    glBindBufferRange(
-                        GL_UNIFORM_BUFFER,
-                        bindingPoint,
-                        buffer.buffer,
-                        static_cast<GLintptr>(binding.offset),
-                        static_cast<GLsizeiptr>(binding.size)
-                    );
-                    glCheckError();
-                    glUniformBlockBinding(pipeline.program, blockIndex, bindingPoint);
-                    glCheckError();
-                }
-
-                if(bindGroupLayout.info.entries[i].type == BindingType::Texture2D){
-                    const BindingEntry& binding = bindGroup.entries[i];
-
-                    if(binding.texture != InvalidID){
-                        const Texture2DData& tex = texture2DPool.Get(binding.texture);
-
-                        GLuint uniformLoc = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].uniformLoc;
-                        Assert(uniformLoc >= 0);
-
-                        glActiveTexture(GL_TEXTURE0 + curTextureIndex);
-                        glBindTexture(GL_TEXTURE_2D, tex.tex);
-                        glUniform1i(uniformLoc, curTextureIndex); // set it manually
-                        glCheckError();
-
-                        curTextureIndex += 1;
-                    } else if(binding.framebuffer != InvalidID){
-                        const FramebufferData& tex = framebufferPool.Get(binding.framebuffer);
-
-                        GLuint uniformLoc = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].uniformLoc;
-                        Assert(uniformLoc >= 0);
-
-                        glActiveTexture(GL_TEXTURE0 + curTextureIndex);
-                        glBindTexture(GL_TEXTURE_2D, binding.framebufferAttacement < 0 ? tex.depthAttachment : tex.colorAttachments[binding.framebufferAttacement]);
-                        glUniform1i(uniformLoc, curTextureIndex); // set it manually
-                        glCheckError();
-
-                        curTextureIndex += 1;
-                    } else {
-                        Assert(false);
-                    }
-                }
-
-                if(bindGroupLayout.info.entries[i].type == BindingType::Texture2DArray){
-                    const BindingEntry& binding = bindGroup.entries[i];
-                    if(binding.textureArray != InvalidID){
-                        const Texture2DArrayData& tex = texture2DArrayPool.Get(binding.textureArray);
-                        GLuint uniformLoc = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].uniformLoc;
-                        Assert(uniformLoc >= 0);
-                        glActiveTexture(GL_TEXTURE0 + curTextureIndex);
-                        glBindTexture(GL_TEXTURE_2D_ARRAY, tex.tex);
-                        glUniform1i(uniformLoc, curTextureIndex);
-                        glCheckError();
-                        curTextureIndex += 1;
-                    } else if(binding.framebuffer != InvalidID){
-                        const FramebufferData& tex = framebufferPool.Get(binding.framebuffer);
-
-                        GLuint uniformLoc = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].uniformLoc;
-                        Assert(uniformLoc >= 0);
-
-                        glActiveTexture(GL_TEXTURE0 + curTextureIndex);
-                        glBindTexture(GL_TEXTURE_2D_ARRAY, binding.framebufferAttacement < 0 ? tex.depthAttachment : tex.colorAttachments[binding.framebufferAttacement]);
-                        glUniform1i(uniformLoc, curTextureIndex);
-                        glCheckError();
-
-                        curTextureIndex += 1;
-                    } else {
-                        Assert(false);
-                    }
-                }
-
-                if(bindGroupLayout.info.entries[i].type == BindingType::TextureCube){
-                    const BindingEntry& binding = bindGroup.entries[i];
-                    if(binding.cubemap != InvalidID){
-                        const CubemapData& cube = cubemapPool.Get(binding.cubemap);
-                        GLuint uniformLoc = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].uniformLoc;
-                        Assert(uniformLoc >= 0);
-
-                        glActiveTexture(GL_TEXTURE0 + curTextureIndex);
-                        glBindTexture(GL_TEXTURE_CUBE_MAP, cube.tex);
-                        glUniform1i(uniformLoc, curTextureIndex);
-                        curTextureIndex += 1;
-                    } else if(binding.framebuffer != InvalidID){
-                        const FramebufferData& tex = framebufferPool.Get(binding.framebuffer);
-
-                        GLuint uniformLoc = pipeline.groupsLookUp[cmd.setBindGroup.slot].bindingsLookUp[binding.binding].uniformLoc;
-                        Assert(uniformLoc >= 0);
-
-                        glActiveTexture(GL_TEXTURE0 + curTextureIndex);
-                        glBindTexture(GL_TEXTURE_CUBE_MAP, binding.framebufferAttacement < 0 ? tex.depthAttachment : tex.colorAttachments[binding.framebufferAttacement]);
-                        glUniform1i(uniformLoc, curTextureIndex);
-                        curTextureIndex += 1;
-                    } else {
-                        Assert(false);
-                    }
-                }
-            }
-            break;
-        }
-
-        case CommandBuffer::Type::Draw:{
-            glDrawArrays(GL_TRIANGLES, 0, cmd.draw.vertexCount);
-            glCheckError();
-            break;
-        }
-
-        case CommandBuffer::Type::DrawIndexed:{
-            glDrawElements(GL_TRIANGLES, cmd.drawIndexed.indexCount, GL_UNSIGNED_INT, nullptr);
-            glCheckError();
-            break;
-        }
-
-        case CommandBuffer::Type::DrawInstanced:{
-            glDrawArraysInstanced(GL_TRIANGLES, 0, cmd.drawInstanced.vertexCount, cmd.drawInstanced.count);
-            break;
-        }
-
-        case CommandBuffer::Type::DrawIndexedInstanced:{
-            glDrawElementsInstanced(GL_TRIANGLES, cmd.drawIndexedInstanced.indexCount,  GL_UNSIGNED_INT, 0, cmd.drawIndexedInstanced.count);
-            break;
-        }
-
-        case CommandBuffer::Type::BeginWindowFramebuffer:{
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glCheckError();
-            break;
-        }
-
-        case CommandBuffer::Type::BeginFramebuffer:{
-            if(!framebufferPool.IsValid(cmd.beginFramebuffer.framebuffer)){
-                LogWarning("Ignoring BeginFramebuffer for a destroyed framebuffer (id={})", cmd.beginFramebuffer.framebuffer);
-                skipFramebufferPass = true;
-                break;
-            }
-            FramebufferData& data = framebufferPool.Get(cmd.beginFramebuffer.framebuffer);
-
-            Assert(data.framebuffer > 0);
-            const bool isArray = data.layout.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY;
-            const bool isCube = data.layout.type == FramebufferAttachmentType::CUBEMAP;
-            const uint32_t layerCount = isCube ? 6u : isArray ? math::max<uint8_t>(1u, data.layout.layers) : 1u;
-            const uint32_t layer = cmd.beginFramebuffer.layer;
-            const uint32_t mip = cmd.beginFramebuffer.mip;
-            if(layer >= layerCount || mip >= data.info.mipLevels){
-                LogError("OpenGL framebuffer subresource index out of range: mip={}, layer={}", mip, layer);
-                skipFramebufferPass = true;
-                break;
-            }
-
-            glBindFramebuffer(GL_FRAMEBUFFER, data.framebuffer);
-            for(uint32_t i = 0; i < data.layout.colorAttachmentsCount; ++i){
-                if(isArray)
-                    glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, data.colorAttachments[i], mip, layer);
-                else
-                    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, isCube ? GL_TEXTURE_CUBE_MAP_POSITIVE_X + layer : GL_TEXTURE_2D, data.colorAttachments[i], mip);
-            }
-            if(data.depthAttachment != 0){
-                const bool hasStencil = data.layout.depthAttachment.format == FramebufferDepthTextureFormat::DEPTH24_STENCIL8 ||
-                    data.layout.depthAttachment.format == FramebufferDepthTextureFormat::DEPTH32F_STENCIL8;
-                const GLenum attachment = hasStencil ? GL_DEPTH_STENCIL_ATTACHMENT : GL_DEPTH_ATTACHMENT;
-                if(isArray)
-                    glFramebufferTextureLayer(GL_FRAMEBUFFER, attachment, data.depthAttachment, mip, layer);
-                else
-                    glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, isCube ? GL_TEXTURE_CUBE_MAP_POSITIVE_X + layer : GL_TEXTURE_2D, data.depthAttachment, mip);
-            }
-
-            if(cmd.beginFramebuffer.clean){
-                const ClearValue& clear = cmd.beginFramebuffer.clearValue;
-                GLbitfield mask = 0;
-
-                if(HasFlag(cmd.beginFramebuffer.clearFlags, ClearFlags::Color)){
-                    glClearColor(clear.color.x, clear.color.y, clear.color.z, clear.color.w);
-                    mask |= GL_COLOR_BUFFER_BIT;
-                }
-                if(HasFlag(cmd.beginFramebuffer.clearFlags, ClearFlags::Depth)){
-                    glClearDepth(clear.depth);
-                    mask |= GL_DEPTH_BUFFER_BIT;
-                }
-                if(HasFlag(cmd.beginFramebuffer.clearFlags, ClearFlags::Stencil)){
-                    glClearStencil(static_cast<GLint>(clear.stencil));
-                    mask |= GL_STENCIL_BUFFER_BIT;
-                }
-                if(mask != 0)
-                    glClear(mask);
-            }
-
-            glCheckError();
-            break;
-        }
-
-        case CommandBuffer::Type::EndFramebuffer:{
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glCheckError();
-            break;
-        }
-
-        case CommandBuffer::Type::BlitFramebuffer:{
-            const auto& blit = cmd.blitFramebuffer;
-            Assert(framebufferPool.IsValid(blit.src));
-            const auto& src = framebufferPool.Get(blit.src);
-            const GLuint dst = blit.dst == InvalidID ? 0 : [&](){
-                Assert(framebufferPool.IsValid(blit.dst));
-                return framebufferPool.Get(blit.dst).framebuffer;
-            }();
-
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, src.framebuffer);
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dst);
-            if(blit.srcPass < 0){
-                glBlitFramebuffer(0, 0, src.width, src.height, 0, 0,
-                    blit.dst == InvalidID ? src.width : framebufferPool.Get(blit.dst).width,
-                    blit.dst == InvalidID ? src.height : framebufferPool.Get(blit.dst).height,
-                    GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-            } else {
-                glReadBuffer(GL_COLOR_ATTACHMENT0 + blit.srcPass);
-                // The default framebuffer does not have GL_COLOR_ATTACHMENT*;
-                // its color buffer is selected with GL_BACK.
-                glDrawBuffer(blit.dst == InvalidID ? GL_BACK : GL_COLOR_ATTACHMENT0 + blit.srcPass);
-                const uint32_t dstWidth = blit.dst == InvalidID ? src.width : framebufferPool.Get(blit.dst).width;
-                const uint32_t dstHeight = blit.dst == InvalidID ? src.height : framebufferPool.Get(blit.dst).height;
-                glBlitFramebuffer(0, 0, src.width, src.height, 0, 0, dstWidth, dstHeight,
-                    GL_COLOR_BUFFER_BIT, GL_NEAREST);
-            }
-            glCheckError();
-            break;
-        }
-
-        case CommandBuffer::Type::CopyTexture2D:
-        case CommandBuffer::Type::CopyCubemap:{
-            const bool cube = cmd.type == CommandBuffer::Type::CopyCubemap;
-            const Framebuffer sourceId = cube ? cmd.copyCubemap.src : cmd.copyTexture2D.src;
-            const int attachment = cube ? cmd.copyCubemap.attachment : cmd.copyTexture2D.attachment;
-            Assert(framebufferPool.IsValid(sourceId));
-            const auto& source = framebufferPool.Get(sourceId);
-            Assert(source.layout.type == (cube ? FramebufferAttachmentType::CUBEMAP : FramebufferAttachmentType::TEXTURE_2D));
-            uint32_t destinationWidth = 0, destinationHeight = 0, destinationMipLevels = 0;
-            ImageFormat destinationFormat = ImageFormat::R8_UNORM;
-            GLuint destinationTexture = 0;
-            if(cube){
-                const auto& destination = cubemapPool.Get(cmd.copyCubemap.dst);
-                destinationWidth = destination.info.width; destinationHeight = destination.info.height;
-                destinationMipLevels = GetTextureMipLevels(destinationWidth, destinationHeight, destination.info.mipmap, destination.info.mipLevels);
-                destinationFormat = destination.info.format; destinationTexture = destination.tex;
-            } else {
-                const auto& destination = texture2DPool.Get(cmd.copyTexture2D.dst);
-                destinationWidth = destination.info.width; destinationHeight = destination.info.height;
-                destinationMipLevels = GetTextureMipLevels(destinationWidth, destinationHeight, destination.info.mipmap, destination.info.mipLevels);
-                destinationFormat = destination.info.format; destinationTexture = destination.tex;
-            }
-            Assert(attachment < 0 || static_cast<uint32_t>(attachment) < source.layout.colorAttachmentsCount);
-            const uint32_t sourceMipLevels = source.info.mipLevels;
-            Assert(source.width == destinationWidth && source.height == destinationHeight);
-            Assert(sourceMipLevels == destinationMipLevels);
-            ImageFormat sourceFormat = ImageFormat::R8_UNORM;
-            if(attachment < 0){
-                Assert(source.layout.depthAttachment.format == FramebufferDepthTextureFormat::DEPTH_COMPONENT16);
-                sourceFormat = ImageFormat::DEPTH_COMPONENT16;
-            } else {
-                switch(source.layout.colorAttachments[attachment].format){
-                    case FramebufferTextureFormat::RGBA8: sourceFormat = ImageFormat::R8G8B8A8_UNORM; break;
-                    case FramebufferTextureFormat::RGB: sourceFormat = ImageFormat::R8G8B8_UNORM; break;
-                    case FramebufferTextureFormat::RGB11B10F: sourceFormat = ImageFormat::RGB11B10F; break;
-                    case FramebufferTextureFormat::RGB16F: sourceFormat = ImageFormat::RGB16F; break;
-                    case FramebufferTextureFormat::RGBA16F: sourceFormat = ImageFormat::RGBA16F; break;
-                    case FramebufferTextureFormat::RGB32F: sourceFormat = ImageFormat::RGB32F; break;
-                    case FramebufferTextureFormat::RGBA32F: sourceFormat = ImageFormat::RGBA32F; break;
-                    case FramebufferTextureFormat::RED_INTEGER: sourceFormat = ImageFormat::RED_INTEGER; break;
-                    default: Assert(false); break;
-                }
-            }
-            Assert(sourceFormat == destinationFormat);
-            const GLuint sourceTexture = attachment < 0 ? source.depthAttachment : source.colorAttachments[attachment];
-            const GLenum target = cube ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D;
-            for(uint32_t mip = 0; mip < sourceMipLevels; ++mip){
-                const uint32_t width = std::max(1u, source.width >> mip);
-                const uint32_t height = std::max(1u, source.height >> mip);
-                if(cube){
-                    for(uint32_t face = 0; face < 6; ++face){
-                        glCopyImageSubData(sourceTexture, target, mip, 0, 0, face,
-                            destinationTexture, target, mip, 0, 0, face, width, height, 1);
-                    }
-                } else {
-                    glCopyImageSubData(sourceTexture, target, mip, 0, 0, 0,
-                        destinationTexture, target, mip, 0, 0, 0, width, height, 1);
-                }
-            }
-            glCheckError();
-            break;
-        }
-
-        case CommandBuffer::Type::RenderImGui:{
-            const uint32_t index = cmd.renderImGui.snapshotIndex;
-            Assert(index < frame.imguiSnapshots.size());
-
-            const auto& snapshot = frame.imguiSnapshots[index];
-            if(snapshot.data == nullptr)
-                break;
-
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glViewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
-            ImGuiNewFrame();
-            ResolveImGuiImages(*static_cast<ImDrawData*>(snapshot.data), frame.imguiImages,
-                [&](uint32_t framebuffer, uint32_t attachment) -> void* {
-                    if(!framebufferPool.IsValid(framebuffer)) return nullptr;
-                    const auto& data = framebufferPool.Get(framebuffer);
-                    if(data.layout.type != FramebufferAttachmentType::TEXTURE_2D || data.layout.samples != 1 ||
-                       attachment >= data.colorAttachments.size() ||
-                       data.layout.colorAttachments[attachment].format == FramebufferTextureFormat::RED_INTEGER) return nullptr;
-                    return reinterpret_cast<void*>(static_cast<uintptr_t>(data.colorAttachments[attachment]));
-                });
-            ImGui_ImplOpenGL3_RenderDrawData(static_cast<ImDrawData*>(snapshot.data));
-            break;
-        }
-
-        }
+        glCheckError();
+        break;
     }
 
-    for(auto i: frameBindGroups){
-        bindGroupPool.AddDestroyedId(i);
+    case CommandBuffer::Type::EndFramebuffer:{
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glCheckError();
+        break;
+    }
+
+    case CommandBuffer::Type::BlitFramebuffer:{
+        const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, cmd, blitFramebuffer);
+        Assert(framebufferPool.IsValid(command.src));
+        const auto& src = framebufferPool.Get(command.src);
+        const GLuint dst = command.dst == InvalidID ? 0 : [&](){
+            Assert(framebufferPool.IsValid(command.dst));
+            return framebufferPool.Get(command.dst).framebuffer;
+        }();
+
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, src.framebuffer);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, dst);
+        if(command.srcPass < 0){
+            glBlitFramebuffer(0, 0, src.width, src.height, 0, 0,
+                command.dst == InvalidID ? src.width : framebufferPool.Get(command.dst).width,
+                command.dst == InvalidID ? src.height : framebufferPool.Get(command.dst).height,
+                GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+        } else {
+            glReadBuffer(GL_COLOR_ATTACHMENT0 + command.srcPass);
+            // The default framebuffer does not have GL_COLOR_ATTACHMENT*;
+            // its color buffer is selected with GL_BACK.
+            glDrawBuffer(command.dst == InvalidID ? GL_BACK : GL_COLOR_ATTACHMENT0 + command.srcPass);
+            const uint32_t dstWidth = command.dst == InvalidID ? src.width : framebufferPool.Get(command.dst).width;
+            const uint32_t dstHeight = command.dst == InvalidID ? src.height : framebufferPool.Get(command.dst).height;
+            glBlitFramebuffer(0, 0, src.width, src.height, 0, 0, dstWidth, dstHeight,
+                GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        }
+        glCheckError();
+        break;
+    }
+
+    case CommandBuffer::Type::CopyTexture2D:
+    case CommandBuffer::Type::CopyCubemap:{
+        const bool cube = type == CommandBuffer::Type::CopyCubemap;
+        const auto [sourceId, attachment, destinationId] = [&]()
+            -> decltype(CommandBuffer::Command::copyTexture2D) {
+            if(cube){
+                const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, cmd, copyCubemap);
+                return {command.src, command.attachment, command.dst};
+            }
+            const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, cmd, copyTexture2D);
+            return command;
+        }();
+        Assert(framebufferPool.IsValid(sourceId));
+        const auto& source = framebufferPool.Get(sourceId);
+        Assert(source.layout.type == (cube ? FramebufferAttachmentType::CUBEMAP : FramebufferAttachmentType::TEXTURE_2D));
+        uint32_t destinationWidth = 0, destinationHeight = 0, destinationMipLevels = 0;
+        ImageFormat destinationFormat = ImageFormat::R8_UNORM;
+        GLuint destinationTexture = 0;
+        if(cube){
+            const auto& destination = cubemapPool.Get(destinationId);
+            destinationWidth = destination.info.width; destinationHeight = destination.info.height;
+            destinationMipLevels = GetTextureMipLevels(destinationWidth, destinationHeight, destination.info.mipmap, destination.info.mipLevels);
+            destinationFormat = destination.info.format; destinationTexture = destination.tex;
+        } else {
+            const auto& destination = texture2DPool.Get(destinationId);
+            destinationWidth = destination.info.width; destinationHeight = destination.info.height;
+            destinationMipLevels = GetTextureMipLevels(destinationWidth, destinationHeight, destination.info.mipmap, destination.info.mipLevels);
+            destinationFormat = destination.info.format; destinationTexture = destination.tex;
+        }
+        Assert(attachment < 0 || static_cast<uint32_t>(attachment) < source.layout.colorAttachmentsCount);
+        const uint32_t sourceMipLevels = source.info.mipLevels;
+        Assert(source.width == destinationWidth && source.height == destinationHeight);
+        Assert(sourceMipLevels == destinationMipLevels);
+        ImageFormat sourceFormat = ImageFormat::R8_UNORM;
+        if(attachment < 0){
+            Assert(source.layout.depthAttachment.format == FramebufferDepthTextureFormat::DEPTH_COMPONENT16);
+            sourceFormat = ImageFormat::DEPTH_COMPONENT16;
+        } else {
+            switch(source.layout.colorAttachments[attachment].format){
+                case FramebufferTextureFormat::RGBA8: sourceFormat = ImageFormat::R8G8B8A8_UNORM; break;
+                case FramebufferTextureFormat::RGB: sourceFormat = ImageFormat::R8G8B8_UNORM; break;
+                case FramebufferTextureFormat::RGB11B10F: sourceFormat = ImageFormat::RGB11B10F; break;
+                case FramebufferTextureFormat::RGB16F: sourceFormat = ImageFormat::RGB16F; break;
+                case FramebufferTextureFormat::RGBA16F: sourceFormat = ImageFormat::RGBA16F; break;
+                case FramebufferTextureFormat::RGB32F: sourceFormat = ImageFormat::RGB32F; break;
+                case FramebufferTextureFormat::RGBA32F: sourceFormat = ImageFormat::RGBA32F; break;
+                case FramebufferTextureFormat::RED_INTEGER: sourceFormat = ImageFormat::RED_INTEGER; break;
+                default: Assert(false); break;
+            }
+        }
+        Assert(sourceFormat == destinationFormat);
+        const GLuint sourceTexture = attachment < 0 ? source.depthAttachment : source.colorAttachments[attachment];
+        const GLenum target = cube ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D;
+        for(uint32_t mip = 0; mip < sourceMipLevels; ++mip){
+            const uint32_t width = std::max(1u, source.width >> mip);
+            const uint32_t height = std::max(1u, source.height >> mip);
+            if(cube){
+                for(uint32_t face = 0; face < 6; ++face){
+                    glCopyImageSubData(sourceTexture, target, mip, 0, 0, face,
+                        destinationTexture, target, mip, 0, 0, face, width, height, 1);
+                }
+            } else {
+                glCopyImageSubData(sourceTexture, target, mip, 0, 0, 0,
+                    destinationTexture, target, mip, 0, 0, 0, width, height, 1);
+            }
+        }
+        glCheckError();
+        break;
+    }
+
+    case CommandBuffer::Type::RenderImGui:{
+        const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, cmd, renderImGui);
+        const uint32_t index = command.snapshotIndex;
+        Assert(index < frame.imguiSnapshots.size());
+
+        const auto& snapshot = frame.imguiSnapshots[index];
+        if(snapshot.data == nullptr)
+            break;
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, Application::ScreenWidth(), Application::ScreenHeight());
+        ImGuiNewFrame();
+        ResolveImGuiImages(*static_cast<ImDrawData*>(snapshot.data), frame.imguiImages,
+            [&](uint32_t framebuffer, uint32_t attachment) -> void* {
+                if(!framebufferPool.IsValid(framebuffer)) return nullptr;
+                const auto& data = framebufferPool.Get(framebuffer);
+                if(data.layout.type != FramebufferAttachmentType::TEXTURE_2D || data.layout.samples != 1 ||
+                   attachment >= data.colorAttachments.size() ||
+                   data.layout.colorAttachments[attachment].format == FramebufferTextureFormat::RED_INTEGER) return nullptr;
+                return reinterpret_cast<void*>(static_cast<uintptr_t>(data.colorAttachments[attachment]));
+            }, [&](uint32_t texture) -> void* {
+                if(!texture2DPool.IsValid(texture)) return nullptr;
+                const auto& data = texture2DPool.Get(texture);
+                if(data.info.format == ImageFormat::RED_INTEGER) return nullptr;
+                return reinterpret_cast<void*>(static_cast<uintptr_t>(data.tex));
+            });
+        ImGui_ImplOpenGL3_RenderDrawData(static_cast<ImDrawData*>(snapshot.data));
+        break;
+    }
+
+    }
+}
+
+void OpenglGPUDevice::FinishRenderFrame(RenderFrame& frame){
+    for(auto id : frameBindGroups){
+        bindGroupPool.AddDestroyedId(id);
     }
     frameBindGroups.clear();
 
-    for(const ResourceCommands::Command& cmd: frame.resourcePostCommands.commands){
-        switch(cmd.type){
-        case ResourceCommands::Type::DestroyBuffer:{
-            if(!bufferPool.IsValid(cmd.destroyBuffer.id)){
-                LogError("DestroyBuffer: Invalid id!");
-                break;
-            }
+#ifdef TEST_NEW_CMD
+    frame.resourcePostCommands.commands.ForEach([&](ResourceCommands::Type type, const void* payload){
+        ExecuteDestroyCommand(type, payload);
+    });
+#else
+    for(const auto& cmd : frame.resourcePostCommands.commands) ExecuteDestroyCommand(cmd);
+#endif
+}
 
-            Assert(bufferPool.IsValid(cmd.destroyBuffer.id));
-            auto& data = bufferPool.Get(cmd.destroyBuffer.id);
-            _DestroyBuffer(data);
-            bufferPool.AddDestroyedId(cmd.destroyBuffer.id);
+#ifdef TEST_NEW_CMD
+void OpenglGPUDevice::ExecuteDestroyCommand(ResourceCommands::Type type, const void* payload){
+#else
+void OpenglGPUDevice::ExecuteDestroyCommand(const ResourceCommands::Command& cmd){
+    const auto type = cmd.type;
+#endif
+    switch(type){
+    case ResourceCommands::Type::DestroyBuffer:{
+        const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, destroyBuffer);
+        if(!bufferPool.IsValid(command.id)){
+            LogError("DestroyBuffer: Invalid id!");
             break;
         }
 
-        case ResourceCommands::Type::DestroyTexture2D:{
-            Assert(texture2DPool.IsValid(cmd.destroyTexture2D.id));
-            auto& data = texture2DPool.Get(cmd.destroyTexture2D.id);
-            _DestroyTexture2D(data);
-            texture2DPool.AddDestroyedId(cmd.destroyTexture2D.id);
-            break;
-        }
-
-        case ResourceCommands::Type::DestroyTexture2DArray:{
-            Assert(texture2DArrayPool.IsValid(cmd.destroyTexture2DArray.id));
-            _DestroyTexture2DArray(texture2DArrayPool.Get(cmd.destroyTexture2DArray.id));
-            texture2DArrayPool.AddDestroyedId(cmd.destroyTexture2DArray.id);
-            break;
-        }
-
-        case ResourceCommands::Type::DestroyCubemap:{
-            Assert(cubemapPool.IsValid(cmd.destroyCubemap.id));
-            _DestroyCubemap(cubemapPool.Get(cmd.destroyCubemap.id));
-            cubemapPool.AddDestroyedId(cmd.destroyCubemap.id);
-            break;
-        }
-
-        case ResourceCommands::Type::DestroyPipeline:{
-            Assert(pipelinePool.IsValid(cmd.destroyPipeline.id));
-            auto& data = pipelinePool.Get(cmd.destroyPipeline.id);
-            _DestroyPipeline(data);
-            pipelinePool.AddDestroyedId(cmd.destroyPipeline.id);
-            break;
-        }
-        
-        case ResourceCommands::Type::DestroyBindGroupLayout:{
-            Assert(bindGroupLayoutPool.IsValid(cmd.destroyBindGroupLayout.id));
-            BindGroupLayoutData& data = bindGroupLayoutPool.Get(cmd.destroyBindGroupLayout.id);
-            _DestroyBindGroupLayout(data);
-            bindGroupLayoutPool.AddDestroyedId(cmd.destroyBindGroupLayout.id);
-            break;
-        }
-
-        case ResourceCommands::Type::DestroyFramebuffer:{
-            Assert(framebufferPool.IsValid(cmd.destroyFramebuffer.id));
-            auto& data = framebufferPool.Get(cmd.destroyFramebuffer.id);
-            _DestroyFramebuffer(data);
-            framebufferPool.AddDestroyedId(cmd.destroyFramebuffer.id);
-            break;
-        }
-
-        default: Assert(false);
-        }
+        Assert(bufferPool.IsValid(command.id));
+        auto& data = bufferPool.Get(command.id);
+        _DestroyBuffer(data);
+        bufferPool.AddDestroyedId(command.id);
+        break;
     }
 
+    case ResourceCommands::Type::DestroyTexture2D:{
+        const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, destroyTexture2D);
+        Assert(texture2DPool.IsValid(command.id));
+        auto& data = texture2DPool.Get(command.id);
+        _DestroyTexture2D(data);
+        texture2DPool.AddDestroyedId(command.id);
+        break;
+    }
+
+    case ResourceCommands::Type::DestroyTexture2DArray:{
+        const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, destroyTexture2DArray);
+        Assert(texture2DArrayPool.IsValid(command.id));
+        _DestroyTexture2DArray(texture2DArrayPool.Get(command.id));
+        texture2DArrayPool.AddDestroyedId(command.id);
+        break;
+    }
+
+    case ResourceCommands::Type::DestroyCubemap:{
+        const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, destroyCubemap);
+        Assert(cubemapPool.IsValid(command.id));
+        _DestroyCubemap(cubemapPool.Get(command.id));
+        cubemapPool.AddDestroyedId(command.id);
+        break;
+    }
+
+    case ResourceCommands::Type::DestroyPipeline:{
+        const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, destroyPipeline);
+        Assert(pipelinePool.IsValid(command.id));
+        auto& data = pipelinePool.Get(command.id);
+        _DestroyPipeline(data);
+        pipelinePool.AddDestroyedId(command.id);
+        break;
+    }
+
+    case ResourceCommands::Type::DestroyBindGroupLayout:{
+        const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, destroyBindGroupLayout);
+        Assert(bindGroupLayoutPool.IsValid(command.id));
+        BindGroupLayoutData& data = bindGroupLayoutPool.Get(command.id);
+        _DestroyBindGroupLayout(data);
+        bindGroupLayoutPool.AddDestroyedId(command.id);
+        break;
+    }
+
+    case ResourceCommands::Type::DestroyFramebuffer:{
+        const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, destroyFramebuffer);
+        Assert(framebufferPool.IsValid(command.id));
+        auto& data = framebufferPool.Get(command.id);
+        _DestroyFramebuffer(data);
+        framebufferPool.AddDestroyedId(command.id);
+        break;
+    }
+
+    default: Assert(false);
+    }
 }
 
 void OpenglGPUDevice::SyncSingleThreadData(){
@@ -2077,7 +2252,7 @@ void OpenglGPUDevice::SyncSingleThreadData(){
 
 ///////////////////////////////////
 
-Pipeline OpenglGPUDevice::CreatePipeline(const char* source, PipelineInfo info){   
+Pipeline OpenglGPUDevice::CreatePipeline(const char* source, PipelineInfo info){
     #ifdef DONT_DEFERRED_RESOURCE_CREATION
 
     PipelineData data;
@@ -2226,12 +2401,27 @@ void OpenglGPUDevice::DestroyBindGroupLayout(BindGroupLayout layout){
 }
 
 BindGroup OpenglGPUDevice::CreateBindGroup(BindGroupInfo& info){
+    auto& frame = *multithreadRendererContext.simulationFrame;
+    bool usesFramebuffer = false;
+    for(uint32_t i = 0; i < info.entriesCount; ++i){
+        const auto framebuffer = info.entries[i].framebuffer;
+        if(framebuffer != InvalidID){
+            frame.renderCommands.TrackFramebufferUse(framebuffer);
+            persistentFramebufferBindings.insert(framebuffer);
+            usesFramebuffer = true;
+        }
+    }
+    if(usesFramebuffer){
+        if(!IsThreaded()) ApplyFramebufferResizes(frame);
+    }
     auto id = bindGroupPool.AllocId();
     multithreadRendererContext.simulationFrame->resourceCommands.CreateBindGroup(id, info);
     return id;
 }
 
 BindGroup OpenglGPUDevice::CreateFrameBindGroup(BindGroupInfo& info){
+    auto& frame = *multithreadRendererContext.simulationFrame;
+    frame.TrackFramebufferBindings(info);
     auto id = bindGroupPool.AllocId();
     multithreadRendererContext.simulationFrame->resourceCommands.CreateFrameBindGroup(id, info);
     return id;
@@ -2240,16 +2430,59 @@ BindGroup OpenglGPUDevice::CreateFrameBindGroup(BindGroupInfo& info){
 Framebuffer OpenglGPUDevice::CreateFramebuffer(FrameBufferCreateInfo& info){
     if(!IsValidFramebufferCreateInfo(info)) return InvalidID;
     auto id = framebufferPool.AllocId();
+    if(IsThreaded()){
+        // A queued creation executes after the resize batch.
+        multithreadRendererContext.simulationFrame->renderCommands.TrackFramebufferUse(id);
+    }
     multithreadRendererContext.simulationFrame->resourceCommands.CreateFramebuffer(id, info);
     return id;
 }
 
-void OpenglGPUDevice::DestroyFramebuffer(Framebuffer framebuffer){
-    multithreadRendererContext.simulationFrame->resourcePostCommands.DestroyFramebuffer(framebuffer);
+bool OpenglGPUDevice::ResizeFramebuffer(Framebuffer framebuffer, const FrameBufferCreateInfo& info){
+    auto& frame = *multithreadRendererContext.simulationFrame;
+    if(framebuffer == InvalidID || !IsValidFramebufferCreateInfo(info) ||
+        frame.renderCommands.HasOpenFramebufferPass() || frame.renderCommands.HasFramebufferUse(framebuffer) ||
+        persistentFramebufferBindings.find(framebuffer) != persistentFramebufferBindings.end()) return false;
+
+    frame.framebufferResizes.insert_or_assign(framebuffer, info);
+    return true;
 }
 
-ResourceStats OpenglGPUDevice::GetBufferStats(Buffer id){ 
-    return bufferPool.GetStatus(id);// .resourceStatus[id]; 
+void OpenglGPUDevice::DestroyFramebuffer(Framebuffer framebuffer){
+    auto& frame = *multithreadRendererContext.simulationFrame;
+    if(!frame.renderCommands.HasFramebufferUse(framebuffer)) frame.framebufferResizes.erase(framebuffer);
+    persistentFramebufferBindings.erase(framebuffer);
+    frame.resourcePostCommands.DestroyFramebuffer(framebuffer);
+}
+
+void OpenglGPUDevice::ApplyFramebufferResizes(RenderFrame& frame){
+    if(frame.framebufferResizes.empty()) return;
+
+    // OpenGL can retain deleted storage while a previous draw is still executing.
+    glFinish();
+    CommandBuffer initialization;
+
+    for(const auto& [id, info] : frame.framebufferResizes){
+        if(!framebufferPool.IsValid(id)) continue;
+        _DestroyFramebuffer(framebufferPool.Get(id));
+    }
+    for(const auto& [id, info] : frame.framebufferResizes){
+        if(!framebufferPool.IsValid(id)) continue;
+        auto& data = framebufferPool.Get(id);
+        data = {};
+        if(!_CreateFramebuffer(data, info)){
+            framebufferPool.AddDestroyedId(id);
+            continue;
+        }
+        frame.renderCommands.TrackFramebufferUse(id);
+        RecordFramebufferInitialization(initialization, id, info.layout, info.mipLevels);
+    }
+    frame.framebufferResizes.clear();
+    ReplayRenderCommands(frame, initialization);
+}
+
+ResourceStats OpenglGPUDevice::GetBufferStats(Buffer id){
+    return bufferPool.GetStatus(id);// .resourceStatus[id];
 }
 
 std::vector<Device::Profile> OpenglGPUDevice::GetProfiles(){
@@ -2259,3 +2492,5 @@ std::vector<Device::Profile> OpenglGPUDevice::GetProfiles(){
 #pragma endregion
 }
 }
+
+#undef OD_GFX_COMMAND_FIELD

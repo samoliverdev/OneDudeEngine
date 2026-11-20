@@ -2,14 +2,17 @@
 
 #if defined(OD_PHYSICS_BACKEND_BOX3D)
 
+#include "OD/Core/ImGui.h"
 #include "OD/Scene/Scene.h"
 #include "OD/Scene/SceneManager.h"
 #include "OD/Graphics/Mesh.h"
 #include "OD/RenderPipeline/ModelRendererComponent.h"
 #include <box3d/collision.h>
+#include <box3d/constants.h>
 
 #include <algorithm>
 #include <cmath>
+#include <thread>
 #include <unordered_map>
 
 namespace OD {
@@ -204,6 +207,7 @@ void PhysicsSystem::OnInit(Scene& inScene) {
     auto* world = new Box3DWorld;
     b3WorldDef def = b3DefaultWorldDef();
     def.gravity = ToB3({0.0f, -9.81f, 0.0f});
+    def.workerCount = std::clamp(std::thread::hardware_concurrency(), 1u, unsigned(B3_MAX_WORKERS));
     world->id = b3CreateWorld(&def);
     physicsWorld = reinterpret_cast<class PhysicsWorld*>(world);
     inScene.GetRegistry().on_destroy<RigidbodyComponent>().connect<&PhysicsSystem::OnRemoveRigidbody>();
@@ -237,6 +241,9 @@ void PhysicsSystem::OnEnd(Scene& inScene) {
 }
 
 void PhysicsSystem::OnStart(Scene& inScene) {
+    // A stopped scene retains its world and body handles. A cloned scene starts
+    // with a fresh world and must discard the source scene's handles.
+    if (hasStarted) return;
     auto view = inScene.GetRegistry().view<RigidbodyComponent>();
     for (auto [e, rb] : view.each()) {
         rb.data = nullptr;
@@ -254,6 +261,8 @@ void PhysicsSystem::OnStart(Scene& inScene) {
 }
 
 void PhysicsSystem::PrePhysicsUpdate(Scene& inScene) {
+    // TerrainSystem creates its collision tiles when the scene starts.
+    if (!inScene.Running() || !physicsWorld) return;
     auto& registry = inScene.GetRegistry();
     auto bodies = registry.view<RigidbodyComponent, TransformComponent, InfoComponent>();
     for (auto [entity, rb, transform, info] : bodies.each()) {
@@ -311,8 +320,8 @@ void PhysicsSystem::PrePhysicsUpdate(Scene& inScene) {
     }
 }
 void PhysicsSystem::FixedPhysicsUpdate(Scene& inScene) {
-    if (skipUpdate || !physicsWorld) return;
-    b3World_Step(reinterpret_cast<Box3DWorld*>(physicsWorld)->id, 1.0f / 60.0f, 4);
+    if (!inScene.Running() || skipUpdate || !physicsWorld) return;
+    b3World_Step(reinterpret_cast<Box3DWorld*>(physicsWorld)->id, 1.0f / 60.0f, 1);
     auto events = b3World_GetBodyEvents(reinterpret_cast<Box3DWorld*>(physicsWorld)->id);
     for (int i = 0; i < events.moveCount; ++i) {
         auto& event = events.moveEvents[i];
@@ -439,7 +448,7 @@ bool PhysicsSystem::Raycast(Vector3 pos, Vector3 dir, RayResult& hit, LayerMask 
     filter.maskBits = mask.mask;
     RayCastContext context{};
     context.ignoreSensor = ignoreSensor;
-    b3World_CastRay(id, ToB3Pos(pos), ToB3(dir * 10000.0f), filter, CollectRayHit, &context);
+    b3World_CastRay(id, ToB3Pos(pos), ToB3(dir), filter, CollectRayHit, &context);
     if (!context.hit) return false;
     auto* user = static_cast<ShapeUserData*>(b3Shape_GetUserData(context.shape));
     if (!user) return false;
@@ -457,7 +466,7 @@ bool PhysicsSystem::RaycastIgnoreEntity(Vector3 pos, Vector3 dir, RayResult& hit
     RayCastContext context{};
     context.ignoredEntity = ignoreEntity;
     context.ignoreSensor = ignoreSensor;
-    b3World_CastRay(reinterpret_cast<Box3DWorld*>(physicsWorld)->id, ToB3Pos(pos), ToB3(dir * 10000.0f), filter, CollectRayHit, &context);
+    b3World_CastRay(reinterpret_cast<Box3DWorld*>(physicsWorld)->id, ToB3Pos(pos), ToB3(dir), filter, CollectRayHit, &context);
     if (!context.hit) return false;
     auto* user = static_cast<ShapeUserData*>(b3Shape_GetUserData(context.shape));
     if (!user) return false;
@@ -522,6 +531,7 @@ void PhysicsSystem::AddRigidbody(Entity entity, RigidbodyComponent& rb, Transfor
     def.angularDamping = rb.angularDamping;
     def.userData = reinterpret_cast<void*>(static_cast<uintptr_t>(entity));
     def.enableSleep = !rb.neverSleep;
+    def.isBullet = rb.motionQuality == PhysicMotionQuality::LinearCast;
     def.motionLocks = {!(uint8_t(rb.constraints) & 0x01), !(uint8_t(rb.constraints) & 0x02), !(uint8_t(rb.constraints) & 0x04),
                        !(uint8_t(rb.constraints) & 0x08), !(uint8_t(rb.constraints) & 0x10), !(uint8_t(rb.constraints) & 0x20)};
     auto* data = new PhysicObject;
@@ -556,7 +566,91 @@ void PhysicsSystem::RemoveRigidbody(Entity, RigidbodyComponent& rb) {
     rb.isDirt = true;
 }
 
-void RigidbodyComponent::OnGui(Entity&, Scene&) {}
+void RigidbodyComponent::OnGui(Entity& entity, Scene& scene) {
+    auto& body = scene.GetComponent<RigidbodyComponent>(entity);
+    auto type = body.GetType();
+    if (ImGui::DrawEnumCombo<Type>("Type", &type)) body.SetType(type);
+
+    float mass = body.Mass();
+    if (ImGui::DragFloat("Mass", &mass, 0.01f, 0.001f, 1e6f)) body.Mass(mass);
+    float friction = body.Friction();
+    if (ImGui::DragFloat("Friction", &friction, 0.01f, 0.0f, 1e6f)) body.Friction(friction);
+    float linearDamping = body.LinearDamping();
+    if (ImGui::DragFloat("Linear Damping", &linearDamping, 0.01f, 0.0f, 1e6f)) body.LinearDamping(linearDamping);
+    float angularDamping = body.AngularDamping();
+    if (ImGui::DragFloat("Angular Damping", &angularDamping, 0.01f, 0.0f, 1e6f)) body.AngularDamping(angularDamping);
+    bool neverSleep = body.NeverSleep();
+    if (ImGui::Checkbox("Never Sleep", &neverSleep)) body.NeverSleep(neverSleep);
+    auto quality = body.MotionQuality();
+    if (ImGui::DrawEnumCombo<PhysicMotionQuality>("Motion Quality", &quality)) body.MotionQuality(quality);
+
+    const auto oldMask = body.mask.mask;
+    ImGui::DrawLayerMask("Collision Mask", body.mask);
+    const bool scaleChanged = ImGui::Checkbox("Use Transform Scale", &body.useTransformScale);
+    if (oldMask != body.mask.mask || scaleChanged) body.SetDirt();
+
+    auto drawShape = [](CollisionShape& shape) {
+        constexpr const char* shapeNames[] = {"Box", "Sphere", "Capsule", "Mesh", "Model"};
+        int shapeType = int(shape.type);
+        bool changed = false;
+        if (ImGui::BeginCombo("Shape", shapeNames[shapeType])) {
+            for (int i = 0; i <= int(CollisionShape::Type::Capsule); ++i) {
+                if (ImGui::Selectable(shapeNames[i], shapeType == i)) {
+                    shape.type = static_cast<CollisionShape::Type>(i);
+                    changed = true;
+                }
+            }
+            ImGui::EndCombo();
+        }
+
+        if (shape.type == CollisionShape::Type::Mesh || shape.type == CollisionShape::Type::Model) return changed;
+        changed |= ImGui::DragFloat3("Center", &shape.center.x, 0.01f);
+        if (shape.type == CollisionShape::Type::Box) {
+            changed |= ImGui::DragFloat3("Size", &shape.size.x, 0.01f, 0.001f, 1e6f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+        } else {
+            changed |= ImGui::DragFloat("Radius", &shape.radius, 0.01f, 0.001f, 1e6f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+            if (shape.type == CollisionShape::Type::Capsule) {
+                changed |= ImGui::DragFloat("Height", &shape.height, 0.01f, 0.002f, 2e6f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+                if (changed) shape.height = std::max(shape.height, 2.0f * shape.radius);
+            }
+        }
+        return changed;
+    };
+
+    ImGui::SeparatorText("Main Shape");
+    auto mainShape = body.GetShape();
+    ImGui::PushID("Main Shape");
+    if (drawShape(mainShape)) body.SetShape(mainShape);
+    ImGui::PopID();
+
+    if (ImGui::CollapsingHeader("Extra Shapes")) {
+        for (int i = 0; i < int(body.extraShapes.size()); ++i) {
+            ImGui::PushID(i);
+            ImGui::SeparatorText(("Shape " + std::to_string(i + 1)).c_str());
+            if (drawShape(body.extraShapes[i])) body.SetDirt();
+            ImGui::PopID();
+        }
+        if (ImGui::Button("Add Box Shape")) body.PushExtraShape(CollisionShape::BoxShape(Vector3One, Vector3Zero));
+        if (!body.extraShapes.empty()) {
+            ImGui::SameLine();
+            if (ImGui::Button("Remove Last Shape")) body.PopExtraShape();
+        }
+    }
+
+    if (ImGui::CollapsingHeader("Constraints")) {
+        constexpr const char* labels[] = {
+            "Freeze Position X", "Freeze Position Y", "Freeze Position Z",
+            "Freeze Rotation X", "Freeze Rotation Y", "Freeze Rotation Z"
+        };
+        auto allowed = body.Constraints();
+        for (unsigned i = 0; i < 6; ++i) {
+            const auto axis = static_cast<RigidbodyConstraints>(1u << i);
+            bool frozen = (allowed & axis) == RigidbodyConstraints::None;
+            if (ImGui::Checkbox(labels[i], &frozen)) allowed ^= axis;
+        }
+        if (allowed != body.Constraints() && allowed != RigidbodyConstraints::None) body.Constraints(allowed);
+    }
+}
 void RigidbodyComponent::SetShape(CollisionShape value) { shape = std::move(value); SetDirt(); }
 void RigidbodyComponent::PushExtraShape(CollisionShape value) { extraShapes.push_back(std::move(value)); SetDirt(); }
 void RigidbodyComponent::PopExtraShape() { if (!extraShapes.empty()) extraShapes.pop_back(); SetDirt(); }

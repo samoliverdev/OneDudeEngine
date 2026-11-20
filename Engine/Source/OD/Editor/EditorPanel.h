@@ -1,4 +1,5 @@
 #pragma once
+#include "OD/Defines.h"
 #include <string>
 
 namespace OD{

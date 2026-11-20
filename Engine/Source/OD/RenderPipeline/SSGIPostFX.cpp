@@ -64,6 +64,7 @@ void SSGIFeature::Execute(Scene& scene, RenderContext& context, RenderFrameData&
     int halfWidth = width;
     int halfHeight = height;
     bool useDownSample = resolutionMode != ResolutionMode::Full;
+    bool resetHistory = false;
 
     #ifdef TestNewGPU_API
     Ref<Framebuffer> deferred = context.GetDeferredFramebuffer();
@@ -87,6 +88,9 @@ void SSGIFeature::Execute(Scene& scene, RenderContext& context, RenderFrameData&
     //useTemporalDenoise = false;
 
     if(useTemporalDenoise){
+        resetHistory = giHistory == nullptr || depthHistory == nullptr ||
+            giHistory->Width() != width || giHistory->Height() != height ||
+            depthHistory->Width() != width || depthHistory->Height() != height;
         if(giHistory == nullptr) giHistory = ResourceManager::Get().Create<Framebuffer>(passName, width, height);
         if(depthHistory == nullptr) depthHistory = ResourceManager::Get().Create<Framebuffer>(passName, width, height);
 
@@ -208,22 +212,23 @@ void SSGIFeature::Execute(Scene& scene, RenderContext& context, RenderFrameData&
     }
 
     if(useTemporalDenoise){
-        giTemporalFilterPass->SetTexture("gDepth", deferred, -1);
-        giTemporalFilterPass->SetTexture("giAO", GetCurGIA(), 0);
-        giTemporalFilterPass->SetTexture("gDepthHistory", depthHistory, 0);
-        giTemporalFilterPass->SetTexture("giAOHistory", giHistory, 0);
-        giTemporalFilterPass->SetMatrix4("lastProj", lastProj);
-        giTemporalFilterPass->SetMatrix4("lastView", lastView);
-        giTemporalFilterPass->SetMatrix4("lastInvProj", lastInvProj);
-        giTemporalFilterPass->SetMatrix4("lastInvView", lastInvView);
-        Blit(GetCurGIA(), GetCurGIB(), giTemporalFilterPass, 0);
+        if(!resetHistory){
+            giTemporalFilterPass->SetTexture("gDepth", deferred, -1);
+            giTemporalFilterPass->SetTexture("giAO", GetCurGIA(), 0);
+            giTemporalFilterPass->SetTexture("gDepthHistory", depthHistory, 0);
+            giTemporalFilterPass->SetTexture("giAOHistory", giHistory, 0);
+            giTemporalFilterPass->SetMatrix4("lastProj", lastProj);
+            giTemporalFilterPass->SetMatrix4("lastView", lastView);
+            giTemporalFilterPass->SetMatrix4("lastInvProj", lastInvProj);
+            giTemporalFilterPass->SetMatrix4("lastInvView", lastInvView);
+            Blit(GetCurGIA(), GetCurGIB(), giTemporalFilterPass, 0);
+            giStep = !giStep;
+        }
 
         giBlitPass->SetTexture("gDepth", deferred, -1);
-        giBlitPass->SetTexture("giAO", GetCurGIB(), 0);
+        giBlitPass->SetTexture("giAO", GetCurGIA(), 0);
         Blit(data.src, giHistory, giBlitPass, 0);
         Blit(data.src, depthHistory, giBlitPass, 1);
-
-        giStep = !giStep;
 
         //Blit(giTAA.get(), gi.get(), blitPass, 0);
     }

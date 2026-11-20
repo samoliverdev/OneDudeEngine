@@ -5,7 +5,7 @@
 #include "OD/Core/Lua.h"
 #include "OD/Defines.h"
 #include "SubShader.h"
-#include "OD/Gfx/Gfx.h"
+#include "OD/Gfx/FramebufferUtils.h"
 #include <algorithm>
 
 namespace OD{
@@ -51,25 +51,7 @@ static size_t EstimateFramebufferBytes(const Gfx::FrameBufferLayout& layout, int
 }
 
 static void InitializeGfxFramebuffer(Gfx::Framebuffer framebuffer, const Gfx::FrameBufferLayout& layout, uint32_t mipCount){
-    const uint32_t layerCount = layout.type == Gfx::FramebufferAttachmentType::CUBEMAP ? 6u :
-        layout.type == Gfx::FramebufferAttachmentType::TEXTURE_2D_ARRAY ? std::max(1u, static_cast<uint32_t>(layout.layers)) : 1u;
-
-    auto* commands = gfxDevice->GetCommandBuffer();
-    // Keep the command order identical to Vulkan's subresource framebuffer
-    // storage order: mip-major, then layer.
-    for(uint32_t mip = 0; mip < mipCount; ++mip){
-        for(uint32_t layer = 0; layer < layerCount; ++layer){
-            commands->BeginFramebuffer(
-                framebuffer,
-                layer,
-                mip,
-                true,
-                Gfx::ClearFlags::Color | Gfx::ClearFlags::Depth,
-                {{0.0f, 0.0f, 0.0f, 1.0f}}
-            );
-            commands->EndFramebuffer();
-        }
-    }
+    Gfx::RecordFramebufferInitialization(*gfxDevice->GetCommandBuffer(), framebuffer, layout, mipCount);
 }
 #endif
 
@@ -254,18 +236,13 @@ void Framebuffer::Reload(FrameBufferSpecification inSpecification){
 void Framebuffer::Resize(int width, int height){
     #ifdef TestNewGPU_API
     //Assert(false);
-    if(width == 0 || height == 0) return;
+    if(width <= 0 || height <= 0) return;
     if(framebuffer != Gfx::InvalidID && specification.width == width && specification.height == height) return;
-
-    if(framebuffer != Gfx::InvalidID) gfxDevice->DestroyFramebuffer(framebuffer);
 
     Assert(passIndex != -1);
     FramebufferRenderPassData* data = &renderPassDatas[passIndex];
 
     Assert(data != nullptr);
-    specification.width = width;
-    specification.height = height;
-
     Gfx::FrameBufferCreateInfo info = {};
     info.layout = data->layout;
     info.width = width;
@@ -277,12 +254,21 @@ void Framebuffer::Resize(int width, int height){
         info.mipLevels = std::max(info.mipLevels, static_cast<uint32_t>(std::max(1, data->info.depthAttachment.mipLevels)));
     info.filter = Gfx::TextureFilter::Nearest;
     info.wrapping = Gfx::TextureWrapping::ClampToBorder;
-    framebuffer = gfxDevice->CreateFramebuffer(info);
-    Assert(framebuffer != Gfx::InvalidID);
+    if(!Gfx::IsValidFramebufferCreateInfo(info)) return;
+
+    if(framebuffer == Gfx::InvalidID || !gfxDevice->ResizeFramebuffer(framebuffer, info)){
+        const auto replacement = gfxDevice->CreateFramebuffer(info);
+        if(replacement == Gfx::InvalidID) return;
+        if(framebuffer != Gfx::InvalidID) gfxDevice->DestroyFramebuffer(framebuffer);
+        framebuffer = replacement;
+        InitializeGfxFramebuffer(framebuffer, data->layout, info.mipLevels);
+    }
+
+    specification.width = width;
+    specification.height = height;
     const size_t oldVramUsage = vramUsage;
     vramUsage = EstimateFramebufferBytes(data->layout, width, height, info.mipLevels);
     Graphics::TrackMemoryUsage(GraphicsMemoryCategory::Framebuffer, oldVramUsage, vramUsage);
-    InitializeGfxFramebuffer(framebuffer, data->layout, info.mipLevels);
     #else
     if(width == 0 || height == 0) return; // avoid crash
 

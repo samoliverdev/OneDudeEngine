@@ -700,7 +700,7 @@ void CameraRenderer::RenderPassNew(CameraRenderPass& inpass, RenderContext* rend
     if(inpass.target == nullptr){
         //inpass.target = ResourceManager::Get().Create<Framebuffer>(renderContext->GetFinalColor()->Specification());
         inpass.target = ResourceManager::Get().Create<Framebuffer>("PostProssing", inpass.camera.width, inpass.camera.height);
-        inpass.target->name = "CameraRenderPass";
+        inpass.target->name = "CameraRenderPass"; //TODO: This is making the framebuffer alwas be recreated every frame, becose RenderNew::camPasses.clear();, Fix this!
     }
 
     // ----------- Setup ----------- 

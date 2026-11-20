@@ -5,6 +5,7 @@
 #include "OD/Platform/BaseGpu/MultithreadRendererContext.h"
 #include <vulkan/vulkan.h>
 #include <vk_mem_alloc.h>
+#include <deque>
 
 namespace OD{
 namespace Gfx{   
@@ -26,7 +27,6 @@ public:
 
     virtual bool SupportMultithread() override { return true; }
     
-    virtual void Init(bool multithread) override;
     virtual void Shut() override;
     virtual void StartRender() override;
     virtual void UpdateRender() override;
@@ -36,6 +36,7 @@ public:
     virtual void ImGuiNewFrame() override;
     virtual void SubmitImGuiDrawData(void* data, ImGuiDrawDataDestroyFunction destroy) override;
     virtual void ImGuiShutdown() override;
+    void* ImGuiTexture2D(Texture2D texture) override;
     virtual void* ImGuiFramebufferColorAttachment(Framebuffer framebuffer, uint32_t attachment) override;
     virtual bool ImGuiFramebufferNeedsVerticalFlip() const override;
 
@@ -67,6 +68,7 @@ public:
     virtual BindGroup CreateFrameBindGroup(BindGroupInfo& info) override;
 
     virtual Framebuffer CreateFramebuffer(FrameBufferCreateInfo& info) override;
+    bool ResizeFramebuffer(Framebuffer framebuffer, const FrameBufferCreateInfo& info) override;
     virtual void DestroyFramebuffer(Framebuffer destroy) override;
 
     virtual std::vector<Profile> GetProfiles() override;
@@ -92,6 +94,9 @@ private:
         VkImageView imageView = VK_NULL_HANDLE;
         VkSampler sampler = VK_NULL_HANDLE;
         Texture2DInfo info;
+        VkImageView imguiView = VK_NULL_HANDLE;
+        VkDescriptorSet imguiDescriptor = VK_NULL_HANDLE;
+        bool baseMipInitialized = false;
     };
     ResourcePool<Texture2DData> texture2DPool;
 
@@ -181,12 +186,47 @@ private:
 
     MultithreadRendererContext multithreadRendererContext;
 
-    bool multithread;
+    struct StagingSlice{
+        VkBuffer buffer;
+        VkDeviceSize offset;
+        const void* data;
+    };
+
+    struct StagingPool{
+        struct Block{
+            VkBuffer buffer = VK_NULL_HANDLE;
+            VmaAllocation allocation = VK_NULL_HANDLE;
+            std::byte* mapped = nullptr;
+            VkDeviceSize capacity = 0;
+            VkDeviceSize used = 0;
+        };
+
+        StagingSlice Copy(const void* data, size_t size);
+        const StagingSlice* Stage(const void* data, size_t size);
+        void Reset();
+        void Clear();
+
+        VkDeviceSize alignment = 48;
+        std::vector<Block> blocks;
+        std::deque<StagingSlice> queuedSlices;
+    };
+
+    // One pool for each CPU frame slot, with the same producer/consumer ownership.
+    StagingPool stagingPools[2];
+    StagingPool& GetStagingPool(const RenderFrame& frame);
+    std::unordered_set<Buffer> gpuOnlyUploadBuffers;
+    std::unordered_set<Texture2D> rgbTextures;
+    std::unordered_set<Texture2DArray> rgbTextureArrays;
+    std::unordered_set<Cubemap> rgbCubemaps;
+
     VulkanPresentMode presentMode;
 
     //VkDescriptorSetLayout emptyLayout;
 
     std::vector<BindGroup> frameBindGroups;
+    ResourceCommands submittedDestroyCommands;
+    bool frameInFlight = false;
+    bool recreateAfterSubmission = false;
 
     VkDescriptorPool imguiDescriptorPool = VK_NULL_HANDLE;
     bool imguiInitialized = false;
@@ -197,10 +237,50 @@ private:
     void InitDefaultRenderpass();
     void InitFramebuffers();
     void InitDescriptors();
-    bool RecreateSwapchain();
+    bool RecreateSwapchain(bool force = false);
 
     void Cleanup();
 
+
+    struct RenderState{
+        VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
+        uint32_t swapchainImageIndex = 0;
+        Pipeline currentPipeline = InvalidID;
+        FramebufferData* currentFramebuffer = nullptr;
+        bool skipNextEndFramebuffer = false;
+        bool hasWindowRenderPass = false;
+        bool attemptedAcquire = false;
+        bool recreateAfterPresent = false;
+    } renderState;
+    VkRenderPass windowOverlayRenderPass = VK_NULL_HANDLE;
+    void BeginRenderCommands();
+    void SubmitRenderCommands();
+    void WaitForSubmittedFrame();
+    void SyncGpu();
+    void RetireFrameResources(const ResourceCommands& destroyCommands);
+
+    void InitializeRendering() override;
+#ifdef TEST_NEW_CMD
+    void ExecuteResourceCommand(RenderFrame& frame, ResourceCommands::Type type, const void* payload);
+#else
+    void ExecuteResourceCommand(RenderFrame& frame, const ResourceCommands::Command& cmd);
+#endif
+#ifdef TEST_NEW_CMD
+    void ExecuteDestroyCommand(ResourceCommands::Type type, const void* payload);
+#else
+    void ExecuteDestroyCommand(const ResourceCommands::Command& cmd);
+#endif
+#ifdef TEST_NEW_CMD
+    void ExecuteRenderCommand(RenderFrame& frame, CommandBuffer::Type type, const void* payload);
+#else
+    void ExecuteRenderCommand(RenderFrame& frame, const CommandBuffer::Command& cmd);
+#endif
+    void FinishRenderFrame(RenderFrame& frame);
+    void ReplayRenderCommands(RenderFrame& frame, const CommandBuffer& commands);
+    void ApplyFramebufferResizes(RenderFrame& frame);
+    std::unordered_set<Framebuffer> persistentFramebufferBindings;
+    void InitializeResizedFramebuffers(RenderFrame& frame);
+    std::unordered_map<Framebuffer, FrameBufferCreateInfo> framebuffersToInitialize;
     void RunRender(RenderFrame& frame);
     void SyncSingleThreadData();
 
@@ -210,21 +290,21 @@ private:
     void _DestroyPipeline(PipelineData& data);
 
     bool _CreateBuffer(BufferData& data, size_t size, BufferUsage usage, BufferMemory memory);
-    void _UpdatedBuffer(BufferData& data, const void* _data, size_t size);
+    void _UpdatedBuffer(BufferData& data, const void* bytes, size_t size, StagingPool& pool, const StagingSlice* staged);
     void _DestroyBuffer(BufferData& data);
 
     bool _CreateFramebuffer(FramebufferData& data, const FrameBufferCreateInfo& createInfo);
     void _DestroyFramebuffer(FramebufferData& data);
 
     bool _CreateTexture2D(Texture2DData& data, const Texture2DInfo& info); 
-    void _UploadTexture2D(Texture2DData& data, const void* _data, size_t size, int mipLevel);
+    void _UploadTexture2D(Texture2DData& data, const void* bytes, size_t size, int mipLevel, StagingPool& pool, const StagingSlice* staged = nullptr);
     void _DestroyTexture2D(Texture2DData& data); 
     bool _CreateTexture2DArray(Texture2DArrayData& data, const Texture2DArrayInfo& info);
-    void _UploadTexture2DArray(Texture2DArrayData& data, const void* bytes, size_t size, int arrayElement, int mipLevel);
+    void _UploadTexture2DArray(Texture2DArrayData& data, const void* bytes, size_t size, int arrayElement, int mipLevel, StagingPool& pool, const StagingSlice* staged = nullptr);
     void _DestroyTexture2DArray(Texture2DArrayData& data);
     bool _CreateCubemap(CubemapData& data, const CubemapInfo& info);
-    void _UploadCubemap(CubemapData& data, const void* rawData, size_t size, int mipLevel);
-    void _UploadCubemapFace(CubemapData& data, const void* rawData, size_t size, CubemapFace face, int mipLevel);
+    void _UploadCubemap(CubemapData& data, const void* rawData, size_t size, int mipLevel, StagingPool& pool, const StagingSlice* staged = nullptr);
+    void _UploadCubemapFace(CubemapData& data, const void* rawData, size_t size, CubemapFace face, int mipLevel, StagingPool& pool, const StagingSlice* staged = nullptr);
     void _DestroyCubemap(CubemapData& data);
 
     bool _CreateBindGroupLayout(BindGroupLayoutData& data, const BindGroupLayoutInfo& info);

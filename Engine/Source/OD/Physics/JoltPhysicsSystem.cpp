@@ -442,6 +442,7 @@ struct PhysicsSettings{
 
 void PhysicsModuleInit(){
     SceneManager::Get().RegisterCoreComponent<RigidbodyComponent>("RigidbodyComponent", "Physics");
+    SceneManager::Get().RegisterCoreComponent<YieldOnImpact>("YieldOnImpact", "Physics");
 	SceneManager::Get().RegisterCoreComponent<RagdollComponent>("RagdollComponent", "Physics");
     SceneManager::Get().RegisterCoreComponent<JointComponent>("JointComponent", "Physics");
     SceneManager::Get().RegisterCoreComponent<HeightmapColliderComponent>("HeightmapColliderComponent", "Physics");
@@ -910,6 +911,10 @@ public:
 	}
 
 	virtual void OnContactAdded(const Body &inBody1, const Body &inBody2, const ContactManifold &inManifold, ContactSettings &ioSettings) override{
+		HandleContact(inBody1, inBody2, inManifold, ioSettings, false);
+	}
+
+	void HandleContact(const Body &inBody1, const Body &inBody2, const ContactManifold &inManifold, ContactSettings &ioSettings, bool persisted){
 		//return;
 		//lock_guard lock(mutex);
 
@@ -929,6 +934,16 @@ public:
 		uint32_t _entity2;
 		int32_t _index2;
 		DecodeUserData(inBody2.GetUserData(), _entity2, _index2);
+
+		const auto& registry = scene->GetRegistry();
+		const YieldOnImpact* yieldSettings = nullptr;
+		const bool firstYields = !inBody1.IsDynamic() && inBody2.IsDynamic();
+		if(!inBody1.IsSensor() && !inBody2.IsSensor() && inBody1.IsDynamic() != inBody2.IsDynamic()){
+			const int part = firstYields ? _index1 : _index2;
+			const auto owner = static_cast<Entity>(firstYields ? _entity1 : _entity2);
+			if(part < 0) yieldSettings = registry.try_get<YieldOnImpact>(owner);
+		}
+		if(persisted && !yieldSettings) return;
 
 		Collision collision;
 		collision.e1 = static_cast<Entity>(_entity1);// static_cast<Entity>(inBody1.GetUserData());
@@ -958,6 +973,17 @@ public:
 		collision.body1IsSensor = inBody1.IsSensor();
 		collision.body2IsSensor = inBody2.IsSensor();
 
+		if(yieldSettings){
+			const float closingSpeed = -math::dot(collision.relativeVelocity, collision.normal);
+			if(closingSpeed > 0.0f && closingSpeed >= yieldSettings->minClosingSpeed){
+				// Suppress the solver impulse for this contact and report the hit to gameplay.
+				ioSettings.mIsSensor = true;
+				collision.yieldingEntity = firstYields ? collision.e1 : collision.e2;
+				collision.impactVelocity = FromJolt(firstYields ? v2 : v1) * math::clamp(yieldSettings->velocityTransfer, 0.0f, 1.0f);
+			}
+		}
+
+		if(persisted && collision.yieldingEntity == EntityNull) return;
 		physic->onContactAddedData.enqueue(collision);
 		return;
 
@@ -977,7 +1003,7 @@ public:
 	}
 
 	virtual void OnContactPersisted(const Body &inBody1, const Body &inBody2, const ContactManifold &inManifold, ContactSettings &ioSettings) override{
-		//cout << "A contact was persisted" << endl;
+		HandleContact(inBody1, inBody2, inManifold, ioSettings, true);
 	}
 
 	virtual void OnContactRemoved(const SubShapeIDPair &inSubShapePair) override{
@@ -4986,7 +5012,7 @@ void PhysicsSystem::_PostPhysicsUpdate(bool onlyPostSync, bool canInterpolate){
 		for(auto [e, rb, transform, info]: rbView.each()){
 			Assert(rb.data != nullptr);
 
-			if(rb.GetType() == RigidbodyComponent::Type::Dynamic/* || rb.GetType() == RigidbodyComponent::Type::Static*/){
+			if(rb.data && (rb.GetType() == RigidbodyComponent::Type::Dynamic || rb.GetType() == RigidbodyComponent::Type::Kinematic)){
 				SyncRbToTrans(rb, transform);
 			}
 		}
@@ -5047,11 +5073,8 @@ void PhysicsSystem::_PostPhysicsUpdate(bool onlyPostSync, bool canInterpolate){
 
         //Assert(rb.data != nullptr);//This is true now becose i can have none rigidbody type
 
-        if(rb.GetType() == RigidbodyComponent::Type::Dynamic/* || rb.GetType() == RigidbodyComponent::Type::Static*/){
-            SyncRbToTrans(rb, transform);//INFO: In some place is pass null data on here, so dirt is false but data is null, Review this later
-        } else if(rb.GetType() == RigidbodyComponent::Type::Kinematic){
-            //bodyInterface.SetPosition(rb.data->bodyID, ToJolt(transform.Position()), EActivation::Activate);
-            //bodyInterface.SetRotation(rb.data->bodyID, ToJolt(transform.Rotation()), EActivation::Activate);
+        if(rb.data && (rb.GetType() == RigidbodyComponent::Type::Dynamic || rb.GetType() == RigidbodyComponent::Type::Kinematic)){
+            SyncRbToTrans(rb, transform);
         }
     }
 

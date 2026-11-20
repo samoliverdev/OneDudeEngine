@@ -39,6 +39,7 @@ int main(int argc, char** argv){
 
     // IMPORTANT: skip engine boot when CMake is discovering tests
     if(::testing::GTEST_FLAG(list_tests) ||
+        ::testing::GTEST_FLAG(filter).find("GfxCommandDispatch.") != std::string::npos ||
         ::testing::GTEST_FLAG(filter).find("TerrainSystemDataTest.") != std::string::npos ||
         ::testing::GTEST_FLAG(filter).find("RenderDataCullingTest.") != std::string::npos ||
         ::testing::GTEST_FLAG(filter).find("StandingRagdollTest.") != std::string::npos ||

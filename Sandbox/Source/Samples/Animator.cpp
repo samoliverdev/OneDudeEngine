@@ -616,7 +616,7 @@ void AnimatorSample::OnInit(){
 
     scene->Start();
     //RenderContext::GetSettings().enableGizmos = false;
-    //Application::AddModule<Editor>(false);
+    Application::AddModule<Editor>(true);
 
     LogInfo("Animation Count: {}", charModel->animationClips.size());
 

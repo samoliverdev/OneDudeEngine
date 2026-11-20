@@ -23,6 +23,8 @@
 #include <stdexcept>
 #include <unordered_map>
 #include <algorithm>
+#include <utility>
+#include <numeric>
 
 //#define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
@@ -39,7 +41,13 @@
 	} while (0)
 
 namespace OD{
-namespace Gfx{   
+namespace Gfx{
+
+#ifdef TEST_NEW_CMD
+#define OD_GFX_COMMAND_FIELD(Buffer, command, field) Buffer::FastCommands::Read<decltype(Buffer::Command::field)>(payload)
+#else
+#define OD_GFX_COMMAND_FIELD(Buffer, command, field) ((command).field)
+#endif
 
 //#define TestDrawInverted 
 #define DONT_DEFERRED_RESOURCE_CREATION
@@ -145,12 +153,6 @@ struct UploadContext {
 UploadContext _uploadContext;
 bool _uploadSubmitted = false;
 
-struct PendingUploadBuffer {
-    VkBuffer buffer;
-    VmaAllocation allocation;
-};
-std::vector<PendingUploadBuffer> _pendingUploadBuffers;
-std::vector<PendingUploadBuffer> _submittedUploadBuffers;
 void flush_pending_buffer_uploads(){
     if(!_uploadContext._recording){
         return;
@@ -164,35 +166,79 @@ void flush_pending_buffer_uploads(){
     VK_CHECK(vkWaitForFences(_device, 1, &_uploadContext._uploadFence, true, 9999999999));
     VK_CHECK(vkResetFences(_device, 1, &_uploadContext._uploadFence));
 
-    for(const auto& pending : _pendingUploadBuffers){
-        vmaDestroyBuffer(_allocator, pending.buffer, pending.allocation);
-    }
-    _pendingUploadBuffers.clear();
-
     VK_CHECK(vkResetCommandPool(_device, _uploadContext._commandPool, 0));
     _uploadContext._recording = false;
 }
 
-struct AllocatedBuffer {
-	VkBuffer _buffer;
-	VmaAllocation _allocation;
-};
+namespace {
+constexpr VkDeviceSize UploadBlockSize = 4 * 1024 * 1024;
+constexpr size_t RetainedUploadBlocks = 4;
+}
 
-AllocatedBuffer create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage){
-	//allocate vertex buffer
-	VkBufferCreateInfo bufferInfo = {};
-	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.pNext = nullptr;
-	bufferInfo.size = allocSize;
-	bufferInfo.usage = usage;
+VulkanGPUDevice::StagingPool& VulkanGPUDevice::GetStagingPool(const RenderFrame& frame){
+    return stagingPools[&frame - multithreadRendererContext.frames];
+}
 
-	//let the VMA library know that this data should be writeable by CPU, but also readable by GPU
-	VmaAllocationCreateInfo vmaallocInfo = {};
-	vmaallocInfo.usage = memoryUsage;
+VulkanGPUDevice::StagingSlice VulkanGPUDevice::StagingPool::Copy(const void* data, size_t size){
+    auto write = [&](Block& block, VkDeviceSize offset){
+        auto* destination = block.mapped + offset;
+        std::memcpy(destination, data, size);
+        VK_CHECK(vmaFlushAllocation(_allocator, block.allocation, offset, size));
+        block.used = offset + size;
+        return StagingSlice{block.buffer, offset, destination};
+    };
 
-	AllocatedBuffer newBuffer;
-	VK_CHECK(vmaCreateBuffer(_allocator, &bufferInfo, &vmaallocInfo, &newBuffer._buffer, &newBuffer._allocation, nullptr));
-	return newBuffer;
+    if(size <= UploadBlockSize){
+        for(auto& block : blocks){
+            if(block.capacity != UploadBlockSize) continue;
+            const auto remaining = block.capacity - block.used;
+            const auto padding = (alignment - block.used % alignment) % alignment;
+            if(padding <= remaining && size <= remaining - padding){
+                return write(block, block.used + padding);
+            }
+        }
+    }
+
+    Block block;
+    block.capacity = std::max<VkDeviceSize>(UploadBlockSize, size);
+    VkBufferCreateInfo bufferInfo{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+    bufferInfo.size = block.capacity;
+    bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+
+    VmaAllocationCreateInfo allocationInfo{};
+    allocationInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
+    allocationInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+    VmaAllocationInfo mappedInfo{};
+    VK_CHECK(vmaCreateBuffer(_allocator, &bufferInfo, &allocationInfo,
+        &block.buffer, &block.allocation, &mappedInfo));
+    block.mapped = static_cast<std::byte*>(mappedInfo.pMappedData);
+    blocks.push_back(block);
+    return write(blocks.back(), 0);
+}
+
+const VulkanGPUDevice::StagingSlice* VulkanGPUDevice::StagingPool::Stage(const void* data, size_t size){
+    queuedSlices.push_back(Copy(data, size));
+    return &queuedSlices.back();
+}
+
+void VulkanGPUDevice::StagingPool::Reset(){
+    queuedSlices.clear();
+    size_t retained = 0;
+    for(auto& block : blocks){
+        if(block.capacity == UploadBlockSize && retained < RetainedUploadBlocks){
+            block.used = 0;
+            blocks[retained++] = block;
+        } else {
+            vmaDestroyBuffer(_allocator, block.buffer, block.allocation);
+        }
+    }
+    blocks.resize(retained);
+}
+
+void VulkanGPUDevice::StagingPool::Clear(){
+    queuedSlices.clear();
+    for(const auto& block : blocks) vmaDestroyBuffer(_allocator, block.buffer, block.allocation);
+    blocks.clear();
 }
 
 void immediate_submit(std::function<void(VkCommandBuffer cmd)>&& function){
@@ -216,11 +262,11 @@ void immediate_submit(std::function<void(VkCommandBuffer cmd)>&& function){
 	// _uploadFence will now block until the graphic commands finish execution
 	VK_CHECK(vkQueueSubmit(_graphicsQueue, 1, &submit, _uploadContext._uploadFence));
 
-	vkWaitForFences(_device, 1, &_uploadContext._uploadFence, true, 9999999999);
-	vkResetFences(_device, 1, &_uploadContext._uploadFence);
+	VK_CHECK(vkWaitForFences(_device, 1, &_uploadContext._uploadFence, true, 9999999999));
+	VK_CHECK(vkResetFences(_device, 1, &_uploadContext._uploadFence));
 
 	// reset the command buffers inside the command pool
-	vkResetCommandPool(_device, _uploadContext._commandPool, 0);
+	VK_CHECK(vkResetCommandPool(_device, _uploadContext._commandPool, 0));
 }
 
 struct DeletionQueue{
@@ -664,15 +710,16 @@ bool VulkanGPUDevice::_CreateBuffer(BufferData& data, size_t size, BufferUsage u
     return true;
 }
 
-void VulkanGPUDevice::_UpdatedBuffer(BufferData& bufferData, const void* data, size_t size){
+void VulkanGPUDevice::_UpdatedBuffer(BufferData& bufferData, const void* data, size_t size,
+                                     StagingPool& pool, const StagingSlice* staged){
     if(!data || size == 0){
         return;
     }
 
-    /*if(cmd.updateBuffer.offset + cmd.updateBuffer.size > bufferData.size) {
+    if(size > bufferData.size){
         LogError("UpdateBuffer exceeds buffer size");
-        break;
-    }*/
+        return;
+    }
 
     // CPU visible buffer
     if (bufferData.memory != BufferMemory::GPUOnly) {
@@ -700,7 +747,7 @@ void VulkanGPUDevice::_UpdatedBuffer(BufferData& bufferData, const void* data, s
         }
 
         std::memcpy(
-            static_cast<char*>(mappedData), // + cmd.updateBuffer.offset,
+            static_cast<char*>(mappedData), // + cmd.updateBuffer().offset,
             data,
             size
         );
@@ -708,7 +755,7 @@ void VulkanGPUDevice::_UpdatedBuffer(BufferData& bufferData, const void* data, s
         vmaFlushAllocation(
             _allocator,
             bufferData.allocation,
-            0, //cmd.updateBuffer.offset,
+            0, //cmd.updateBuffer().offset,
             size
         );
 
@@ -732,58 +779,22 @@ void VulkanGPUDevice::_UpdatedBuffer(BufferData& bufferData, const void* data, s
             _uploadContext._recording = true;
         }
 
-        VkBufferCreateInfo stagingInfo{};
-        stagingInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        stagingInfo.size = size;
-        stagingInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-
-        VmaAllocationCreateInfo stagingAllocInfo{};
-        stagingAllocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
-        stagingAllocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-
-        VkBuffer stagingBuffer;
-        VmaAllocation stagingAllocation;
-        VmaAllocationInfo stagingResultInfo{};
-
-        VK_CHECK(vmaCreateBuffer(
-            _allocator,
-            &stagingInfo,
-            &stagingAllocInfo,
-            &stagingBuffer,
-            &stagingAllocation,
-            &stagingResultInfo
-        ));
-
-        // CPU -> staging
-        std::memcpy(
-            stagingResultInfo.pMappedData,
-            data,
-            size
-        );
-
-        vmaFlushAllocation(
-            _allocator,
-            stagingAllocation,
-            0,
-            size
-        );
+        const auto staging = staged != nullptr ? *staged : pool.Copy(data, size);
 
         // Record staging -> GPU buffer. All pending copies are submitted together
         // after resource commands for this frame have been processed.
         VkBufferCopy copy{};
-        copy.srcOffset = 0;
-        copy.dstOffset = 0; //cmd.updateBuffer.offset;
+        copy.srcOffset = staging.offset;
+        copy.dstOffset = 0; //cmd.updateBuffer().offset;
         copy.size = size;
 
         vkCmdCopyBuffer(
             _uploadContext._commandBuffer,
-            stagingBuffer,
+            staging.buffer,
             bufferData.buffer,
             1,
             &copy
         );
-
-        _pendingUploadBuffers.push_back({stagingBuffer, stagingAllocation});
     }
 
 }
@@ -955,6 +966,7 @@ VkRenderPass CreateRenderPass(VkDevice device, const FrameBufferLayout& layout, 
 VkFormat GetImageFormat(ImageFormat f){
     switch(f){
         case ImageFormat::R8_UNORM: return VK_FORMAT_R8_UNORM;
+        case ImageFormat::R32F: return VK_FORMAT_R32_SFLOAT;
 
         case ImageFormat::R8G8B8_UNORM: return VK_FORMAT_R8G8B8A8_UNORM; //VK_FORMAT_R8G8B8_UNORM;
         case ImageFormat::R8G8B8_SRGB: return VK_FORMAT_R8G8B8A8_SRGB; //VK_FORMAT_R8G8B8_SRGB;
@@ -1150,16 +1162,12 @@ bool VulkanGPUDevice::_CreateTexture2DArray(Texture2DArrayData& data, const Text
     return true;
 }
 
-void VulkanGPUDevice::_UploadTexture2DArray(Texture2DArrayData& data, const void* bytes, size_t size, int arrayElement, int mipLevel){
+void VulkanGPUDevice::_UploadTexture2DArray(Texture2DArrayData& data, const void* bytes, size_t size, int arrayElement, int mipLevel, StagingPool& pool, const StagingSlice* staged){
     const uint32_t mipLevels = GetTextureMipLevels(data.info.width, data.info.height, data.info.mipmap, data.info.mipLevels);
     if(arrayElement < 0 || mipLevel < 0 || static_cast<uint32_t>(arrayElement) >= data.info.arrayElements || static_cast<uint32_t>(mipLevel) >= mipLevels || size == 0) return;
     const uint32_t uploadArrayElement = static_cast<uint32_t>(arrayElement);
     const uint32_t uploadMipLevel = static_cast<uint32_t>(mipLevel);
-    AllocatedBuffer staging = create_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-    void* mapped = nullptr;
-    vmaMapMemory(_allocator, staging._allocation, &mapped);
-    memcpy(mapped, bytes, size);
-    vmaUnmapMemory(_allocator, staging._allocation);
+    const auto staging = staged != nullptr ? *staged : pool.Copy(bytes, size);
     immediate_submit([&](VkCommandBuffer command){
         const bool generateMips = data.info.mipmap && data.info.mipLevels == 0 && mipLevel == 0 && mipLevels > 1;
         VkImageSubresourceRange range{GetImageAspect(data.info.format), generateMips ? 0u : uploadMipLevel, generateMips ? mipLevels : 1u, uploadArrayElement, 1};
@@ -1170,9 +1178,10 @@ void VulkanGPUDevice::_UploadTexture2DArray(Texture2DArrayData& data, const void
         barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
         VkBufferImageCopy copy{};
+        copy.bufferOffset = staging.offset;
         copy.imageSubresource = {GetImageAspect(data.info.format), uploadMipLevel, uploadArrayElement, 1};
         copy.imageExtent = {std::max(1u, data.info.width >> uploadMipLevel), std::max(1u, data.info.height >> uploadMipLevel), 1};
-        vkCmdCopyBufferToImage(command, staging._buffer, data.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+        vkCmdCopyBufferToImage(command, staging.buffer, data.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
 
         if(generateMips){
             for(uint32_t mip = 1; mip < mipLevels; ++mip){
@@ -1212,7 +1221,6 @@ void VulkanGPUDevice::_UploadTexture2DArray(Texture2DArrayData& data, const void
         barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
         vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
     });
-    vmaDestroyBuffer(_allocator, staging._buffer, staging._allocation);
 }
 
 void VulkanGPUDevice::_DestroyTexture2DArray(Texture2DArrayData& data){
@@ -1222,7 +1230,7 @@ void VulkanGPUDevice::_DestroyTexture2DArray(Texture2DArrayData& data){
     data = {};
 }
 
-void VulkanGPUDevice::_UploadCubemap(CubemapData& data, const void* rawData, size_t size, int mipLevel){
+void VulkanGPUDevice::_UploadCubemap(CubemapData& data, const void* rawData, size_t size, int mipLevel, StagingPool& pool, const StagingSlice* staged){
     const uint32_t mipLevels = GetTextureMipLevels(data.info.width, data.info.height, data.info.mipmap, data.info.mipLevels);
     if(mipLevel < 0 || static_cast<uint32_t>(mipLevel) >= mipLevels || size == 0) return;
     const uint32_t uploadMipLevel = static_cast<uint32_t>(mipLevel);
@@ -1231,11 +1239,7 @@ void VulkanGPUDevice::_UploadCubemap(CubemapData& data, const void* rawData, siz
     const size_t expectedFaceSize = static_cast<size_t>(width) * height * 4;
     if(size < expectedFaceSize * 6 || size % 6 != 0) return;
     const size_t faceSize = size / 6;
-    AllocatedBuffer staging = create_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-    void* mapped = nullptr;
-    vmaMapMemory(_allocator, staging._allocation, &mapped);
-    memcpy(mapped, rawData, size);
-    vmaUnmapMemory(_allocator, staging._allocation);
+    const auto staging = staged != nullptr ? *staged : pool.Copy(rawData, size);
     immediate_submit([&](VkCommandBuffer command){
         const bool generateMips = data.info.mipmap && data.info.mipLevels == 0 && mipLevel == 0 && mipLevels > 1;
         VkImageSubresourceRange range{VK_IMAGE_ASPECT_COLOR_BIT, generateMips ? 0u : uploadMipLevel, generateMips ? mipLevels : 1u, 0, 6};
@@ -1247,11 +1251,11 @@ void VulkanGPUDevice::_UploadCubemap(CubemapData& data, const void* rawData, siz
         vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
         VkBufferImageCopy copies[6]{};
         for(uint32_t face = 0; face < 6; ++face){
-            copies[face].bufferOffset = face * faceSize;
+            copies[face].bufferOffset = staging.offset + face * faceSize;
             copies[face].imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, uploadMipLevel, face, 1};
             copies[face].imageExtent = {width, height, 1};
         }
-        vkCmdCopyBufferToImage(command, staging._buffer, data.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 6, copies);
+        vkCmdCopyBufferToImage(command, staging.buffer, data.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 6, copies);
         if(!generateMips){
             barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
             barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -1297,10 +1301,9 @@ void VulkanGPUDevice::_UploadCubemap(CubemapData& data, const void* rawData, siz
         generatedBarriers[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
         vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 2, generatedBarriers);
     });
-    vmaDestroyBuffer(_allocator, staging._buffer, staging._allocation);
 }
 
-void VulkanGPUDevice::_UploadCubemapFace(CubemapData& data, const void* rawData, size_t size, CubemapFace face, int mipLevel){
+void VulkanGPUDevice::_UploadCubemapFace(CubemapData& data, const void* rawData, size_t size, CubemapFace face, int mipLevel, StagingPool& pool, const StagingSlice* staged){
     const uint32_t faceIndex = static_cast<uint32_t>(face);
     const uint32_t mipLevels = GetTextureMipLevels(data.info.width, data.info.height, data.info.mipmap, data.info.mipLevels);
     if(faceIndex >= 6 || mipLevel < 0 || static_cast<uint32_t>(mipLevel) >= mipLevels || size == 0) return;
@@ -1308,11 +1311,7 @@ void VulkanGPUDevice::_UploadCubemapFace(CubemapData& data, const void* rawData,
     const uint32_t width = std::max(1u, data.info.width >> uploadMipLevel);
     const uint32_t height = std::max(1u, data.info.height >> uploadMipLevel);
 
-    AllocatedBuffer staging = create_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-    void* mapped = nullptr;
-    vmaMapMemory(_allocator, staging._allocation, &mapped);
-    memcpy(mapped, rawData, size);
-    vmaUnmapMemory(_allocator, staging._allocation);
+    const auto staging = staged != nullptr ? *staged : pool.Copy(rawData, size);
     immediate_submit([&](VkCommandBuffer command){
         const bool generateMips = data.info.mipmap && data.info.mipLevels == 0 && mipLevel == 0 && mipLevels > 1;
         VkImageSubresourceRange range{VK_IMAGE_ASPECT_COLOR_BIT, generateMips ? 0u : uploadMipLevel, generateMips ? mipLevels : 1u, faceIndex, 1};
@@ -1325,9 +1324,10 @@ void VulkanGPUDevice::_UploadCubemapFace(CubemapData& data, const void* rawData,
         vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 
         VkBufferImageCopy copy{};
+        copy.bufferOffset = staging.offset;
         copy.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, uploadMipLevel, faceIndex, 1};
         copy.imageExtent = {width, height, 1};
-        vkCmdCopyBufferToImage(command, staging._buffer, data.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+        vkCmdCopyBufferToImage(command, staging.buffer, data.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
 
         if(generateMips){
             for(uint32_t mip = 1; mip < mipLevels; ++mip){
@@ -1369,7 +1369,6 @@ void VulkanGPUDevice::_UploadCubemapFace(CubemapData& data, const void* rawData,
             vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
         }
     });
-    vmaDestroyBuffer(_allocator, staging._buffer, staging._allocation);
 }
 
 void VulkanGPUDevice::_DestroyCubemap(CubemapData& data){
@@ -1379,17 +1378,13 @@ void VulkanGPUDevice::_DestroyCubemap(CubemapData& data){
     data = {};
 }
 
-void VulkanGPUDevice::_UploadTexture2D(Texture2DData& texData, const void* data, size_t size, int mipLevel){
+void VulkanGPUDevice::_UploadTexture2D(Texture2DData& texData, const void* data, size_t size, int mipLevel, StagingPool& pool, const StagingSlice* staged){
     const uint32_t mipLevels = GetTextureMipLevels(texData.width, texData.height, texData.info.mipmap, texData.info.mipLevels);
     if(mipLevel < 0 || static_cast<uint32_t>(mipLevel) >= mipLevels || size == 0) return;
     const uint32_t uploadMipLevel = static_cast<uint32_t>(mipLevel);
     const uint32_t width = std::max(1u, texData.width >> uploadMipLevel);
     const uint32_t height = std::max(1u, texData.height >> uploadMipLevel);
-    AllocatedBuffer staging = create_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-    void* mapped = nullptr;
-    vmaMapMemory(_allocator, staging._allocation, &mapped);
-    memcpy(mapped, data, size);
-    vmaUnmapMemory(_allocator, staging._allocation);
+    const auto staging = staged != nullptr ? *staged : pool.Copy(data, size);
     VkExtent3D extent{width, height, 1};
     immediate_submit([&](VkCommandBuffer command){
         const bool generateMips = texData.info.mipmap && texData.info.mipLevels == 0 && mipLevel == 0 && mipLevels > 1;
@@ -1401,8 +1396,9 @@ void VulkanGPUDevice::_UploadTexture2D(Texture2DData& texData, const void* data,
         barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
         VkBufferImageCopy copy{};
+        copy.bufferOffset = staging.offset;
         copy.imageSubresource = {VK_IMAGE_ASPECT_COLOR_BIT, uploadMipLevel, 0, 1}; copy.imageExtent = extent;
-        vkCmdCopyBufferToImage(command, staging._buffer, texData.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+        vkCmdCopyBufferToImage(command, staging.buffer, texData.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
         if(!generateMips){
             barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
             barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -1447,13 +1443,19 @@ void VulkanGPUDevice::_UploadTexture2D(Texture2DData& texData, const void* data,
         generatedBarriers[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
         vkCmdPipelineBarrier(command, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 2, generatedBarriers);
     });
-    vmaDestroyBuffer(_allocator, staging._buffer, staging._allocation);
+    if(uploadMipLevel == 0) texData.baseMipInitialized = true;
 }
 
 void VulkanGPUDevice::_DestroyTexture2D(Texture2DData& data){
     Assert(data.sampler != VK_NULL_HANDLE);
     Assert(data.imageView != VK_NULL_HANDLE);
     Assert(data.image != VK_NULL_HANDLE);
+
+    if(data.imguiDescriptor != VK_NULL_HANDLE) ImGui_ImplVulkan_RemoveTexture(data.imguiDescriptor);
+    if(data.imguiView != VK_NULL_HANDLE) vkDestroyImageView(_device, data.imguiView, nullptr);
+    data.imguiDescriptor = VK_NULL_HANDLE;
+    data.imguiView = VK_NULL_HANDLE;
+    data.baseMipInitialized = false;
 
     vkDestroySampler(_device, data.sampler, nullptr);
     vkDestroyImageView(_device, data.imageView, nullptr);
@@ -1964,7 +1966,7 @@ VulkanGPUDevice::VulkanGPUDevice(VulkanPresentMode mode): presentMode(mode){
     _windowFrameBufferLayout.swapChainTarget = true;
 }
 
-void create_allocator(){
+void CreateAllocator(){
     VmaAllocatorCreateInfo allocatorInfo = {};
     allocatorInfo.physicalDevice = _chosenGPU;
     allocatorInfo.device = _device;
@@ -1972,7 +1974,7 @@ void create_allocator(){
     vmaCreateAllocator(&allocatorInfo, &_allocator);
 }
 
-void init_vulkan(){
+void InitVulkan(){
     vkb::InstanceBuilder builder;
     auto inst_ret = builder.set_app_name("OD Engine Vulkan")
         .require_api_version(1, 1, 0)
@@ -1998,10 +2000,10 @@ void init_vulkan(){
     _graphicsQueue = vkbDevice.get_queue(vkb::QueueType::graphics).value();
     _graphicsQueueFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
 
-    create_allocator();
+    CreateAllocator();
 }
 
-void init_swapchain(VulkanPresentMode presentMode){
+void InitSwapchain(VulkanPresentMode presentMode){
     vkb::SwapchainBuilder swapchainBuilder{ _chosenGPU, _device, _surface };
     vkb::Swapchain vkbSwapchain = swapchainBuilder
         //.use_default_format_selection()
@@ -2020,7 +2022,7 @@ void init_swapchain(VulkanPresentMode presentMode){
     _swapchainImageFormat = vkbSwapchain.image_format;
 }
 
-void destroy_render_semaphores(){
+void DestroyRenderSemaphores(){
     for(VkSemaphore semaphore : _renderSemaphores){
         if(semaphore != VK_NULL_HANDLE)
             vkDestroySemaphore(_device, semaphore, nullptr);
@@ -2028,7 +2030,7 @@ void destroy_render_semaphores(){
     _renderSemaphores.clear();
 }
 
-void init_render_semaphores(){
+void InitRenderSemaphores(){
     VkSemaphoreCreateInfo semaphoreCreateInfo{};
     semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -2056,7 +2058,7 @@ FramebufferDepthTextureFormat FindSupportedWindowDepthFormat(){
     return FramebufferDepthTextureFormat::None;
 }
 
-void init_window_depth_buffer(){
+void InitWindowDepthBuffer(){
     _windowFrameBufferLayout.depthAttachment.format = FindSupportedWindowDepthFormat();
 
     VkImageCreateInfo imageInfo{};
@@ -2084,7 +2086,7 @@ void init_window_depth_buffer(){
     VK_CHECK(vkCreateImageView(_device, &viewInfo, nullptr, &_windowDepthImageView));
 }
 
-void init_commands(){
+void InitCommands(){
     VkCommandPoolCreateInfo commandPoolInfo = vkinit::command_pool_create_info(_graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     VK_CHECK(vkCreateCommandPool(_device, &commandPoolInfo, nullptr, &_commandPool));
 
@@ -2157,7 +2159,24 @@ void VulkanGPUDevice::InitDefaultRenderpass(){
     render_pass_info.subpassCount = 1;
     render_pass_info.pSubpasses = &subpass;
 
+    // The overlay uses the same attachments and subpass, but loads the existing window color.
+    const VkPipelineStageFlags attachmentStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    const VkAccessFlags attachmentWrites = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+        VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    // Order both layout transitions when the scene pass is followed by the overlay.
+    const VkSubpassDependency dependencies[] = {
+        {VK_SUBPASS_EXTERNAL, 0, attachmentStages, attachmentStages,
+            attachmentWrites, attachmentWrites | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT, 0},
+        {0, VK_SUBPASS_EXTERNAL, attachmentStages, attachmentStages, attachmentWrites, 0, 0}
+    };
+    render_pass_info.dependencyCount = 2;
+    render_pass_info.pDependencies = dependencies;
+
     VK_CHECK(vkCreateRenderPass(_device, &render_pass_info, nullptr, &_renderPass));
+    attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachments[0].initialLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    VK_CHECK(vkCreateRenderPass(_device, &render_pass_info, nullptr, &windowOverlayRenderPass));
 
     RenderPasses pass = {};
     pass.hash = GetFramebufferLayoutHash(_windowFrameBufferLayout);
@@ -2194,7 +2213,7 @@ void init_sync_structures(){
     VkSemaphoreCreateInfo semaphoreCreateInfo = {};
     semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-    init_render_semaphores();
+    InitRenderSemaphores();
 
 	for(int i = 0; i < FRAME_OVERLAP; i++){     
         VK_CHECK(vkCreateFence(_device, &fenceCreateInfo, nullptr, &_frames[i]._renderFence));
@@ -2230,7 +2249,7 @@ void VulkanGPUDevice::InitDescriptors(){
     }
 }
 
-bool VulkanGPUDevice::RecreateSwapchain(){
+bool VulkanGPUDevice::RecreateSwapchain(bool force){
     int width = 0;
     int height = 0;
     Platform::GetFramebufferSize(&width, &height);
@@ -2244,7 +2263,7 @@ bool VulkanGPUDevice::RecreateSwapchain(){
         static_cast<uint32_t>(width),
         static_cast<uint32_t>(height)
     };
-    if(!NeedsSwapchainRecreation(VK_SUCCESS, _windowExtent, requestedExtent))
+    if(!force && !NeedsSwapchainRecreation(VK_SUCCESS, _windowExtent, requestedExtent))
         return false;
 
     vkDeviceWaitIdle(_device);
@@ -2261,7 +2280,7 @@ bool VulkanGPUDevice::RecreateSwapchain(){
     _windowDepthImage = VK_NULL_HANDLE;
     _windowDepthAllocation = VK_NULL_HANDLE;
 
-    destroy_render_semaphores();
+    DestroyRenderSemaphores();
     for(VkImageView imageView : _swapchainImageViews)
         vkDestroyImageView(_device, imageView, nullptr);
     _swapchainImageViews.clear();
@@ -2271,10 +2290,10 @@ bool VulkanGPUDevice::RecreateSwapchain(){
     _swapchain = VK_NULL_HANDLE;
 
     _windowExtent = requestedExtent;
-    init_swapchain(presentMode);
-    init_window_depth_buffer();
+    InitSwapchain(presentMode);
+    InitWindowDepthBuffer();
     InitFramebuffers();
-    init_render_semaphores();
+    InitRenderSemaphores();
     return true;
 }
 
@@ -2347,6 +2366,7 @@ void VulkanGPUDevice::Cleanup(){
     }
 
     vkDestroySwapchainKHR(_device, _swapchain, nullptr);
+    vkDestroyRenderPass(_device, windowOverlayRenderPass, nullptr);
     vkDestroyRenderPass(_device, _renderPass, nullptr);
 
     for(size_t i = 0; i < _framebuffers.size(); i++){
@@ -2366,6 +2386,8 @@ void VulkanGPUDevice::Cleanup(){
         vkDestroyRenderPass(_device, i.renderPass, nullptr);
     }
 
+    for(auto& pool : stagingPools) pool.Clear();
+
     // All VMA-backed resources must be released before destroying the allocator.
     vmaDestroyAllocator(_allocator);
 
@@ -2381,7 +2403,15 @@ void VulkanGPUDevice::_Init(){
     _windowExtent.width = Application::ScreenWidth();
     _windowExtent.height = Application::ScreenHeight();
 
-    init_vulkan();
+    InitVulkan();
+    VkPhysicalDeviceProperties properties{};
+    vkGetPhysicalDeviceProperties(_chosenGPU, &properties);
+    // 48 is a multiple of every supported texel size, including RGB32F.
+    for(auto& pool : stagingPools){
+        pool.alignment = std::lcm(VkDeviceSize{48},
+            std::lcm(properties.limits.nonCoherentAtomSize, properties.limits.optimalBufferCopyOffsetAlignment));
+    }
+
     /*bufferPool.SetDestroyFunction([this](BufferData& data){ _DestroyBuffer(data); });
     texture2DPool.SetDestroyFunction([this](Texture2DData& data){ _DestroyTexture2D(data); });
     texture2DArrayPool.SetDestroyFunction([this](Texture2DArrayData& data){ _DestroyTexture2DArray(data); });
@@ -2389,9 +2419,9 @@ void VulkanGPUDevice::_Init(){
     pipelinePool.SetDestroyFunction([this](PipelineData& data){ _DestroyPipeline(data); });
     bindGroupLayoutPool.SetDestroyFunction([this](BindGroupLayoutData& data){ _DestroyBindGroupLayout(data); });
     framebufferPool.SetDestroyFunction([this](FramebufferData& data){ _DestroyFramebuffer(data); });*/
-    init_swapchain(presentMode);
-    init_window_depth_buffer();
-    init_commands();
+    InitSwapchain(presentMode);
+    InitWindowDepthBuffer();
+    InitCommands();
     InitDefaultRenderpass();
     InitFramebuffers();
     init_sync_structures();
@@ -2448,6 +2478,10 @@ void VulkanGPUDevice::SubmitImGuiDrawData(void* data, ImGuiDrawDataDestroyFuncti
     frame.RecordImGuiDrawData(data, destroy);
 }
 
+void* VulkanGPUDevice::ImGuiTexture2D(Texture2D texture){
+    return multithreadRendererContext.simulationFrame->imguiImages.Texture(texture);
+}
+
 void* VulkanGPUDevice::ImGuiFramebufferColorAttachment(Framebuffer framebuffer, uint32_t attachment){
     return multithreadRendererContext.simulationFrame->imguiImages.ColorAttachment(framebuffer, attachment);
 }
@@ -2474,16 +2508,18 @@ void VulkanGPUDevice::ImGuiShutdown(){
             attachment.imguiDescriptor = VK_NULL_HANDLE;
         }
     });
+    texture2DPool.ForEach([&](uint32_t, Texture2DData& data){
+        if(data.imguiDescriptor != VK_NULL_HANDLE) ImGui_ImplVulkan_RemoveTexture(data.imguiDescriptor);
+        data.imguiDescriptor = VK_NULL_HANDLE;
+    });
     ImGui_ImplVulkan_Shutdown();
     imguiInitialized = false;
 }
 
-void VulkanGPUDevice::Init(bool inmultithread){
-    multithread = inmultithread;
-
+void VulkanGPUDevice::InitializeRendering(){
     multithreadRendererContext.StartupFrames();
 
-    if(multithread){
+    if(IsThreaded()){
         multithreadRendererContext.init = [&](){ _Init(); };
         multithreadRendererContext.shut = [&](){ _Shut(); };
         multithreadRendererContext.runRender = [&](RenderFrame& f){  
@@ -2495,19 +2531,47 @@ void VulkanGPUDevice::Init(bool inmultithread){
         multithreadRendererContext.Init();
     } else {
         _Init();
+        auto& frame = *multithreadRendererContext.simulationFrame;
+#ifdef TEST_NEW_CMD
+        frame.renderCommands.SetImmediateExecutor(this, [](void* context, CommandBuffer::Type type, const void* payload){
+            auto& device = *static_cast<VulkanGPUDevice*>(context);
+            device.ExecuteRenderCommand(*device.multithreadRendererContext.simulationFrame, type, payload);
+        });
+#else
+        frame.renderCommands.SetImmediateExecutor(this, [](void* context, const CommandBuffer::Command& cmd){
+            auto& device = *static_cast<VulkanGPUDevice*>(context);
+            device.ExecuteRenderCommand(*device.multithreadRendererContext.simulationFrame, cmd);
+        });
+#endif
+#ifdef TEST_NEW_CMD
+        frame.resourceCommands.SetImmediateExecutor(this, [](void* context, ResourceCommands::Type type, const void* payload){
+            auto& device = *static_cast<VulkanGPUDevice*>(context);
+            device.ExecuteResourceCommand(*device.multithreadRendererContext.simulationFrame, type, payload);
+        });
+#else
+        frame.resourceCommands.SetImmediateExecutor(this, [](void* context, const ResourceCommands::Command& cmd){
+            auto& device = *static_cast<VulkanGPUDevice*>(context);
+            device.ExecuteResourceCommand(*device.multithreadRendererContext.simulationFrame, cmd);
+        });
+#endif
     }
 }
 
 void VulkanGPUDevice::Shut(){
-    if(multithread){
+    if(IsThreaded()){
         multithreadRendererContext.Shut();
     } else {
+        SyncGpu();
+        auto& frame = *multithreadRendererContext.simulationFrame;
+        FinishRenderFrame(frame);
+        SyncGpu();
+        frame.Clear();
         _Shut();
     }
 }
 
 void VulkanGPUDevice::StartRender(){
-    if(multithread){
+    if(IsThreaded()){
         multithreadRendererContext.StartRender();
     } else {
         SyncSingleThreadData();
@@ -2515,46 +2579,21 @@ void VulkanGPUDevice::StartRender(){
 }
 
 void VulkanGPUDevice::UpdateRender(){
-    /*if(multithread){
-        multithreadRendererContext.WaitForRender();
+    if(IsThreaded()){
+        {
+            OD_PROFILE_SCOPE("VulkanGPUDevice::UpdateRender::WaitForRender");
+            multithreadRendererContext.WaitForRender();
+        }
         multithreadRendererContext.SwapRenderFrames();
         SyncSingleThreadData();
     } else {
-        SimpleTimer s([&](float t){ profilesGpu.push_back({"RunRender", t}); });
-        RunRender(*multithreadRendererContext.simulationFrame);
-        multithreadRendererContext.simulationFrame->Clear();
-        //Platform::SwapBuffers();
-    }*/
-
-    if(multithread){
-        {
-        OD_PROFILE_SCOPE("OpenglGPUDevice::UpdateRender::WaitForRender");
-        multithreadRendererContext.WaitForRender();
-        }
-
-        {
-        OD_PROFILE_SCOPE("OpenglGPUDevice::UpdateRender::SwapRenderFrames");
-        multithreadRendererContext.SwapRenderFrames();
-        }
-        
-        {
-        OD_PROFILE_SCOPE("OpenglGPUDevice::UpdateRender::SyncSingleThreadData");
-        SyncSingleThreadData();
-        }
-    } else {
-        SimpleTimer s([&](float t){ 
-            //LogInfo("RunRender: {}", t);
-            profilesGpu.push_back({"RunRender", t}); 
-        });
-        {
-        OD_PROFILE_SCOPE("OpenglGPUDevice::UpdateRender::RunRender");
-        RunRender(*multithreadRendererContext.simulationFrame);
-        }
-        {
-        OD_PROFILE_SCOPE("OpenglGPUDevice::UpdateRender::SimulationFrameClear");
-        multithreadRendererContext.simulationFrame->Clear();
-        }
-
+        auto& frame = *multithreadRendererContext.simulationFrame;
+        ApplyFramebufferResizes(frame);
+        frame.DrawImGuiOverlay();
+        if(!renderState.attemptedAcquire) BeginRenderCommands();
+        if(renderState.commandBuffer != VK_NULL_HANDLE) InitializeResizedFramebuffers(frame);
+        FinishRenderFrame(frame);
+        frame.Clear();
     }
 }
 
@@ -2567,1130 +2606,1172 @@ FrameBufferLayout VulkanGPUDevice::GetWindowFrameBufferLayout(){
 }
 
 void VulkanGPUDevice::RunRender(RenderFrame& frame){
-    #undef max
+    ApplyFramebufferResizes(frame);
+    SimpleTimer commandTimer([&](float t){ profilesGpu.push_back({"RecordAndPrepare", t}); });
+    VK_CHECK(vkResetDescriptorPool(_device, get_current_frame()._descriptorPool, 0));
+    {
+        SimpleTimer timer([&](float t){ profilesGpu.push_back({"ResourceCommands", t}); });
+#ifdef TEST_NEW_CMD
+        frame.resourceCommands.commands.ForEach([&](ResourceCommands::Type type, const void* payload){
+            ExecuteResourceCommand(frame, type, payload);
+        });
+#else
+        for(const auto& cmd : frame.resourceCommands.commands) ExecuteResourceCommand(frame, cmd);
+#endif
+    }
 
-    //framebufferDeleteQueue.clear();
+    {
+        SimpleTimer timer([&](float t){ profilesGpu.push_back({"FlushUploads", t}); });
+        flush_pending_buffer_uploads();
+        GetStagingPool(frame).Reset();
+    }
+    BeginRenderCommands();
+    if(renderState.commandBuffer != VK_NULL_HANDLE){
+        InitializeResizedFramebuffers(frame);
+        SimpleTimer timer([&](float t){ profilesGpu.push_back({"RecordCommands", t}); });
+        ReplayRenderCommands(frame, frame.renderCommands);
+    }
+    commandTimer.Stop();
+    FinishRenderFrame(frame);
+}
 
-    Pipeline currentPipeline = INVALID_ID;
-    bool skipNextEndFramebuffer = false;
+void VulkanGPUDevice::ReplayRenderCommands(RenderFrame& frame, const CommandBuffer& commands){
+#ifdef TEST_NEW_CMD
+    commands.commands.ForEach([&](CommandBuffer::Type type, const void* payload){
+        ExecuteRenderCommand(frame, type, payload);
+    });
+#else
+    for(const auto& cmd : commands.commands) ExecuteRenderCommand(frame, cmd);
+#endif
+}
 
-    int framebufferWidth = 0;
-    int framebufferHeight = 0;
-    Platform::GetFramebufferSize(&framebufferWidth, &framebufferHeight);
-    const VkExtent2D requestedExtent{
-        static_cast<uint32_t>(std::max(framebufferWidth, 0)),
-        static_cast<uint32_t>(std::max(framebufferHeight, 0))
-    };
+#ifdef TEST_NEW_CMD
+void VulkanGPUDevice::ExecuteResourceCommand(RenderFrame& frame, ResourceCommands::Type type, const void* payload){
+#else
+void VulkanGPUDevice::ExecuteResourceCommand(RenderFrame& frame, const ResourceCommands::Command& cmd){
+    const auto type = cmd.type;
+#endif
+    auto& stagingPool = GetStagingPool(frame);
+    switch(type){
+        case ResourceCommands::Type::CreateBuffer:{
+            const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, createBuffer);
+            Assert(bufferPool.IsValid(command.id));
+            auto& data = bufferPool.Get(command.id);
+            if(!_CreateBuffer(data, command.size, command.usage, command.memory)){
+                bufferPool.AddDestroyedId(command.id);
+            }
+            break;
+        }
+
+        case ResourceCommands::Type::UpdateBuffer: {
+            const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, updateBuffer);
+            if(command.data == nullptr || command.size == 0) break;
+            SyncGpu();
+            Assert(bufferPool.IsValid(command.id));
+            auto& bufferData = bufferPool.Get(command.id);
+            _UpdatedBuffer(bufferData, command.data, command.size, stagingPool,
+                static_cast<const StagingSlice*>(command.staging));
+            break;
+        }
+
+        case ResourceCommands::Type::CreateTexture2D:{
+            const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, createTexture2D);
+            Assert(texture2DPool.IsValid(command.id));
+            auto& data = texture2DPool.Get(command.id);
+            if(!_CreateTexture2D(data, command.info)){
+                texture2DPool.AddDestroyedId(command.id);
+            }
+            break;
+        }
+
+        case ResourceCommands::Type::UploadTexture2D:{
+            const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, uploadTexture2D);
+            SyncGpu();
+            Assert(texture2DPool.IsValid(command.id));
+            auto& data = texture2DPool.Get(command.id);
+
+            if(data.info.format == ImageFormat::R8G8B8_UNORM || data.info.format == ImageFormat::R8G8B8_SRGB){
+                if(command.mipLevel < 0 || static_cast<uint32_t>(command.mipLevel) >= GetTextureMipLevels(data.width, data.height, data.info.mipmap, data.info.mipLevels)) break;
+                const uint32_t width = std::max(1u, data.width >> command.mipLevel);
+                const uint32_t height = std::max(1u, data.height >> command.mipLevel);
+                auto rgba = ConvertRGBToRGBA(static_cast<const uint8_t*>(command.data), width, height);
+                _UploadTexture2D(data, rgba.data(), rgba.size(), command.mipLevel, stagingPool);
+            } else {
+                _UploadTexture2D(data, command.data, command.size, command.mipLevel, stagingPool,
+                    static_cast<const StagingSlice*>(command.staging));
+            }
+            break;
+        }
+
+        case ResourceCommands::Type::CreateTexture2DArray:{
+            const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, createTexture2DArray);
+            Assert(texture2DArrayPool.IsValid(command.id));
+            auto& data = texture2DArrayPool.Get(command.id);
+            if(!_CreateTexture2DArray(data, command.info)) texture2DArrayPool.AddDestroyedId(command.id);
+            break;
+        }
+        case ResourceCommands::Type::UploadTexture2DArray:{
+            const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, uploadTexture2DArray);
+            SyncGpu();
+            Assert(texture2DArrayPool.IsValid(command.id));
+            auto& data = texture2DArrayPool.Get(command.id);
+            if(command.arrayElement < 0 || command.mipLevel < 0 ||
+                static_cast<uint32_t>(command.arrayElement) >= data.info.arrayElements ||
+                static_cast<uint32_t>(command.mipLevel) >= GetTextureMipLevels(data.info.width, data.info.height, data.info.mipmap, data.info.mipLevels)) break;
+            if(data.info.format == ImageFormat::R8G8B8_UNORM || data.info.format == ImageFormat::R8G8B8_SRGB){
+                const uint32_t width = std::max(1u, data.info.width >> command.mipLevel);
+                const uint32_t height = std::max(1u, data.info.height >> command.mipLevel);
+                auto rgba = ConvertRGBToRGBA(static_cast<const uint8_t*>(command.data), width, height);
+                _UploadTexture2DArray(data, rgba.data(), rgba.size(), command.arrayElement, command.mipLevel, stagingPool);
+            } else {
+                _UploadTexture2DArray(data, command.data, command.size,
+                    command.arrayElement, command.mipLevel, stagingPool,
+                    static_cast<const StagingSlice*>(command.staging));
+            }
+            break;
+        }
+        case ResourceCommands::Type::DestroyTexture2DArray:{
+            const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, destroyTexture2DArray);
+            Assert(texture2DArrayPool.IsValid(command.id));
+            texture2DArrayPool.AddDestroyedId(command.id);
+            break;
+        }
+
+        case ResourceCommands::Type::CreateCubemap:{
+            const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, createCubemap);
+            Assert(cubemapPool.IsValid(command.id));
+            auto& data = cubemapPool.Get(command.id);
+            if(!_CreateCubemap(data, command.info)) cubemapPool.AddDestroyedId(command.id);
+            break;
+        }
+        case ResourceCommands::Type::UploadCubemap:{
+            const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, uploadCubemap);
+            SyncGpu();
+            Assert(cubemapPool.IsValid(command.id));
+            auto& data = cubemapPool.Get(command.id);
+            if((data.info.format == ImageFormat::R8G8B8_UNORM || data.info.format == ImageFormat::R8G8B8_SRGB) && command.mipLevel >= 0 &&
+                static_cast<uint32_t>(command.mipLevel) < GetTextureMipLevels(data.info.width, data.info.height, data.info.mipmap, data.info.mipLevels)){
+                const uint32_t width = std::max(1u, data.info.width >> command.mipLevel);
+                const uint32_t height = std::max(1u, data.info.height >> command.mipLevel);
+                const size_t faceSize = static_cast<size_t>(width) * height * 3;
+                if(command.size < faceSize * 6) break;
+                std::vector<uint8_t> rgba;
+                rgba.reserve(static_cast<size_t>(width) * height * 4 * 6);
+                for(uint32_t face = 0; face < 6; ++face){
+                    auto converted = ConvertRGBToRGBA(static_cast<const uint8_t*>(command.data) + face * faceSize, width, height);
+                    rgba.insert(rgba.end(), converted.begin(), converted.end());
+                }
+                _UploadCubemap(data, rgba.data(), rgba.size(), command.mipLevel, stagingPool);
+            } else {
+                _UploadCubemap(data, command.data, command.size, command.mipLevel, stagingPool,
+                    static_cast<const StagingSlice*>(command.staging));
+            }
+            break;
+        }
+        case ResourceCommands::Type::UploadCubemapFace:{
+            const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, uploadCubemapFace);
+            SyncGpu();
+            Assert(cubemapPool.IsValid(command.id));
+            auto& data = cubemapPool.Get(command.id);
+            const uint32_t faceIndex = static_cast<uint32_t>(command.face);
+            if(faceIndex >= 6 || command.mipLevel < 0 ||
+                static_cast<uint32_t>(command.mipLevel) >= GetTextureMipLevels(data.info.width, data.info.height, data.info.mipmap, data.info.mipLevels)) break;
+            if(data.info.format == ImageFormat::R8G8B8_UNORM || data.info.format == ImageFormat::R8G8B8_SRGB){
+                const uint32_t width = std::max(1u, data.info.width >> command.mipLevel);
+                const uint32_t height = std::max(1u, data.info.height >> command.mipLevel);
+                if(command.size < static_cast<size_t>(width) * height * 3) break;
+                auto rgba = ConvertRGBToRGBA(static_cast<const uint8_t*>(command.data), width, height);
+                _UploadCubemapFace(data, rgba.data(), rgba.size(), command.face, command.mipLevel, stagingPool);
+            } else {
+                _UploadCubemapFace(data, command.data, command.size,
+                    command.face, command.mipLevel, stagingPool,
+                    static_cast<const StagingSlice*>(command.staging));
+            }
+            break;
+        }
+
+        case ResourceCommands::Type::CreatePipeline:{
+            const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, createPipeline);
+            Assert(pipelinePool.IsValid(command.id));
+            auto& data = pipelinePool.Get(command.id);
+            if(!_CreatePipeline(data, command.source, command.info)){
+                pipelinePool.AddDestroyedId(command.id);
+            }
+            break;
+        }
+
+        case ResourceCommands::Type::CreateBindGroupLayout:{
+            const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, createBindGroupLayout);
+            Assert(bindGroupLayoutPool.IsValid(command.id));
+            BindGroupLayoutData& data = bindGroupLayoutPool.Get(command.id);
+            if(!_CreateBindGroupLayout(data, *command.info)){
+                bindGroupLayoutPool.AddDestroyedId(command.id);
+            }
+            break;
+        }
+
+        case ResourceCommands::Type::CreateBindGroup:{
+            const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, createBindGroup);
+            Assert(bindGroupPool.IsValid(command.id));
+            auto& data = bindGroupPool.Get(command.id);
+            _CreateBindGroup(data, command.info, _descriptorPool);
+            break;
+        }
+
+        case ResourceCommands::Type::CreateFrameBindGroup:{
+            const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, createFrameBindGroup);
+            SyncGpu();
+            Assert(bindGroupPool.IsValid(command.id));
+            auto& data = bindGroupPool.Get(command.id);
+            _CreateBindGroup(data, command.info, get_current_frame()._descriptorPool);
+            frameBindGroups.push_back(command.id);
+            break;
+        }
+
+        case ResourceCommands::Type::CreateFramebuffer:{
+            const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, createFramebuffer);
+            Assert(framebufferPool.IsValid(command.framebuffer));
+            auto& data = framebufferPool.Get(command.framebuffer);
+            if(!_CreateFramebuffer(data, command.info)){
+                framebufferPool.AddDestroyedId(command.framebuffer);
+            }
+            break;
+        }
+
+        default: Assert(false);
+    }
+}
+
+void VulkanGPUDevice::BeginRenderCommands(){
+    SyncGpu();
+    renderState.attemptedAcquire = true;
+
+    int width = 0;
+    int height = 0;
+    Platform::GetFramebufferSize(&width, &height);
+    if(width <= 0 || height <= 0) return;
+
+    const VkExtent2D requestedExtent{static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
     if(NeedsSwapchainRecreation(VK_SUCCESS, _windowExtent, requestedExtent)){
         RecreateSwapchain();
         return;
     }
 
-    if(framebufferWidth <= 0 || framebufferHeight <= 0)
-        return;
-
-    /*{
-        SimpleTimer timer([&](float t){ profilesGpu.push_back({"FenceWait", t}); });
-        VK_CHECK(vkWaitForFences(_device, 1, &get_current_frame()._renderFence, true, 1000000000));
-    }*/
-
-    SimpleTimer commandTimer([&](float t){ profilesGpu.push_back({"RecordAndPrepare", t}); });
-
-    /*for(auto i: frameBindGroups){
-        bindGroupPool.AddDestroyedId(i);
-    }
-    frameBindGroups.clear();*/
-    VK_CHECK(vkResetDescriptorPool(_device, get_current_frame()._descriptorPool, 0));
-    
-    SimpleTimer resourceTimer([&](float t){ profilesGpu.push_back({"ResourceCommands", t}); });
-
-    // Process Resource Commands first
-    for(const ResourceCommands::Command& cmd : frame.resourceCommands.commands){
-        switch(cmd.type){
-            case ResourceCommands::Type::CreateBuffer:{
-                Assert(bufferPool.IsValid(cmd.createBuffer.id));
-                auto& data = bufferPool.Get(cmd.createBuffer.id);
-                if(!_CreateBuffer(data, cmd.createBuffer.size, cmd.createBuffer.usage, cmd.createBuffer.memory)){
-                    bufferPool.AddDestroyedId(cmd.createBuffer.id);
-                }
-                break;
-            }
-
-            case ResourceCommands::Type::UpdateBuffer: {
-                Assert(bufferPool.IsValid(cmd.updateBuffer.id));
-                auto& bufferData = bufferPool.Get(cmd.updateBuffer.id);
-                _UpdatedBuffer(bufferData, cmd.updateBuffer.data, cmd.updateBuffer.size);
-                break;
-            }
-
-            case ResourceCommands::Type::CreateTexture2D:{
-                Assert(texture2DPool.IsValid(cmd.createTexture2D.id));
-                auto& data = texture2DPool.Get(cmd.createTexture2D.id);
-                if(!_CreateTexture2D(data, cmd.createTexture2D.info)){
-                    texture2DPool.AddDestroyedId(cmd.createTexture2D.id);
-                }
-                break;
-            }
-
-            case ResourceCommands::Type::UploadTexture2D:{
-                Assert(texture2DPool.IsValid(cmd.uploadTexture2D.id));
-                auto& data = texture2DPool.Get(cmd.uploadTexture2D.id);
-
-                if(data.info.format == ImageFormat::R8G8B8_UNORM || data.info.format == ImageFormat::R8G8B8_SRGB){
-                    if(cmd.uploadTexture2D.mipLevel < 0 || static_cast<uint32_t>(cmd.uploadTexture2D.mipLevel) >= GetTextureMipLevels(data.width, data.height, data.info.mipmap, data.info.mipLevels)) break;
-                    const uint32_t width = std::max(1u, data.width >> cmd.uploadTexture2D.mipLevel);
-                    const uint32_t height = std::max(1u, data.height >> cmd.uploadTexture2D.mipLevel);
-                    auto rgba = ConvertRGBToRGBA(static_cast<const uint8_t*>(cmd.uploadTexture2D.data), width, height);
-                    _UploadTexture2D(data, rgba.data(), rgba.size(), cmd.uploadTexture2D.mipLevel);
-                } else {
-                    _UploadTexture2D(data, cmd.uploadTexture2D.data, cmd.uploadTexture2D.size, cmd.uploadTexture2D.mipLevel);
-                }
-                break;
-            }
-
-            case ResourceCommands::Type::CreateTexture2DArray:{
-                Assert(texture2DArrayPool.IsValid(cmd.createTexture2DArray.id));
-                auto& data = texture2DArrayPool.Get(cmd.createTexture2DArray.id);
-                if(!_CreateTexture2DArray(data, cmd.createTexture2DArray.info)) texture2DArrayPool.AddDestroyedId(cmd.createTexture2DArray.id);
-                break;
-            }
-            case ResourceCommands::Type::UploadTexture2DArray:{
-                Assert(texture2DArrayPool.IsValid(cmd.uploadTexture2DArray.id));
-                auto& data = texture2DArrayPool.Get(cmd.uploadTexture2DArray.id);
-                if(cmd.uploadTexture2DArray.arrayElement < 0 || cmd.uploadTexture2DArray.mipLevel < 0 ||
-                    static_cast<uint32_t>(cmd.uploadTexture2DArray.arrayElement) >= data.info.arrayElements ||
-                    static_cast<uint32_t>(cmd.uploadTexture2DArray.mipLevel) >= GetTextureMipLevels(data.info.width, data.info.height, data.info.mipmap, data.info.mipLevels)) break;
-                if(data.info.format == ImageFormat::R8G8B8_UNORM || data.info.format == ImageFormat::R8G8B8_SRGB){
-                    const uint32_t width = std::max(1u, data.info.width >> cmd.uploadTexture2DArray.mipLevel);
-                    const uint32_t height = std::max(1u, data.info.height >> cmd.uploadTexture2DArray.mipLevel);
-                    auto rgba = ConvertRGBToRGBA(static_cast<const uint8_t*>(cmd.uploadTexture2DArray.data), width, height);
-                    _UploadTexture2DArray(data, rgba.data(), rgba.size(), cmd.uploadTexture2DArray.arrayElement, cmd.uploadTexture2DArray.mipLevel);
-                } else {
-                    _UploadTexture2DArray(data, cmd.uploadTexture2DArray.data, cmd.uploadTexture2DArray.size,
-                        cmd.uploadTexture2DArray.arrayElement, cmd.uploadTexture2DArray.mipLevel);
-                }
-                break;
-            }
-            case ResourceCommands::Type::DestroyTexture2DArray:{
-                Assert(texture2DArrayPool.IsValid(cmd.destroyTexture2DArray.id));
-                texture2DArrayPool.AddDestroyedId(cmd.destroyTexture2DArray.id);
-                break;
-            }
-
-            case ResourceCommands::Type::CreateCubemap:{
-                Assert(cubemapPool.IsValid(cmd.createCubemap.id));
-                auto& data = cubemapPool.Get(cmd.createCubemap.id);
-                if(!_CreateCubemap(data, cmd.createCubemap.info)) cubemapPool.AddDestroyedId(cmd.createCubemap.id);
-                break;
-            }
-            case ResourceCommands::Type::UploadCubemap:{
-                Assert(cubemapPool.IsValid(cmd.uploadCubemap.id));
-                auto& data = cubemapPool.Get(cmd.uploadCubemap.id);
-                if((data.info.format == ImageFormat::R8G8B8_UNORM || data.info.format == ImageFormat::R8G8B8_SRGB) && cmd.uploadCubemap.mipLevel >= 0 &&
-                    static_cast<uint32_t>(cmd.uploadCubemap.mipLevel) < GetTextureMipLevels(data.info.width, data.info.height, data.info.mipmap, data.info.mipLevels)){
-                    const uint32_t width = std::max(1u, data.info.width >> cmd.uploadCubemap.mipLevel);
-                    const uint32_t height = std::max(1u, data.info.height >> cmd.uploadCubemap.mipLevel);
-                    const size_t faceSize = static_cast<size_t>(width) * height * 3;
-                    if(cmd.uploadCubemap.size < faceSize * 6) break;
-                    std::vector<uint8_t> rgba;
-                    rgba.reserve(static_cast<size_t>(width) * height * 4 * 6);
-                    for(uint32_t face = 0; face < 6; ++face){
-                        auto converted = ConvertRGBToRGBA(static_cast<const uint8_t*>(cmd.uploadCubemap.data) + face * faceSize, width, height);
-                        rgba.insert(rgba.end(), converted.begin(), converted.end());
-                    }
-                    _UploadCubemap(data, rgba.data(), rgba.size(), cmd.uploadCubemap.mipLevel);
-                } else {
-                    _UploadCubemap(data, cmd.uploadCubemap.data, cmd.uploadCubemap.size, cmd.uploadCubemap.mipLevel);
-                }
-                break;
-            }
-            case ResourceCommands::Type::UploadCubemapFace:{
-                Assert(cubemapPool.IsValid(cmd.uploadCubemapFace.id));
-                auto& data = cubemapPool.Get(cmd.uploadCubemapFace.id);
-                const uint32_t faceIndex = static_cast<uint32_t>(cmd.uploadCubemapFace.face);
-                if(faceIndex >= 6 || cmd.uploadCubemapFace.mipLevel < 0 ||
-                    static_cast<uint32_t>(cmd.uploadCubemapFace.mipLevel) >= GetTextureMipLevels(data.info.width, data.info.height, data.info.mipmap, data.info.mipLevels)) break;
-                if(data.info.format == ImageFormat::R8G8B8_UNORM || data.info.format == ImageFormat::R8G8B8_SRGB){
-                    const uint32_t width = std::max(1u, data.info.width >> cmd.uploadCubemapFace.mipLevel);
-                    const uint32_t height = std::max(1u, data.info.height >> cmd.uploadCubemapFace.mipLevel);
-                    if(cmd.uploadCubemapFace.size < static_cast<size_t>(width) * height * 3) break;
-                    auto rgba = ConvertRGBToRGBA(static_cast<const uint8_t*>(cmd.uploadCubemapFace.data), width, height);
-                    _UploadCubemapFace(data, rgba.data(), rgba.size(), cmd.uploadCubemapFace.face, cmd.uploadCubemapFace.mipLevel);
-                } else {
-                    _UploadCubemapFace(data, cmd.uploadCubemapFace.data, cmd.uploadCubemapFace.size,
-                        cmd.uploadCubemapFace.face, cmd.uploadCubemapFace.mipLevel);
-                }
-                break;
-            }
-      
-            case ResourceCommands::Type::CreatePipeline:{
-                Assert(pipelinePool.IsValid(cmd.createPipeline.id));
-                auto& data = pipelinePool.Get(cmd.createPipeline.id);
-                if(!_CreatePipeline(data, cmd.createPipeline.source, cmd.createPipeline.info)){
-                    pipelinePool.AddDestroyedId(cmd.createPipeline.id);
-                }
-                break;
-            }
-
-            case ResourceCommands::Type::CreateBindGroupLayout:{
-                Assert(bindGroupLayoutPool.IsValid(cmd.createBindGroupLayout.id));
-                BindGroupLayoutData& data = bindGroupLayoutPool.Get(cmd.createBindGroupLayout.id);
-                if(!_CreateBindGroupLayout(data, *cmd.createBindGroupLayout.info)){
-                    bindGroupLayoutPool.AddDestroyedId(cmd.createBindGroupLayout.id);
-                }
-                break;
-            }
-
-            case ResourceCommands::Type::CreateBindGroup:{
-                Assert(bindGroupPool.IsValid(cmd.createBindGroup.id));
-                auto& data = bindGroupPool.Get(cmd.createBindGroup.id);
-                _CreateBindGroup(data, cmd.createBindGroup.info, _descriptorPool);
-                break;
-            }
-
-            case ResourceCommands::Type::CreateFrameBindGroup:{
-                Assert(bindGroupPool.IsValid(cmd.createFrameBindGroup.id));
-                auto& data = bindGroupPool.Get(cmd.createFrameBindGroup.id);
-                _CreateBindGroup(data, cmd.createFrameBindGroup.info, get_current_frame()._descriptorPool);
-                frameBindGroups.push_back(cmd.createFrameBindGroup.id);
-                break;
-            }
-            
-            case ResourceCommands::Type::CreateFramebuffer:{
-                Assert(framebufferPool.IsValid(cmd.createFramebuffer.framebuffer));
-                auto& data = framebufferPool.Get(cmd.createFramebuffer.framebuffer);
-                if(!_CreateFramebuffer(data, cmd.createFramebuffer.info)){
-                    framebufferPool.AddDestroyedId(cmd.createFramebuffer.framebuffer);
-                }
-                break;
-            }
-
-            default: Assert(false);
-        }
-    }
-
-    resourceTimer.Stop();
-
-    {
-        SimpleTimer timer([&](float t){ profilesGpu.push_back({"FlushUploads", t}); });
-        flush_pending_buffer_uploads();
-    }
-
-    //VK_CHECK(vkWaitForFences(_device, 1, &_renderFence, true, 1000000000));
-    //VK_CHECK(vkResetFences(_device, 1, &_renderFence));
-
-    VK_CHECK(vkResetCommandBuffer(get_current_frame()._mainCommandBuffer, 0));
-    VkCommandBuffer cmd = get_current_frame()._mainCommandBuffer;
-
-    uint32_t swapchainImageIndex;
     {
         SimpleTimer timer([&](float t){ profilesGpu.push_back({"AcquireImage", t}); });
-        VkResult acquireResult = vkAcquireNextImageKHR(_device, _swapchain, 1000000000, get_current_frame()._presentSemaphore, nullptr, &swapchainImageIndex);
-        if(acquireResult == VK_ERROR_OUT_OF_DATE_KHR || acquireResult == VK_SUBOPTIMAL_KHR){
-            RecreateSwapchain();
+        const VkResult result = vkAcquireNextImageKHR(_device, _swapchain, 1000000000,
+            get_current_frame()._presentSemaphore, VK_NULL_HANDLE, &renderState.swapchainImageIndex);
+        if(result == VK_ERROR_OUT_OF_DATE_KHR){
+            RecreateSwapchain(true);
             return;
         }
-        VK_CHECK(acquireResult);
-        VK_CHECK(vkResetFences(_device, 1, &get_current_frame()._renderFence));
+        renderState.recreateAfterPresent = result == VK_SUBOPTIMAL_KHR;
+        if(!renderState.recreateAfterPresent) VK_CHECK(result);
     }
 
-    VkCommandBufferBeginInfo cmdBeginInfo = {};
-    cmdBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    cmdBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    VK_CHECK(vkBeginCommandBuffer(cmd, &cmdBeginInfo));
+    renderState.commandBuffer = get_current_frame()._mainCommandBuffer;
+    VK_CHECK(vkResetCommandBuffer(renderState.commandBuffer, 0));
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    VK_CHECK(vkBeginCommandBuffer(renderState.commandBuffer, &beginInfo));
+}
 
-    /*VkClearValue clearValue{};
-    clearValue.color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
-
-    VkRenderPassBeginInfo rpInfo = {};
-    rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    rpInfo.renderPass = _renderPass;
-    rpInfo.renderArea.offset = { 0, 0 };
-    rpInfo.renderArea.extent = _windowExtent;
-    rpInfo.framebuffer = _framebuffers[swapchainImageIndex];
-    rpInfo.clearValueCount = 1;
-    rpInfo.pClearValues = &clearValue;
-
-    vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-    VkViewport viewport{};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = static_cast<float>(_windowExtent.width);
-    viewport.height = static_cast<float>(_windowExtent.height);
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(cmd, 0, 1, &viewport);
-
-    VkRect2D scissor{};
-    scissor.offset = { 0, 0 };
-    scissor.extent = _windowExtent;
-    vkCmdSetScissor(cmd, 0, 1, &scissor);*/
-
-    FramebufferData* _currentFramebuffer = nullptr;
-    SimpleTimer commandRecordingTimer([&](float t){ profilesGpu.push_back({"RecordCommands", t}); });
-
-    bool hasWindowRenderPass = false;
-
-    for(const CommandBuffer::Command& renderCmd : frame.renderCommands.commands){
-        if(skipNextEndFramebuffer && renderCmd.type != CommandBuffer::Type::EndFramebuffer) continue;
-        switch(renderCmd.type){
-            case CommandBuffer::Type::Clear:{
-                std::vector<VkClearAttachment> clearAttachments;
-                const bool hasColor = _currentFramebuffer == nullptr ||
-                    _currentFramebuffer->layout.colorAttachmentsCount > 0;
-                if(HasFlag(renderCmd.clear.flags, ClearFlags::Color) && hasColor){
-                    VkClearAttachment clear{};
-                    clear.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                    clear.colorAttachment = 0;
-                    clear.clearValue.color = {{
-                        renderCmd.clear.clearValue.color.x,
-                        renderCmd.clear.clearValue.color.y,
-                        renderCmd.clear.clearValue.color.z,
-                        renderCmd.clear.clearValue.color.w
-                    }};
-                    clearAttachments.push_back(clear);
-                }
-
-                const bool hasDepth = _currentFramebuffer != nullptr &&
-                    _currentFramebuffer->layout.depthAttachment.format != FramebufferDepthTextureFormat::None;
-                if(HasFlag(renderCmd.clear.flags, ClearFlags::Depth) && hasDepth){
-                    VkClearAttachment clear{};
-                    clear.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                    clear.clearValue.depthStencil.depth = renderCmd.clear.clearValue.depth;
-                    clearAttachments.push_back(clear);
-                }
-                if(HasFlag(renderCmd.clear.flags, ClearFlags::Stencil) && hasDepth){
-                    VkClearAttachment clear{};
-                    clear.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
-                    clear.clearValue.depthStencil.stencil = renderCmd.clear.clearValue.stencil;
-                    clearAttachments.push_back(clear);
-                }
-
-                VkClearRect clearRect{};
-                clearRect.rect.offset = { 0, 0 };
-                clearRect.rect.extent = _currentFramebuffer == nullptr
-                    ? _windowExtent
-                    : VkExtent2D{
-                        std::max(1u, _currentFramebuffer->width >> _currentFramebuffer->activeMip),
-                        std::max(1u, _currentFramebuffer->height >> _currentFramebuffer->activeMip)
-                    };
-                clearRect.baseArrayLayer = 0;
-                clearRect.layerCount = 1;
-
-                if(!clearAttachments.empty())
-                    vkCmdClearAttachments(cmd, static_cast<uint32_t>(clearAttachments.size()), clearAttachments.data(), 1, &clearRect);
-                break;
+#ifdef TEST_NEW_CMD
+void VulkanGPUDevice::ExecuteRenderCommand(RenderFrame& frame, CommandBuffer::Type type, const void* payload){
+#else
+void VulkanGPUDevice::ExecuteRenderCommand(RenderFrame& frame, const CommandBuffer::Command& renderCmd){
+    const auto type = renderCmd.type;
+#endif
+    ApplyFramebufferResizes(frame);
+    if(!renderState.attemptedAcquire) BeginRenderCommands();
+    const VkCommandBuffer cmd = renderState.commandBuffer;
+    if(cmd == VK_NULL_HANDLE) return;
+    InitializeResizedFramebuffers(frame);
+    auto& currentPipeline = renderState.currentPipeline;
+    auto& currentFramebuffer = renderState.currentFramebuffer;
+    auto& skipNextEndFramebuffer = renderState.skipNextEndFramebuffer;
+    auto& hasWindowRenderPass = renderState.hasWindowRenderPass;
+    const auto swapchainImageIndex = renderState.swapchainImageIndex;
+    if(skipNextEndFramebuffer && type != CommandBuffer::Type::EndFramebuffer) return;
+    switch(type){
+        case CommandBuffer::Type::Clear:{
+            const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, renderCmd, clear);
+            std::vector<VkClearAttachment> clearAttachments;
+            const bool hasColor = currentFramebuffer == nullptr ||
+                currentFramebuffer->layout.colorAttachmentsCount > 0;
+            if(HasFlag(command.flags, ClearFlags::Color) && hasColor){
+                VkClearAttachment clear{};
+                clear.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                clear.colorAttachment = 0;
+                clear.clearValue.color = {{
+                    command.clearValue.color.x,
+                    command.clearValue.color.y,
+                    command.clearValue.color.z,
+                    command.clearValue.color.w
+                }};
+                clearAttachments.push_back(clear);
             }
 
-            case CommandBuffer::Type::Viewport:{
-                #ifdef TestDrawInverted
-                VkViewport customViewport{};
-                customViewport.x = static_cast<float>(renderCmd.viewport.x);
-                customViewport.y = static_cast<float>(renderCmd.viewport.y) + static_cast<float>(renderCmd.viewport.h);
-                customViewport.width = static_cast<float>(renderCmd.viewport.w);
-                customViewport.height = -static_cast<float>(renderCmd.viewport.h);
-                customViewport.minDepth = 0.0f;
-                customViewport.maxDepth = 1.0f;
-                vkCmdSetViewport(cmd, 0, 1, &customViewport);
-
-                VkRect2D customScissor{};
-                customScissor.offset = { static_cast<int32_t>(renderCmd.viewport.x), static_cast<int32_t>(renderCmd.viewport.y) };
-                customScissor.extent = { renderCmd.viewport.w, renderCmd.viewport.h };
-                vkCmdSetScissor(cmd, 0, 1, &customScissor);
-                #else
-
-                VkViewport customViewport{};
-                customViewport.x = static_cast<float>(renderCmd.viewport.x);
-                customViewport.y = static_cast<float>(renderCmd.viewport.y);
-                customViewport.width = static_cast<float>(renderCmd.viewport.w);
-                customViewport.height = static_cast<float>(renderCmd.viewport.h);
-                customViewport.minDepth = 0.0f;
-                customViewport.maxDepth = 1.0f;
-                vkCmdSetViewport(cmd, 0, 1, &customViewport);
-
-                VkRect2D customScissor{};
-                customScissor.offset = { static_cast<int32_t>(renderCmd.viewport.x), static_cast<int32_t>(renderCmd.viewport.y) };
-                customScissor.extent = { renderCmd.viewport.w, renderCmd.viewport.h };
-                vkCmdSetScissor(cmd, 0, 1, &customScissor);
-                #endif
-                break;
+            const bool hasDepth = currentFramebuffer != nullptr &&
+                currentFramebuffer->layout.depthAttachment.format != FramebufferDepthTextureFormat::None;
+            if(HasFlag(command.flags, ClearFlags::Depth) && hasDepth){
+                VkClearAttachment clear{};
+                clear.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                clear.clearValue.depthStencil.depth = command.clearValue.depth;
+                clearAttachments.push_back(clear);
+            }
+            if(HasFlag(command.flags, ClearFlags::Stencil) && hasDepth){
+                VkClearAttachment clear{};
+                clear.aspectMask = VK_IMAGE_ASPECT_STENCIL_BIT;
+                clear.clearValue.depthStencil.stencil = command.clearValue.stencil;
+                clearAttachments.push_back(clear);
             }
 
-            case CommandBuffer::Type::Scissor:{
-                VkRect2D customScissor{};
-                customScissor.offset = {
-                    static_cast<int32_t>(renderCmd.scissor.x),
-                    static_cast<int32_t>(renderCmd.scissor.y)
+            VkClearRect clearRect{};
+            clearRect.rect.offset = { 0, 0 };
+            clearRect.rect.extent = currentFramebuffer == nullptr
+                ? _windowExtent
+                : VkExtent2D{
+                    std::max(1u, currentFramebuffer->width >> currentFramebuffer->activeMip),
+                    std::max(1u, currentFramebuffer->height >> currentFramebuffer->activeMip)
                 };
-                customScissor.extent = {
-                    static_cast<uint32_t>(std::max(0, renderCmd.scissor.w)),
-                    static_cast<uint32_t>(std::max(0, renderCmd.scissor.h))
-                };
-                vkCmdSetScissor(cmd, 0, 1, &customScissor);
-                break;
-            }
+            clearRect.baseArrayLayer = 0;
+            clearRect.layerCount = 1;
 
-            case CommandBuffer::Type::SetPipeline:{
-                const auto& pipeData = pipelinePool.Get(renderCmd.setPipeline.id);
-                vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeData.pipeline);
-                currentPipeline = renderCmd.setPipeline.id;
-                break;
-            }
+            if(!clearAttachments.empty())
+                vkCmdClearAttachments(cmd, static_cast<uint32_t>(clearAttachments.size()), clearAttachments.data(), 1, &clearRect);
+            break;
+        }
 
-            case CommandBuffer::Type::SetVertexBuffer:{
-                const auto& bufData = bufferPool.Get(renderCmd.setVertexBuffer.buffer);
-                Assert(bufData.buffer != VK_NULL_HANDLE);
-                Assert(renderCmd.setVertexBuffer.buffer != InvalidID);
-                //Assert(renderCmd.setVertexBuffer.buffer < bufferPool.data.size());
-                VkDeviceSize offsets[] = { 0 };
-                vkCmdBindVertexBuffers(cmd, renderCmd.setVertexBuffer.slot, 1, &bufData.buffer, offsets);
-                break;
-            }
+        case CommandBuffer::Type::Viewport:{
+            const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, renderCmd, viewport);
+            #ifdef TestDrawInverted
+            VkViewport customViewport{};
+            customViewport.x = static_cast<float>(command.x);
+            customViewport.y = static_cast<float>(command.y) + static_cast<float>(command.h);
+            customViewport.width = static_cast<float>(command.w);
+            customViewport.height = -static_cast<float>(command.h);
+            customViewport.minDepth = 0.0f;
+            customViewport.maxDepth = 1.0f;
+            vkCmdSetViewport(cmd, 0, 1, &customViewport);
 
-            case CommandBuffer::Type::SetIndexBuffer:{
-                const auto& bufData = bufferPool.Get(renderCmd.setIndexBuffer.buffer);
-                vkCmdBindIndexBuffer(cmd, bufData.buffer, 0, VK_INDEX_TYPE_UINT32);
-                break;
-            }
+            VkRect2D customScissor{};
+            customScissor.offset = { static_cast<int32_t>(command.x), static_cast<int32_t>(command.y) };
+            customScissor.extent = { command.w, command.h };
+            vkCmdSetScissor(cmd, 0, 1, &customScissor);
+            #else
 
-            case CommandBuffer::Type::SetBindGroup:{
-                const BindGroupData& bindGroupData = bindGroupPool.Get(renderCmd.setBindGroup.group);
-                const PipelineData& pipelineData = pipelinePool.Get(currentPipeline);
+            VkViewport customViewport{};
+            customViewport.x = static_cast<float>(command.x);
+            customViewport.y = static_cast<float>(command.y);
+            customViewport.width = static_cast<float>(command.w);
+            customViewport.height = static_cast<float>(command.h);
+            customViewport.minDepth = 0.0f;
+            customViewport.maxDepth = 1.0f;
+            vkCmdSetViewport(cmd, 0, 1, &customViewport);
 
-                vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineData.layout, renderCmd.setBindGroup.slot, 1, &bindGroupData.descriptorSet, 0, nullptr);
-                break;
+            VkRect2D customScissor{};
+            customScissor.offset = { static_cast<int32_t>(command.x), static_cast<int32_t>(command.y) };
+            customScissor.extent = { command.w, command.h };
+            vkCmdSetScissor(cmd, 0, 1, &customScissor);
+            #endif
+            break;
+        }
+
+        case CommandBuffer::Type::Scissor:{
+            const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, renderCmd, scissor);
+            VkRect2D customScissor{};
+            customScissor.offset = {
+                static_cast<int32_t>(command.x),
+                static_cast<int32_t>(command.y)
             };
+            customScissor.extent = {
+                static_cast<uint32_t>(std::max(0, command.w)),
+                static_cast<uint32_t>(std::max(0, command.h))
+            };
+            vkCmdSetScissor(cmd, 0, 1, &customScissor);
+            break;
+        }
 
-            case CommandBuffer::Type::Draw:{
-                vkCmdDraw(cmd, renderCmd.draw.vertexCount, 1, 0, 0);
+        case CommandBuffer::Type::SetPipeline:{
+            const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, renderCmd, setPipeline);
+            const auto& pipeData = pipelinePool.Get(command.id);
+            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeData.pipeline);
+            currentPipeline = command.id;
+            break;
+        }
+
+        case CommandBuffer::Type::SetVertexBuffer:{
+            const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, renderCmd, setVertexBuffer);
+            const auto& bufData = bufferPool.Get(command.buffer);
+            Assert(bufData.buffer != VK_NULL_HANDLE);
+            Assert(command.buffer != InvalidID);
+            //Assert(command.buffer < bufferPool.data.size());
+            VkDeviceSize offsets[] = { 0 };
+            vkCmdBindVertexBuffers(cmd, command.slot, 1, &bufData.buffer, offsets);
+            break;
+        }
+
+        case CommandBuffer::Type::SetIndexBuffer:{
+            const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, renderCmd, setIndexBuffer);
+            const auto& bufData = bufferPool.Get(command.buffer);
+            vkCmdBindIndexBuffer(cmd, bufData.buffer, 0, VK_INDEX_TYPE_UINT32);
+            break;
+        }
+
+        case CommandBuffer::Type::SetBindGroup:{
+            const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, renderCmd, setBindGroup);
+            const BindGroupData& bindGroupData = bindGroupPool.Get(command.group);
+            const PipelineData& pipelineData = pipelinePool.Get(currentPipeline);
+
+            vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineData.layout, command.slot, 1, &bindGroupData.descriptorSet, 0, nullptr);
+            break;
+        };
+
+        case CommandBuffer::Type::Draw:{
+            const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, renderCmd, draw);
+            vkCmdDraw(cmd, command.vertexCount, 1, 0, 0);
+            break;
+        }
+
+        case CommandBuffer::Type::DrawIndexed:{
+            const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, renderCmd, drawIndexed);
+            vkCmdDrawIndexed(cmd, command.indexCount, 1, 0, 0, 0);
+            break;
+        }
+
+        case CommandBuffer::Type::DrawInstanced:{
+            const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, renderCmd, drawInstanced);
+            vkCmdDraw(cmd, command.vertexCount, command.count, 0, 0);
+            break;
+        }
+
+        case CommandBuffer::Type::DrawIndexedInstanced:{
+            const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, renderCmd, drawIndexedInstanced);
+            vkCmdDrawIndexed(cmd, command.indexCount, command.count, 0, 0, 0);
+            break;
+        }
+
+        case CommandBuffer::Type::BeginFramebuffer:{
+            const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, renderCmd, beginFramebuffer);
+            if(!framebufferPool.IsValid(command.framebuffer)){
+                LogWarning("Ignoring BeginFramebuffer for a destroyed framebuffer (id={})", command.framebuffer);
+                skipNextEndFramebuffer = true;
                 break;
             }
+            auto& data = framebufferPool.Get(command.framebuffer);
+            const auto& layout = data.layout;
 
-            case CommandBuffer::Type::DrawIndexed:{
-                vkCmdDrawIndexed(cmd, renderCmd.drawIndexed.indexCount, 1, 0, 0, 0);
+            const uint32_t layerCount = data.subresourceLayerCount;
+            const uint32_t layer = command.layer;
+            const uint32_t mip = command.mip;
+            bool clean = command.clean;
+            Assert(layerCount != 0);
+            Assert(data.subresourceMipCount != 0);
+            Assert(layer < layerCount);
+            Assert(mip < data.subresourceMipCount);
+            const size_t framebufferIndex = static_cast<size_t>(mip) * layerCount + layer;
+            if(layer >= layerCount || mip >= data.subresourceMipCount || framebufferIndex >= data.subresourceFramebuffers.size()){
+                LogError("Vulkan framebuffer subresource index out of range: mip={}, layer={}, mipCount={}, layerCount={}, framebufferCount={}",
+                    mip, layer, data.subresourceMipCount, layerCount, data.subresourceFramebuffers.size());
+                Assert(false);
+                skipNextEndFramebuffer = true;
                 break;
             }
-
-            case CommandBuffer::Type::DrawInstanced:{
-                vkCmdDraw(cmd, renderCmd.drawInstanced.vertexCount, renderCmd.drawInstanced.count, 0, 0);
-                break;
+            if(!clean && !data.contentsInitialized){
+                LogWarning("Vulkan BeginFramebuffer requested LOAD before framebuffer contents were initialized; using CLEAR."); //TODO: Maybe i can remove this warning later
+                clean = true;
             }
+            data.activeLayer = layer;
+            data.activeMip = mip;
 
-            case CommandBuffer::Type::DrawIndexedInstanced:{
-                vkCmdDrawIndexed(cmd, renderCmd.drawIndexedInstanced.indexCount, renderCmd.drawIndexedInstanced.count, 0, 0, 0);
-                break;
-            }
-        
-            case CommandBuffer::Type::BeginFramebuffer:{
-                if(!framebufferPool.IsValid(renderCmd.beginFramebuffer.framebuffer)){
-                    LogWarning("Ignoring BeginFramebuffer for a destroyed framebuffer (id={})", renderCmd.beginFramebuffer.framebuffer);
-                    skipNextEndFramebuffer = true;
-                    break;
-                }
-                auto& data = framebufferPool.Get(renderCmd.beginFramebuffer.framebuffer); 
-                const auto& layout = data.layout;
+            currentFramebuffer = &data;
 
-                const uint32_t layerCount = data.subresourceLayerCount;
-                const uint32_t layer = renderCmd.beginFramebuffer.layer;
-                const uint32_t mip = renderCmd.beginFramebuffer.mip;
-                bool clean = renderCmd.beginFramebuffer.clean;
-                Assert(layerCount != 0);
-                Assert(data.subresourceMipCount != 0);
-                Assert(layer < layerCount);
-                Assert(mip < data.subresourceMipCount);
-                const size_t framebufferIndex = static_cast<size_t>(mip) * layerCount + layer;
-                if(layer >= layerCount || mip >= data.subresourceMipCount || framebufferIndex >= data.subresourceFramebuffers.size()){
-                    LogError("Vulkan framebuffer subresource index out of range: mip={}, layer={}, mipCount={}, layerCount={}, framebufferCount={}",
-                        mip, layer, data.subresourceMipCount, layerCount, data.subresourceFramebuffers.size());
-                    Assert(false);
-                    skipNextEndFramebuffer = true;
-                    break;
-                }
-                if(!clean && !data.contentsInitialized){
-                    LogWarning("Vulkan BeginFramebuffer requested LOAD before framebuffer contents were initialized; using CLEAR."); //TODO: Maybe i can remove this warning later
-                    clean = true;
-                }
-                data.activeLayer = layer;
-                data.activeMip = mip;
+            // ------------------------------------------------------------
+            // Transition framebuffer attachments to attachment layouts
+            // ------------------------------------------------------------
 
-                _currentFramebuffer = &data;
+            std::vector<VkImageMemoryBarrier> barriers;
 
-                // ------------------------------------------------------------
-                // Transition framebuffer attachments to attachment layouts
-                // ------------------------------------------------------------
-
-                std::vector<VkImageMemoryBarrier> barriers;
-
-                // Descriptor views expose the complete array/cubemap. On the
-                // first pass, transition the complete view to attachment layout;
-                // later passes transition only the selected slice/mip.
-                if(!data.contentsInitialized){
-                    auto addInitialBarrier = [&](VulkanFramebufferAttachment& attachment, VkImageAspectFlags aspect, uint32_t mipLevels){
-                        if(attachment.image == VK_NULL_HANDLE) return;
-                        VkImageMemoryBarrier barrier{};
-                        barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                        barrier.dstAccessMask = aspect == VK_IMAGE_ASPECT_COLOR_BIT
-                            ? VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
-                            : VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-                        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                        barrier.newLayout = aspect == VK_IMAGE_ASPECT_COLOR_BIT
-                            ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-                            : VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-                        barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                        barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                        barrier.image = attachment.image;
-                        barrier.subresourceRange = {aspect, 0, mipLevels, 0, layerCount};
-                        barriers.push_back(barrier);
-                    };
-                    for(uint32_t i = 0; i < layout.colorAttachmentsCount; ++i)
-                        addInitialBarrier(data.colorAttachments[i], VK_IMAGE_ASPECT_COLOR_BIT, data.subresourceMipCount);
-                    if(layout.depthAttachment.format != FramebufferDepthTextureFormat::None)
-                        addInitialBarrier(data.depthAttachment, VK_IMAGE_ASPECT_DEPTH_BIT, data.subresourceMipCount);
-                }
-
-                // Color attachments (the first pass already transitioned all
-                // subresources above).
-                for(uint32_t i = 0; i < layout.colorAttachmentsCount && data.contentsInitialized; ++i){
-                    auto& attachment = data.colorAttachments[i];
-
+            // Descriptor views expose the complete array/cubemap. On the
+            // first pass, transition the complete view to attachment layout;
+            // later passes transition only the selected slice/mip.
+            if(!data.contentsInitialized){
+                auto addInitialBarrier = [&](VulkanFramebufferAttachment& attachment, VkImageAspectFlags aspect, uint32_t mipLevels){
+                    if(attachment.image == VK_NULL_HANDLE) return;
                     VkImageMemoryBarrier barrier{};
                     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                    if(data.contentsInitialized || !barriers.empty()){
-                        // Previous usage was shader read.
-                        barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-                        barrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                    } else {
-                        // First usage.
-                        barrier.srcAccessMask = 0;
-                        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                    }
-                    barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-                    barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                    barrier.dstAccessMask = aspect == VK_IMAGE_ASPECT_COLOR_BIT
+                        ? VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+                        : VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+                    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                    barrier.newLayout = aspect == VK_IMAGE_ASPECT_COLOR_BIT
+                        ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+                        : VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
                     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
                     barrier.image = attachment.image;
-                    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                    barrier.subresourceRange.baseMipLevel = mip;
-                    barrier.subresourceRange.levelCount = 1;
-                    barrier.subresourceRange.baseArrayLayer = layer;
-                    barrier.subresourceRange.layerCount = 1;
+                    barrier.subresourceRange = {aspect, 0, mipLevels, 0, layerCount};
                     barriers.push_back(barrier);
-                }
-
-                // Depth attachment
-                if(layout.depthAttachment.format != FramebufferDepthTextureFormat::None && data.contentsInitialized){
-                    auto& attachment = data.depthAttachment;
-
-                    VkImageMemoryBarrier barrier{};
-                    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                    if(data.contentsInitialized || !barriers.empty()){
-                        barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-                        barrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                    } else {
-                        barrier.srcAccessMask = 0;
-                        barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                    }
-                    barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-                    barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-                    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                    barrier.image = attachment.image;
-                    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                    barrier.subresourceRange.baseMipLevel = mip;
-                    barrier.subresourceRange.levelCount = 1;
-                    barrier.subresourceRange.baseArrayLayer = layer;
-                    barrier.subresourceRange.layerCount = 1;
-                    barriers.push_back(barrier);
-                }
-                if(!barriers.empty()){
-                    vkCmdPipelineBarrier(
-                        cmd,
-                        // Source stage
-                        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                        // Destination stage
-                        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-                        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-                        VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-                        0,
-                        0,
-                        nullptr,
-                        0,
-                        nullptr,
-                        static_cast<uint32_t>(barriers.size()),
-                        barriers.data()
-                    );
-                }
-
-                std::vector<VkClearValue> clearValues;
-
-                // Color clears
-                for(uint32_t i = 0; i < layout.colorAttachmentsCount; ++i){
-                    VkClearValue clear{};
-                    clear.color.float32[0] = renderCmd.beginFramebuffer.clearValue.color.x;
-                    clear.color.float32[1] = renderCmd.beginFramebuffer.clearValue.color.y;
-                    clear.color.float32[2] = renderCmd.beginFramebuffer.clearValue.color.z;
-                    clear.color.float32[3] = renderCmd.beginFramebuffer.clearValue.color.w;
-                    clearValues.push_back(clear);
-                }
-
-                // Depth clear
-                if(layout.depthAttachment.format != FramebufferDepthTextureFormat::None){
-                    VkClearValue clear{};
-                    clear.depthStencil.depth = renderCmd.beginFramebuffer.clearValue.depth;
-                    clear.depthStencil.stencil = renderCmd.beginFramebuffer.clearValue.stencil;
-                    clearValues.push_back(clear);
-                }
-
-                VkRenderPassBeginInfo beginInfo{};
-                beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-                beginInfo.renderPass = GetOrCreate(layout, clean);
-                beginInfo.framebuffer = data.subresourceFramebuffers[framebufferIndex];
-                beginInfo.renderArea.offset = { 0, 0 };
-                beginInfo.renderArea.extent = { std::max(1u, data.width >> mip), std::max(1u, data.height >> mip) };
-                beginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-                beginInfo.pClearValues = clearValues.data();
-                vkCmdBeginRenderPass(cmd, &beginInfo, VK_SUBPASS_CONTENTS_INLINE );
-                break;
-            };
-
-            case CommandBuffer::Type::BeginWindowFramebuffer:{
-                hasWindowRenderPass = true;
-                
-                VkClearValue clearValues[2]{};
-                clearValues[0].color = { { 1.0f, 0.0f, 0.0f, 1.0f } };
-                clearValues[1].depthStencil = { 1.0f, 0 };
-
-                VkRenderPassBeginInfo rpInfo = {};
-                rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-                rpInfo.renderPass = _renderPass;
-                rpInfo.renderArea.offset = { 0, 0 };
-                rpInfo.renderArea.extent = _windowExtent;
-                rpInfo.framebuffer = _framebuffers[swapchainImageIndex];
-                rpInfo.clearValueCount = 2;
-                rpInfo.pClearValues = clearValues;
-
-                vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-                /*VkViewport viewport{};
-                viewport.x = 0.0f;
-                viewport.y = static_cast<float>(_windowExtent.height); //0.0f;
-                viewport.width = static_cast<float>(_windowExtent.width);
-                viewport.height = -static_cast<float>(_windowExtent.height);// static_cast<float>(_windowExtent.height);
-                viewport.minDepth = 0.0f;
-                viewport.maxDepth = 1.0f;
-                vkCmdSetViewport(cmd, 0, 1, &viewport);
-
-                VkRect2D scissor{};
-                scissor.offset = { 0, 0 };
-                scissor.extent = _windowExtent;
-                vkCmdSetScissor(cmd, 0, 1, &scissor);*/
-                break;
+                };
+                for(uint32_t i = 0; i < layout.colorAttachmentsCount; ++i)
+                    addInitialBarrier(data.colorAttachments[i], VK_IMAGE_ASPECT_COLOR_BIT, data.subresourceMipCount);
+                if(layout.depthAttachment.format != FramebufferDepthTextureFormat::None)
+                    addInitialBarrier(data.depthAttachment, VK_IMAGE_ASPECT_DEPTH_BIT, data.subresourceMipCount);
             }
 
-            case CommandBuffer::Type::BlitFramebuffer:{
-                const auto& blit = renderCmd.blitFramebuffer;
-                if(!framebufferPool.IsValid(blit.src)){
-                    LogWarning("Ignoring BlitFramebuffer for a destroyed framebuffer (id={})", blit.src);
-                    skipNextEndFramebuffer = true;
-                    break;
-                }
-                Assert(framebufferPool.IsValid(blit.src));
-                auto& sourceFramebuffer = framebufferPool.Get(blit.src);
-                const bool depth = blit.srcPass < 0;
-                if(!depth)
-                    Assert(static_cast<uint32_t>(blit.srcPass) < sourceFramebuffer.colorAttachments.size());
+            // Color attachments (the first pass already transitioned all
+            // subresources above).
+            for(uint32_t i = 0; i < layout.colorAttachmentsCount && data.contentsInitialized; ++i){
+                auto& attachment = data.colorAttachments[i];
 
-                VulkanFramebufferAttachment& source = depth
-                    ? sourceFramebuffer.depthAttachment
-                    : sourceFramebuffer.colorAttachments[blit.srcPass];
-                const VkImageAspectFlags aspect = depth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
-                const uint32_t sourceWidth = sourceFramebuffer.width;
-                const uint32_t sourceHeight = sourceFramebuffer.height;
-
-                VkImage destinationImage = VK_NULL_HANDLE;
-                uint32_t destinationWidth = sourceWidth;
-                uint32_t destinationHeight = sourceHeight;
-                VkImageLayout destinationOldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                VkImageMemoryBarrier destinationBarrier{};
-                VulkanFramebufferAttachment* destinationAttachment = nullptr;
-
-                if(blit.dst == InvalidID){
-                    destinationImage = depth ? _windowDepthImage : _swapchainImages[swapchainImageIndex];
-                    destinationWidth = _windowExtent.width;
-                    destinationHeight = _windowExtent.height;
-                    destinationOldLayout = depth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+                VkImageMemoryBarrier barrier{};
+                barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                if(data.contentsInitialized || !barriers.empty()){
+                    // Previous usage was shader read.
+                    barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                    barrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 } else {
-                    Assert(framebufferPool.IsValid(blit.dst));
-                    auto& destinationFramebuffer = framebufferPool.Get(blit.dst);
-                    if(depth){
-                        destinationAttachment = &destinationFramebuffer.depthAttachment;
-                    } else {
-                        Assert(static_cast<uint32_t>(blit.srcPass) < destinationFramebuffer.colorAttachments.size());
-                        destinationAttachment = &destinationFramebuffer.colorAttachments[blit.srcPass];
-                    }
-                    destinationImage = destinationAttachment->image;
-                    destinationWidth = destinationFramebuffer.width;
-                    destinationHeight = destinationFramebuffer.height;
-                    destinationOldLayout = destinationFramebuffer.contentsInitialized
-                        ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-                        : VK_IMAGE_LAYOUT_UNDEFINED;
+                    // First usage.
+                    barrier.srcAccessMask = 0;
+                    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
                 }
-
-                std::vector<VkImageMemoryBarrier> barriers;
-                VkImageMemoryBarrier sourceBarrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
-                sourceBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
-                sourceBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-                sourceBarrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                sourceBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-                sourceBarrier.image = source.image;
-                sourceBarrier.subresourceRange = {aspect, 0, 1, 0, 1};
-                barriers.push_back(sourceBarrier);
-
-                destinationBarrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
-                destinationBarrier.srcAccessMask = blit.dst == InvalidID || destinationOldLayout == VK_IMAGE_LAYOUT_UNDEFINED
-                    ? 0
-                    : VK_ACCESS_SHADER_READ_BIT;
-                destinationBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                destinationBarrier.oldLayout = destinationOldLayout;
-                destinationBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-                destinationBarrier.image = destinationImage;
-                destinationBarrier.subresourceRange = {aspect, 0, 1, 0, 1};
-                barriers.push_back(destinationBarrier);
-                vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                    VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr,
-                    static_cast<uint32_t>(barriers.size()), barriers.data());
-
-                VkImageBlit imageBlit{};
-                imageBlit.srcSubresource = {aspect, 0, 0, 1};
-                imageBlit.srcOffsets[1] = {static_cast<int32_t>(sourceWidth), static_cast<int32_t>(sourceHeight), 1};
-                imageBlit.dstSubresource = {aspect, 0, 0, 1};
-                imageBlit.dstOffsets[1] = {static_cast<int32_t>(destinationWidth), static_cast<int32_t>(destinationHeight), 1};
-                vkCmdBlitImage(cmd, source.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                    destinationImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageBlit, VK_FILTER_NEAREST);
-
-                sourceBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-                sourceBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-                sourceBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-                sourceBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                destinationBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-                destinationBarrier.dstAccessMask = blit.dst == InvalidID ? 0 : VK_ACCESS_SHADER_READ_BIT;
-                destinationBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-                destinationBarrier.newLayout = blit.dst == InvalidID
-                    ? (depth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
-                    : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                VkImageMemoryBarrier finalBarriers[] = {sourceBarrier, destinationBarrier};
-                vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                    blit.dst == InvalidID
-                        ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
-                        : VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                    0, 0, nullptr, 0, nullptr, 2, finalBarriers);
-                if(blit.dst != InvalidID)
-                    framebufferPool.Get(blit.dst).contentsInitialized = true;
-                break;
+                barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                barrier.image = attachment.image;
+                barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                barrier.subresourceRange.baseMipLevel = mip;
+                barrier.subresourceRange.levelCount = 1;
+                barrier.subresourceRange.baseArrayLayer = layer;
+                barrier.subresourceRange.layerCount = 1;
+                barriers.push_back(barrier);
             }
 
-            case CommandBuffer::Type::CopyTexture2D:
-            case CommandBuffer::Type::CopyCubemap:{
-                const bool cube = renderCmd.type == CommandBuffer::Type::CopyCubemap;
-                const Framebuffer sourceId = cube ? renderCmd.copyCubemap.src : renderCmd.copyTexture2D.src;
-                const int attachment = cube ? renderCmd.copyCubemap.attachment : renderCmd.copyTexture2D.attachment;
-                Assert(framebufferPool.IsValid(sourceId));
-                auto& sourceFramebuffer = framebufferPool.Get(sourceId);
-                Assert(sourceFramebuffer.layout.type == (cube ? FramebufferAttachmentType::CUBEMAP : FramebufferAttachmentType::TEXTURE_2D));
-                VkImage destinationImage = VK_NULL_HANDLE;
-                ImageFormat destinationFormat = ImageFormat::R8_UNORM;
-                uint32_t destinationWidth = 0, destinationHeight = 0, destinationMipLevels = 0;
-                if(cube){
-                    const auto& destination = cubemapPool.Get(renderCmd.copyCubemap.dst);
-                    destinationImage = destination.image; destinationFormat = destination.info.format;
-                    destinationWidth = destination.info.width; destinationHeight = destination.info.height;
-                    destinationMipLevels = GetTextureMipLevels(destinationWidth, destinationHeight, destination.info.mipmap, destination.info.mipLevels);
+            // Depth attachment
+            if(layout.depthAttachment.format != FramebufferDepthTextureFormat::None && data.contentsInitialized){
+                auto& attachment = data.depthAttachment;
+
+                VkImageMemoryBarrier barrier{};
+                barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                if(data.contentsInitialized || !barriers.empty()){
+                    barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                    barrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                 } else {
-                    const auto& destination = texture2DPool.Get(renderCmd.copyTexture2D.dst);
-                    destinationImage = destination.image; destinationFormat = destination.info.format;
-                    destinationWidth = destination.info.width; destinationHeight = destination.info.height;
-                    destinationMipLevels = GetTextureMipLevels(destinationWidth, destinationHeight, destination.info.mipmap, destination.info.mipLevels);
+                    barrier.srcAccessMask = 0;
+                    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
                 }
-                Assert(attachment < 0 || static_cast<uint32_t>(attachment) < sourceFramebuffer.layout.colorAttachmentsCount);
-                VulkanFramebufferAttachment* source = attachment < 0 ? &sourceFramebuffer.depthAttachment : &sourceFramebuffer.colorAttachments[attachment];
-                const uint32_t sourceMipLevels = sourceFramebuffer.subresourceMipCount;
-                Assert(sourceFramebuffer.width == destinationWidth && sourceFramebuffer.height == destinationHeight);
-                Assert(sourceMipLevels == destinationMipLevels);
-                ImageFormat sourceFormat = ImageFormat::R8_UNORM;
-                if(attachment < 0){
-                    Assert(sourceFramebuffer.layout.depthAttachment.format == FramebufferDepthTextureFormat::DEPTH_COMPONENT16);
-                    sourceFormat = ImageFormat::DEPTH_COMPONENT16;
-                } else {
-                    switch(sourceFramebuffer.layout.colorAttachments[attachment].format){
-                        case FramebufferTextureFormat::RGBA8: sourceFormat = ImageFormat::R8G8B8A8_UNORM; break;
-                        case FramebufferTextureFormat::RGB: sourceFormat = ImageFormat::R8G8B8_UNORM; break;
-                        case FramebufferTextureFormat::RGB11B10F: sourceFormat = ImageFormat::RGB11B10F; break;
-                        case FramebufferTextureFormat::RGB16F: sourceFormat = ImageFormat::RGB16F; break;
-                        case FramebufferTextureFormat::RGBA16F: sourceFormat = ImageFormat::RGBA16F; break;
-                        case FramebufferTextureFormat::RGB32F: sourceFormat = ImageFormat::RGB32F; break;
-                        case FramebufferTextureFormat::RGBA32F: sourceFormat = ImageFormat::RGBA32F; break;
-                        case FramebufferTextureFormat::RED_INTEGER: sourceFormat = ImageFormat::RED_INTEGER; break;
-                        default: Assert(false); break;
-                    }
-                }
-                Assert(sourceFormat == destinationFormat);
-                const VkImageAspectFlags aspect = attachment < 0 ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
-                const uint32_t layers = cube ? 6u : 1u;
-                VkImageMemoryBarrier barriers[2]{};
-                barriers[0] = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
-                barriers[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT; barriers[0].dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-                barriers[0].oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; barriers[0].newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-                barriers[0].image = source->image; barriers[0].subresourceRange = {aspect, 0, sourceMipLevels, 0, layers};
-                barriers[1] = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
-                barriers[1].dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; barriers[1].oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                barriers[1].newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL; barriers[1].image = destinationImage;
-                barriers[1].subresourceRange = {aspect, 0, destinationMipLevels, 0, layers};
-                vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 2, barriers);
-                for(uint32_t mip = 0; mip < sourceMipLevels; ++mip){
-                    VkImageCopy copy{};
-                    copy.srcSubresource = {aspect, mip, 0, layers}; copy.dstSubresource = {aspect, mip, 0, layers};
-                    copy.extent = {std::max(1u, sourceFramebuffer.width >> mip), std::max(1u, sourceFramebuffer.height >> mip), 1};
-                    vkCmdCopyImage(cmd, source->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, destinationImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
-                }
-                barriers[0].srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT; barriers[0].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-                barriers[0].oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL; barriers[0].newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                barriers[1].srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; barriers[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-                barriers[1].oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL; barriers[1].newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 2, barriers);
-                break;
+                barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+                barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                barrier.image = attachment.image;
+                barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                barrier.subresourceRange.baseMipLevel = mip;
+                barrier.subresourceRange.levelCount = 1;
+                barrier.subresourceRange.baseArrayLayer = layer;
+                barrier.subresourceRange.layerCount = 1;
+                barriers.push_back(barrier);
             }
-
-            case CommandBuffer::Type::RenderImGui:{
-                const uint32_t index = renderCmd.renderImGui.snapshotIndex;
-                Assert(index < frame.imguiSnapshots.size());
-
-                const auto& snapshot = frame.imguiSnapshots[index];
-                if(snapshot.data == nullptr || !imguiInitialized)
-                    break;
-
-                ImGuiNewFrame();
-                ResolveImGuiImages(*static_cast<ImDrawData*>(snapshot.data), frame.imguiImages,
-                    [&](uint32_t framebuffer, uint32_t index) -> void* {
-                        if(!framebufferPool.IsValid(framebuffer)) return nullptr;
-                        auto& data = framebufferPool.Get(framebuffer);
-                        if(data.layout.type != FramebufferAttachmentType::TEXTURE_2D || data.layout.samples != 1 ||
-                           !data.contentsInitialized || index >= data.colorAttachments.size() ||
-                           data.layout.colorAttachments[index].format == FramebufferTextureFormat::RED_INTEGER) return nullptr;
-                        auto& attachment = data.colorAttachments[index];
-                        if(attachment.imageView == VK_NULL_HANDLE || attachment.sampler == VK_NULL_HANDLE) return nullptr;
-                        if(attachment.imguiDescriptor == VK_NULL_HANDLE)
-                            attachment.imguiDescriptor = ImGui_ImplVulkan_AddTexture(
-                                attachment.sampler, attachment.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-                        return (ImTextureID)attachment.imguiDescriptor;
-                    });
-                ImGui_ImplVulkan_RenderDrawData(
-                    static_cast<ImDrawData*>(snapshot.data),
-                    cmd
+            if(!barriers.empty()){
+                vkCmdPipelineBarrier(
+                    cmd,
+                    // Source stage
+                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                    // Destination stage
+                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+                    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                    VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                    0,
+                    0,
+                    nullptr,
+                    0,
+                    nullptr,
+                    static_cast<uint32_t>(barriers.size()),
+                    barriers.data()
                 );
+            }
+
+            std::vector<VkClearValue> clearValues;
+
+            // Color clears
+            for(uint32_t i = 0; i < layout.colorAttachmentsCount; ++i){
+                VkClearValue clear{};
+                clear.color.float32[0] = command.clearValue.color.x;
+                clear.color.float32[1] = command.clearValue.color.y;
+                clear.color.float32[2] = command.clearValue.color.z;
+                clear.color.float32[3] = command.clearValue.color.w;
+                clearValues.push_back(clear);
+            }
+
+            // Depth clear
+            if(layout.depthAttachment.format != FramebufferDepthTextureFormat::None){
+                VkClearValue clear{};
+                clear.depthStencil.depth = command.clearValue.depth;
+                clear.depthStencil.stencil = command.clearValue.stencil;
+                clearValues.push_back(clear);
+            }
+
+            VkRenderPassBeginInfo beginInfo{};
+            beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+            beginInfo.renderPass = GetOrCreate(layout, clean);
+            beginInfo.framebuffer = data.subresourceFramebuffers[framebufferIndex];
+            beginInfo.renderArea.offset = { 0, 0 };
+            beginInfo.renderArea.extent = { std::max(1u, data.width >> mip), std::max(1u, data.height >> mip) };
+            beginInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+            beginInfo.pClearValues = clearValues.data();
+            vkCmdBeginRenderPass(cmd, &beginInfo, VK_SUBPASS_CONTENTS_INLINE );
+            break;
+        };
+
+        case CommandBuffer::Type::BeginWindowFramebuffer:{
+            const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, renderCmd, beginWindowFramebuffer);
+            const bool preserveColor = command.preserveColor && hasWindowRenderPass;
+            hasWindowRenderPass = true;
+
+            VkClearValue clearValues[2]{};
+            clearValues[0].color = { { 1.0f, 0.0f, 0.0f, 1.0f } };
+            clearValues[1].depthStencil = { 1.0f, 0 };
+
+            VkRenderPassBeginInfo rpInfo = {};
+            rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+            rpInfo.renderPass = preserveColor ? windowOverlayRenderPass : _renderPass;
+            rpInfo.renderArea.offset = { 0, 0 };
+            rpInfo.renderArea.extent = _windowExtent;
+            rpInfo.framebuffer = _framebuffers[swapchainImageIndex];
+            rpInfo.clearValueCount = 2;
+            rpInfo.pClearValues = clearValues;
+
+            vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+            /*VkViewport viewport{};
+            viewport.x = 0.0f;
+            viewport.y = static_cast<float>(_windowExtent.height); //0.0f;
+            viewport.width = static_cast<float>(_windowExtent.width);
+            viewport.height = -static_cast<float>(_windowExtent.height);// static_cast<float>(_windowExtent.height);
+            viewport.minDepth = 0.0f;
+            viewport.maxDepth = 1.0f;
+            vkCmdSetViewport(cmd, 0, 1, &viewport);
+
+            VkRect2D scissor{};
+            scissor.offset = { 0, 0 };
+            scissor.extent = _windowExtent;
+            vkCmdSetScissor(cmd, 0, 1, &scissor);*/
+            break;
+        }
+
+        case CommandBuffer::Type::BlitFramebuffer:{
+            const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, renderCmd, blitFramebuffer);
+            if(!framebufferPool.IsValid(command.src)){
+                LogWarning("Ignoring BlitFramebuffer for a destroyed framebuffer (id={})", command.src);
+                skipNextEndFramebuffer = true;
                 break;
             }
-        
-            case CommandBuffer::Type::EndFramebuffer:{
-                if(skipNextEndFramebuffer){
-                    skipNextEndFramebuffer = false;
-                    break;
+            Assert(framebufferPool.IsValid(command.src));
+            auto& sourceFramebuffer = framebufferPool.Get(command.src);
+            const bool depth = command.srcPass < 0;
+            if(!depth)
+                Assert(static_cast<uint32_t>(command.srcPass) < sourceFramebuffer.colorAttachments.size());
+
+            VulkanFramebufferAttachment& source = depth
+                ? sourceFramebuffer.depthAttachment
+                : sourceFramebuffer.colorAttachments[command.srcPass];
+            const VkImageAspectFlags aspect = depth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+            const uint32_t sourceWidth = sourceFramebuffer.width;
+            const uint32_t sourceHeight = sourceFramebuffer.height;
+
+            VkImage destinationImage = VK_NULL_HANDLE;
+            uint32_t destinationWidth = sourceWidth;
+            uint32_t destinationHeight = sourceHeight;
+            VkImageLayout destinationOldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            VkImageMemoryBarrier destinationBarrier{};
+            VulkanFramebufferAttachment* destinationAttachment = nullptr;
+
+            if(command.dst == InvalidID){
+                destinationImage = depth ? _windowDepthImage : _swapchainImages[swapchainImageIndex];
+                destinationWidth = _windowExtent.width;
+                destinationHeight = _windowExtent.height;
+                destinationOldLayout = depth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+            } else {
+                Assert(framebufferPool.IsValid(command.dst));
+                auto& destinationFramebuffer = framebufferPool.Get(command.dst);
+                if(depth){
+                    destinationAttachment = &destinationFramebuffer.depthAttachment;
+                } else {
+                    Assert(static_cast<uint32_t>(command.srcPass) < destinationFramebuffer.colorAttachments.size());
+                    destinationAttachment = &destinationFramebuffer.colorAttachments[command.srcPass];
                 }
-                vkCmdEndRenderPass(cmd);
+                destinationImage = destinationAttachment->image;
+                destinationWidth = destinationFramebuffer.width;
+                destinationHeight = destinationFramebuffer.height;
+                destinationOldLayout = destinationFramebuffer.contentsInitialized
+                    ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                    : VK_IMAGE_LAYOUT_UNDEFINED;
+            }
 
-                // Window framebuffer is handled differently.
-                // It must end in PRESENT_SRC_KHR.
-                if(_currentFramebuffer == nullptr) break;
+            std::vector<VkImageMemoryBarrier> barriers;
+            VkImageMemoryBarrier sourceBarrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+            sourceBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            sourceBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            sourceBarrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            sourceBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            sourceBarrier.image = source.image;
+            sourceBarrier.subresourceRange = {aspect, 0, 1, 0, 1};
+            barriers.push_back(sourceBarrier);
 
-                FramebufferData& framebuffer = *_currentFramebuffer;
+            destinationBarrier = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+            destinationBarrier.srcAccessMask = command.dst == InvalidID || destinationOldLayout == VK_IMAGE_LAYOUT_UNDEFINED
+                ? 0
+                : VK_ACCESS_SHADER_READ_BIT;
+            destinationBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            destinationBarrier.oldLayout = destinationOldLayout;
+            destinationBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            destinationBarrier.image = destinationImage;
+            destinationBarrier.subresourceRange = {aspect, 0, 1, 0, 1};
+            barriers.push_back(destinationBarrier);
+            vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr,
+                static_cast<uint32_t>(barriers.size()), barriers.data());
 
-                const auto& layout = framebuffer.layout;
+            VkImageBlit imageBlit{};
+            imageBlit.srcSubresource = {aspect, 0, 0, 1};
+            imageBlit.srcOffsets[1] = {static_cast<int32_t>(sourceWidth), static_cast<int32_t>(sourceHeight), 1};
+            imageBlit.dstSubresource = {aspect, 0, 0, 1};
+            imageBlit.dstOffsets[1] = {static_cast<int32_t>(destinationWidth), static_cast<int32_t>(destinationHeight), 1};
+            vkCmdBlitImage(cmd, source.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                destinationImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageBlit, VK_FILTER_NEAREST);
 
-                std::vector<VkImageMemoryBarrier> barriers;
-                // ------------------------------------------------------------
-                // Color attachments
-                //
-                // COLOR_ATTACHMENT_OPTIMAL
-                //          ↓
-                // SHADER_READ_ONLY_OPTIMAL
-                // ------------------------------------------------------------
-
-                for(uint32_t i = 0; i < layout.colorAttachmentsCount; ++i) {
-                    auto& attachment = framebuffer.colorAttachments[i];
-
-                    VkImageMemoryBarrier barrier{};
-                    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                    barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-                    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-                    barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                    barrier.image = attachment.image;
-                    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-                    barrier.subresourceRange.baseMipLevel = framebuffer.contentsInitialized ? framebuffer.activeMip : 0;
-                    barrier.subresourceRange.levelCount = framebuffer.contentsInitialized ? 1 : framebuffer.subresourceMipCount;
-                    barrier.subresourceRange.baseArrayLayer = framebuffer.contentsInitialized ? framebuffer.activeLayer : 0;
-                    barrier.subresourceRange.layerCount = framebuffer.contentsInitialized ? 1 : (layout.type == FramebufferAttachmentType::CUBEMAP ? 6u : layout.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY ? math::max<uint8_t>(1u, layout.layers) : 1u);
-                    barriers.push_back(barrier);
-                    attachment.initialized = true;
-                }
-
-                // ------------------------------------------------------------
-                // Depth attachment
-                //
-                // DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-                //          ↓
-                // SHADER_READ_ONLY_OPTIMAL
-                // ------------------------------------------------------------
-                if(layout.depthAttachment.format != FramebufferDepthTextureFormat::None){
-                    auto& attachment = framebuffer.depthAttachment;
-
-                    VkImageMemoryBarrier barrier{};
-                    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-                    barrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-                    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-                    barrier.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-                    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-                    barrier.image = attachment.image;
-                    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-                    barrier.subresourceRange.baseMipLevel = framebuffer.contentsInitialized ? framebuffer.activeMip : 0;
-                    barrier.subresourceRange.levelCount = framebuffer.contentsInitialized ? 1 : framebuffer.subresourceMipCount;
-                    barrier.subresourceRange.baseArrayLayer = framebuffer.contentsInitialized ? framebuffer.activeLayer : 0;
-                    barrier.subresourceRange.layerCount = framebuffer.contentsInitialized ? 1 : (layout.type == FramebufferAttachmentType::CUBEMAP ? 6u : layout.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY ? math::max<uint8_t>(1u, layout.layers) : 1u);
-                    barriers.push_back(barrier);
-                    attachment.initialized = true;
-                }
-                if(!barriers.empty()){
-                    vkCmdPipelineBarrier(
-                        cmd,
-                        // Source
-                        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-                        VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-                        VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-                        // Destination
-                        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                        0,
-                        0,
-                        nullptr,
-                        0,
-                        nullptr,
-                        static_cast<uint32_t>(barriers.size()),
-                        barriers.data()
-                    );
-                }
-
-                _currentFramebuffer = nullptr;
-                framebuffer.contentsInitialized = true;
-                break;
-            };
+            sourceBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            sourceBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            sourceBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            sourceBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            destinationBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            destinationBarrier.dstAccessMask = command.dst == InvalidID ? 0 : VK_ACCESS_SHADER_READ_BIT;
+            destinationBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            destinationBarrier.newLayout = command.dst == InvalidID
+                ? (depth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
+                : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            VkImageMemoryBarrier finalBarriers[] = {sourceBarrier, destinationBarrier};
+            vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                command.dst == InvalidID
+                    ? VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
+                    : VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                0, 0, nullptr, 0, nullptr, 2, finalBarriers);
+            if(command.dst != InvalidID)
+                framebufferPool.Get(command.dst).contentsInitialized = true;
+            break;
         }
+
+        case CommandBuffer::Type::CopyTexture2D:
+        case CommandBuffer::Type::CopyCubemap:{
+            const bool cube = type == CommandBuffer::Type::CopyCubemap;
+            const auto [sourceId, attachment, destinationId] = [&]()
+                -> decltype(CommandBuffer::Command::copyTexture2D) {
+                if(cube){
+                    const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, renderCmd, copyCubemap);
+                    return {command.src, command.attachment, command.dst};
+                }
+                const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, renderCmd, copyTexture2D);
+                return command;
+            }();
+            Assert(framebufferPool.IsValid(sourceId));
+            auto& sourceFramebuffer = framebufferPool.Get(sourceId);
+            Assert(sourceFramebuffer.layout.type == (cube ? FramebufferAttachmentType::CUBEMAP : FramebufferAttachmentType::TEXTURE_2D));
+            VkImage destinationImage = VK_NULL_HANDLE;
+            ImageFormat destinationFormat = ImageFormat::R8_UNORM;
+            uint32_t destinationWidth = 0, destinationHeight = 0, destinationMipLevels = 0;
+            if(cube){
+                const auto& destination = cubemapPool.Get(destinationId);
+                destinationImage = destination.image; destinationFormat = destination.info.format;
+                destinationWidth = destination.info.width; destinationHeight = destination.info.height;
+                destinationMipLevels = GetTextureMipLevels(destinationWidth, destinationHeight, destination.info.mipmap, destination.info.mipLevels);
+            } else {
+                const auto& destination = texture2DPool.Get(destinationId);
+                destinationImage = destination.image; destinationFormat = destination.info.format;
+                destinationWidth = destination.info.width; destinationHeight = destination.info.height;
+                destinationMipLevels = GetTextureMipLevels(destinationWidth, destinationHeight, destination.info.mipmap, destination.info.mipLevels);
+            }
+            Assert(attachment < 0 || static_cast<uint32_t>(attachment) < sourceFramebuffer.layout.colorAttachmentsCount);
+            VulkanFramebufferAttachment* source = attachment < 0 ? &sourceFramebuffer.depthAttachment : &sourceFramebuffer.colorAttachments[attachment];
+            const uint32_t sourceMipLevels = sourceFramebuffer.subresourceMipCount;
+            Assert(sourceFramebuffer.width == destinationWidth && sourceFramebuffer.height == destinationHeight);
+            Assert(sourceMipLevels == destinationMipLevels);
+            ImageFormat sourceFormat = ImageFormat::R8_UNORM;
+            if(attachment < 0){
+                Assert(sourceFramebuffer.layout.depthAttachment.format == FramebufferDepthTextureFormat::DEPTH_COMPONENT16);
+                sourceFormat = ImageFormat::DEPTH_COMPONENT16;
+            } else {
+                switch(sourceFramebuffer.layout.colorAttachments[attachment].format){
+                    case FramebufferTextureFormat::RGBA8: sourceFormat = ImageFormat::R8G8B8A8_UNORM; break;
+                    case FramebufferTextureFormat::RGB: sourceFormat = ImageFormat::R8G8B8_UNORM; break;
+                    case FramebufferTextureFormat::RGB11B10F: sourceFormat = ImageFormat::RGB11B10F; break;
+                    case FramebufferTextureFormat::RGB16F: sourceFormat = ImageFormat::RGB16F; break;
+                    case FramebufferTextureFormat::RGBA16F: sourceFormat = ImageFormat::RGBA16F; break;
+                    case FramebufferTextureFormat::RGB32F: sourceFormat = ImageFormat::RGB32F; break;
+                    case FramebufferTextureFormat::RGBA32F: sourceFormat = ImageFormat::RGBA32F; break;
+                    case FramebufferTextureFormat::RED_INTEGER: sourceFormat = ImageFormat::RED_INTEGER; break;
+                    default: Assert(false); break;
+                }
+            }
+            Assert(sourceFormat == destinationFormat);
+            const VkImageAspectFlags aspect = attachment < 0 ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+            const uint32_t layers = cube ? 6u : 1u;
+            VkImageMemoryBarrier barriers[2]{};
+            barriers[0] = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+            barriers[0].srcAccessMask = VK_ACCESS_SHADER_READ_BIT; barriers[0].dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            barriers[0].oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; barriers[0].newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            barriers[0].image = source->image; barriers[0].subresourceRange = {aspect, 0, sourceMipLevels, 0, layers};
+            barriers[1] = {VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+            barriers[1].dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; barriers[1].oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            barriers[1].newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL; barriers[1].image = destinationImage;
+            barriers[1].subresourceRange = {aspect, 0, destinationMipLevels, 0, layers};
+            vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 2, barriers);
+            for(uint32_t mip = 0; mip < sourceMipLevels; ++mip){
+                VkImageCopy copy{};
+                copy.srcSubresource = {aspect, mip, 0, layers}; copy.dstSubresource = {aspect, mip, 0, layers};
+                copy.extent = {std::max(1u, sourceFramebuffer.width >> mip), std::max(1u, sourceFramebuffer.height >> mip), 1};
+                vkCmdCopyImage(cmd, source->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, destinationImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+            }
+            barriers[0].srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT; barriers[0].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            barriers[0].oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL; barriers[0].newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            barriers[1].srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT; barriers[1].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            barriers[1].oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL; barriers[1].newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 2, barriers);
+            if(!cube) texture2DPool.Get(destinationId).baseMipInitialized = true;
+            break;
+        }
+
+        case CommandBuffer::Type::RenderImGui:{
+            const auto& command = OD_GFX_COMMAND_FIELD(CommandBuffer, renderCmd, renderImGui);
+            const uint32_t index = command.snapshotIndex;
+            Assert(index < frame.imguiSnapshots.size());
+
+            const auto& snapshot = frame.imguiSnapshots[index];
+            if(snapshot.data == nullptr || !imguiInitialized)
+                break;
+
+            ImGuiNewFrame();
+            ResolveImGuiImages(*static_cast<ImDrawData*>(snapshot.data), frame.imguiImages,
+                [&](uint32_t framebuffer, uint32_t index) -> void* {
+                    if(!framebufferPool.IsValid(framebuffer)) return nullptr;
+                    auto& data = framebufferPool.Get(framebuffer);
+                    if(data.layout.type != FramebufferAttachmentType::TEXTURE_2D || data.layout.samples != 1 ||
+                       !data.contentsInitialized || index >= data.colorAttachments.size() ||
+                       data.layout.colorAttachments[index].format == FramebufferTextureFormat::RED_INTEGER) return nullptr;
+                    auto& attachment = data.colorAttachments[index];
+                    if(attachment.imageView == VK_NULL_HANDLE || attachment.sampler == VK_NULL_HANDLE) return nullptr;
+                    if(attachment.imguiDescriptor == VK_NULL_HANDLE)
+                        attachment.imguiDescriptor = ImGui_ImplVulkan_AddTexture(
+                            attachment.sampler, attachment.imageView, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                    return (ImTextureID)attachment.imguiDescriptor;
+                }, [&](uint32_t texture) -> void* {
+                    if(!texture2DPool.IsValid(texture)) return nullptr;
+                    auto& data = texture2DPool.Get(texture);
+                    if(!data.baseMipInitialized || data.info.format == ImageFormat::RED_INTEGER ||
+                       GetImageAspect(data.info.format) != VK_IMAGE_ASPECT_COLOR_BIT) return nullptr;
+                    if(data.imguiDescriptor == VK_NULL_HANDLE){
+                        auto info = vkinit::imageview_create_info(GetImageFormat(data.info.format), data.image, VK_IMAGE_ASPECT_COLOR_BIT);
+                        VK_CHECK(vkCreateImageView(_device, &info, nullptr, &data.imguiView));
+                        data.imguiDescriptor = ImGui_ImplVulkan_AddTexture(data.sampler, data.imguiView,
+                            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+                    }
+                    return (ImTextureID)data.imguiDescriptor;
+                });
+            ImGui_ImplVulkan_RenderDrawData(
+                static_cast<ImDrawData*>(snapshot.data),
+                cmd
+            );
+            break;
+        }
+
+        case CommandBuffer::Type::EndFramebuffer:{
+            if(skipNextEndFramebuffer){
+                skipNextEndFramebuffer = false;
+                break;
+            }
+            vkCmdEndRenderPass(cmd);
+
+            // Window framebuffer is handled differently.
+            // It must end in PRESENT_SRC_KHR.
+            if(currentFramebuffer == nullptr) break;
+
+            FramebufferData& framebuffer = *currentFramebuffer;
+
+            const auto& layout = framebuffer.layout;
+
+            std::vector<VkImageMemoryBarrier> barriers;
+            // ------------------------------------------------------------
+            // Color attachments
+            //
+            // COLOR_ATTACHMENT_OPTIMAL
+            //          ↓
+            // SHADER_READ_ONLY_OPTIMAL
+            // ------------------------------------------------------------
+
+            for(uint32_t i = 0; i < layout.colorAttachmentsCount; ++i) {
+                auto& attachment = framebuffer.colorAttachments[i];
+
+                VkImageMemoryBarrier barrier{};
+                barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+                barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                barrier.image = attachment.image;
+                barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                barrier.subresourceRange.baseMipLevel = framebuffer.contentsInitialized ? framebuffer.activeMip : 0;
+                barrier.subresourceRange.levelCount = framebuffer.contentsInitialized ? 1 : framebuffer.subresourceMipCount;
+                barrier.subresourceRange.baseArrayLayer = framebuffer.contentsInitialized ? framebuffer.activeLayer : 0;
+                barrier.subresourceRange.layerCount = framebuffer.contentsInitialized ? 1 : (layout.type == FramebufferAttachmentType::CUBEMAP ? 6u : layout.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY ? math::max<uint8_t>(1u, layout.layers) : 1u);
+                barriers.push_back(barrier);
+                attachment.initialized = true;
+            }
+
+            // ------------------------------------------------------------
+            // Depth attachment
+            //
+            // DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+            //          ↓
+            // SHADER_READ_ONLY_OPTIMAL
+            // ------------------------------------------------------------
+            if(layout.depthAttachment.format != FramebufferDepthTextureFormat::None){
+                auto& attachment = framebuffer.depthAttachment;
+
+                VkImageMemoryBarrier barrier{};
+                barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+                barrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+                barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+                barrier.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+                barrier.image = attachment.image;
+                barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                barrier.subresourceRange.baseMipLevel = framebuffer.contentsInitialized ? framebuffer.activeMip : 0;
+                barrier.subresourceRange.levelCount = framebuffer.contentsInitialized ? 1 : framebuffer.subresourceMipCount;
+                barrier.subresourceRange.baseArrayLayer = framebuffer.contentsInitialized ? framebuffer.activeLayer : 0;
+                barrier.subresourceRange.layerCount = framebuffer.contentsInitialized ? 1 : (layout.type == FramebufferAttachmentType::CUBEMAP ? 6u : layout.type == FramebufferAttachmentType::TEXTURE_2D_ARRAY ? math::max<uint8_t>(1u, layout.layers) : 1u);
+                barriers.push_back(barrier);
+                attachment.initialized = true;
+            }
+            if(!barriers.empty()){
+                vkCmdPipelineBarrier(
+                    cmd,
+                    // Source
+                    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
+                    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                    VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                    // Destination
+                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                    0,
+                    0,
+                    nullptr,
+                    0,
+                    nullptr,
+                    static_cast<uint32_t>(barriers.size()),
+                    barriers.data()
+                );
+            }
+
+            currentFramebuffer = nullptr;
+            framebuffer.contentsInitialized = true;
+            break;
+        };
+    }
+}
+
+void VulkanGPUDevice::FinishRenderFrame(RenderFrame& frame){
+    if(!IsThreaded()){
+        SimpleTimer timer([&](float t){ profilesGpu.push_back({"FlushUploads", t}); });
+        flush_pending_buffer_uploads();
+        GetStagingPool(frame).Reset();
+    }
+    if(renderState.commandBuffer != VK_NULL_HANDLE){
+        SubmitRenderCommands();
     }
 
-    /*for(const ResourceCommands::Command& cmd : frame.resourcePostCommands.commands){
-        switch(cmd.type){
-            case ResourceCommands::Type::DestroyBuffer:{
-                if(!bufferPool.IsValid(cmd.destroyBuffer.id)){
-                    LogError("DestroyBuffer: Invalid id!");
-                    break;
-                }
-
-                Assert(bufferPool.IsValid(cmd.destroyBuffer.id));
-                bufferPool.AddDestroyedId(cmd.destroyBuffer.id);
-                break;
-            }
-
-            case ResourceCommands::Type::DestroyTexture2D:{
-                Assert(texture2DPool.IsValid(cmd.destroyTexture2D.id));
-                texture2DPool.AddDestroyedId(cmd.destroyTexture2D.id);
-                break;
-            }
-
-            case ResourceCommands::Type::DestroyTexture2DArray:{
-                Assert(texture2DArrayPool.IsValid(cmd.destroyTexture2DArray.id));
-                texture2DArrayPool.AddDestroyedId(cmd.destroyTexture2DArray.id);
-                break;
-            }
-
-            case ResourceCommands::Type::DestroyCubemap:{
-                Assert(cubemapPool.IsValid(cmd.destroyCubemap.id));
-                cubemapPool.AddDestroyedId(cmd.destroyCubemap.id);
-                break;
-            }
-
-            case ResourceCommands::Type::DestroyPipeline:{
-                Assert(pipelinePool.IsValid(cmd.destroyPipeline.id));
-                pipelinePool.AddDestroyedId(cmd.destroyPipeline.id);
-                break;
-            }
-            
-            case ResourceCommands::Type::DestroyBindGroupLayout:{
-                Assert(bindGroupLayoutPool.IsValid(cmd.destroyBindGroupLayout.id));
-                bindGroupLayoutPool.AddDestroyedId(cmd.destroyBindGroupLayout.id);
-                break;
-            }
-
-            case ResourceCommands::Type::DestroyFramebuffer:{
-                Assert(framebufferPool.IsValid(cmd.destroyFramebuffer.id));
-                framebufferPool.AddDestroyedId(cmd.destroyFramebuffer.id);
-                break;
-            }
-            
-            default: Assert(false);
-        }
-    }*/
-
-    /*for(auto& i: framebufferDeleteQueue){
-        auto& data = framebufferPool.Get(i);
-        _DestroyFramebuffer(data);
-        framebufferPool.AddDestroyedId(i);
-    }*/
-
-    if(hasWindowRenderPass == false){
-        VkClearValue clearValues[2]{};
-        clearValues[0].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
-        clearValues[1].depthStencil = { 1.0f, 0 };
-        VkRenderPassBeginInfo rpInfo = {};
-        rpInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        rpInfo.renderPass = _renderPass;
-        rpInfo.renderArea.offset = { 0, 0 };
-        rpInfo.renderArea.extent = _windowExtent;
-        rpInfo.framebuffer = _framebuffers[swapchainImageIndex];
-        rpInfo.clearValueCount = 2;
-        rpInfo.pClearValues = clearValues;
-        vkCmdBeginRenderPass(cmd, &rpInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-        /*VkClearAttachment clearAttachment{};
-        clearAttachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        clearAttachment.colorAttachment = 0;
-        clearAttachment.clearValue.color = { {
-            1,
-            1,
-            1,
-            1
-        } };
-
-        VkClearRect clearRect{};
-        clearRect.rect.offset = { 0, 0 };
-        clearRect.rect.extent = _windowExtent;
-        clearRect.baseArrayLayer = 0;
-        clearRect.layerCount = 1;
-
-        vkCmdClearAttachments(cmd, 1, &clearAttachment, 1, &clearRect);*/
-
-        vkCmdEndRenderPass(cmd);
+    if(IsThreaded()){
+        WaitForSubmittedFrame();
+        RetireFrameResources(frame.resourcePostCommands);
+    } else if(frameInFlight){
+        // Keep this submission's destroys separate from the next frame's CPU work.
+        std::swap(submittedDestroyCommands.commands, frame.resourcePostCommands.commands);
+    } else {
+        // A skipped frame can allocate descriptors and queue destroys without submitting.
+        RetireFrameResources(frame.resourcePostCommands);
+        VK_CHECK(vkResetDescriptorPool(_device, get_current_frame()._descriptorPool, 0));
     }
+    renderState = {};
+}
 
-    //vkCmdEndRenderPass(cmd);
-    VK_CHECK(vkEndCommandBuffer(cmd));
-    commandRecordingTimer.Stop();
-    commandTimer.Stop();
-    SimpleTimer submitTimer([&](float t){ profilesGpu.push_back({"SubmitAndPresent", t}); });
-
-    VkSubmitInfo submit = {};
-    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    submit.pWaitDstStageMask = &waitStage;
-    submit.waitSemaphoreCount = 1;
-    submit.pWaitSemaphores = &get_current_frame()._presentSemaphore;
-    submit.signalSemaphoreCount = 1;
-    VkSemaphore renderSemaphore =_renderSemaphores[swapchainImageIndex];
-    submit.pSignalSemaphores = &renderSemaphore; //&get_current_frame()._renderSemaphore;
-    submit.commandBufferCount = 1;
-    submit.pCommandBuffers = &cmd;
-
-    VK_CHECK(vkQueueSubmit(_graphicsQueue, 1, &submit, get_current_frame()._renderFence));
-
-    VkPresentInfoKHR presentInfo = {};
-    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    presentInfo.pSwapchains = &_swapchain;
-    presentInfo.swapchainCount = 1;
-    presentInfo.pWaitSemaphores = &renderSemaphore; //;// &get_current_frame()._renderSemaphore;
-    presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pImageIndices = &swapchainImageIndex;
-
-    VkResult presentResult = vkQueuePresentKHR(_graphicsQueue, &presentInfo);
-    if(presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR)
-        RecreateSwapchain();
-    else
-        VK_CHECK(presentResult);
-    _frameNumber++;
-
-    for(auto i: frameBindGroups){
-        bindGroupPool.AddDestroyedId(i);
+void VulkanGPUDevice::RetireFrameResources(const ResourceCommands& destroyCommands){
+    for(auto id : frameBindGroups){
+        bindGroupPool.AddDestroyedId(id);
     }
     frameBindGroups.clear();
 
+#ifdef TEST_NEW_CMD
+    destroyCommands.commands.ForEach([&](ResourceCommands::Type type, const void* payload){
+        ExecuteDestroyCommand(type, payload);
+    });
+#else
+    for(const auto& cmd : destroyCommands.commands) ExecuteDestroyCommand(cmd);
+#endif
+}
+
+void VulkanGPUDevice::SyncGpu(){
+    if(IsThreaded() || !frameInFlight) return;
+
+    WaitForSubmittedFrame();
+    // Creating a frame bind group also enters SyncGpu before it can add to this list.
+    RetireFrameResources(submittedDestroyCommands);
+    submittedDestroyCommands.Clear();
+    VK_CHECK(vkResetDescriptorPool(_device, get_current_frame()._descriptorPool, 0));
+}
+
+void VulkanGPUDevice::SubmitRenderCommands(){
+    const VkCommandBuffer cmd = renderState.commandBuffer;
+    const uint32_t swapchainImageIndex = renderState.swapchainImageIndex;
+    if(!renderState.hasWindowRenderPass){
+        VkClearValue clearValues[2]{};
+        clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+        clearValues[1].depthStencil = {1.0f, 0};
+        VkRenderPassBeginInfo pass{};
+        pass.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        pass.renderPass = _renderPass;
+        pass.renderArea.extent = _windowExtent;
+        pass.framebuffer = _framebuffers[swapchainImageIndex];
+        pass.clearValueCount = 2;
+        pass.pClearValues = clearValues;
+        vkCmdBeginRenderPass(cmd, &pass, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdEndRenderPass(cmd);
+    }
+    VK_CHECK(vkEndCommandBuffer(cmd));
+
+    SimpleTimer submitTimer([&](float t){ profilesGpu.push_back({"SubmitAndPresent", t}); });
+    auto& frame = get_current_frame();
+    const VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    const VkSemaphore renderSemaphore = _renderSemaphores[swapchainImageIndex];
+    VkSubmitInfo submit{};
+    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit.pWaitDstStageMask = &waitStage;
+    submit.waitSemaphoreCount = 1;
+    submit.pWaitSemaphores = &frame._presentSemaphore;
+    submit.signalSemaphoreCount = 1;
+    submit.pSignalSemaphores = &renderSemaphore;
+    submit.commandBufferCount = 1;
+    submit.pCommandBuffers = &cmd;
+
+    VK_CHECK(vkResetFences(_device, 1, &frame._renderFence));
+    VK_CHECK(vkQueueSubmit(_graphicsQueue, 1, &submit, frame._renderFence));
+    frameInFlight = true;
+
+    VkPresentInfoKHR presentInfo{};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = &_swapchain;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = &renderSemaphore;
+    presentInfo.pImageIndices = &swapchainImageIndex;
+
+    const VkResult result = vkQueuePresentKHR(_graphicsQueue, &presentInfo);
+    const bool recreate = result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR;
+    if(!recreate) VK_CHECK(result);
+    recreateAfterSubmission = recreate || renderState.recreateAfterPresent;
+}
+
+void VulkanGPUDevice::WaitForSubmittedFrame(){
+    if(!frameInFlight) return;
+
+    auto& frame = get_current_frame();
     {
         SimpleTimer timer([&](float t){ profilesGpu.push_back({"FenceWait", t}); });
-        VK_CHECK(vkWaitForFences(_device, 1, &get_current_frame()._renderFence, true, 1000000000));
+        VK_CHECK(vkWaitForFences(_device, 1, &frame._renderFence, true, 1000000000));
     }
+    frameInFlight = false;
+    ++_frameNumber;
+    if(std::exchange(recreateAfterSubmission, false)) RecreateSwapchain(true);
+}
 
-    for(const ResourceCommands::Command& cmd : frame.resourcePostCommands.commands){
-        switch(cmd.type){
-            case ResourceCommands::Type::DestroyBuffer:{
-                if(!bufferPool.IsValid(cmd.destroyBuffer.id)){
-                    LogError("DestroyBuffer: Invalid id!");
-                    break;
-                }
-
-                Assert(bufferPool.IsValid(cmd.destroyBuffer.id));
-                auto& data = bufferPool.Get(cmd.destroyBuffer.id);
-                _DestroyBuffer(data);
-                bufferPool.AddDestroyedId(cmd.destroyBuffer.id);
+#ifdef TEST_NEW_CMD
+void VulkanGPUDevice::ExecuteDestroyCommand(ResourceCommands::Type type, const void* payload){
+#else
+void VulkanGPUDevice::ExecuteDestroyCommand(const ResourceCommands::Command& cmd){
+    const auto type = cmd.type;
+#endif
+    switch(type){
+        case ResourceCommands::Type::DestroyBuffer:{
+            const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, destroyBuffer);
+            if(!bufferPool.IsValid(command.id)){
+                LogError("DestroyBuffer: Invalid id!");
                 break;
             }
 
-            case ResourceCommands::Type::DestroyTexture2D:{
-                Assert(texture2DPool.IsValid(cmd.destroyTexture2D.id));
-                auto& data = texture2DPool.Get(cmd.destroyTexture2D.id);
-                _DestroyTexture2D(data);
-                texture2DPool.AddDestroyedId(cmd.destroyTexture2D.id);
-                break;
-            }
-
-            case ResourceCommands::Type::DestroyTexture2DArray:{
-                Assert(texture2DArrayPool.IsValid(cmd.destroyTexture2DArray.id));
-                _DestroyTexture2DArray(texture2DArrayPool.Get(cmd.destroyTexture2DArray.id));
-                texture2DArrayPool.AddDestroyedId(cmd.destroyTexture2DArray.id);
-                break;
-            }
-
-            case ResourceCommands::Type::DestroyCubemap:{
-                Assert(cubemapPool.IsValid(cmd.destroyCubemap.id));
-                _DestroyCubemap(cubemapPool.Get(cmd.destroyCubemap.id));
-                cubemapPool.AddDestroyedId(cmd.destroyCubemap.id);
-                break;
-            }
-
-            case ResourceCommands::Type::DestroyPipeline:{
-                Assert(pipelinePool.IsValid(cmd.destroyPipeline.id));
-                auto& data = pipelinePool.Get(cmd.destroyPipeline.id);
-                _DestroyPipeline(data);
-                pipelinePool.AddDestroyedId(cmd.destroyPipeline.id);
-                break;
-            }
-            
-            case ResourceCommands::Type::DestroyBindGroupLayout:{
-                Assert(bindGroupLayoutPool.IsValid(cmd.destroyBindGroupLayout.id));
-                BindGroupLayoutData& data = bindGroupLayoutPool.Get(cmd.destroyBindGroupLayout.id);
-                _DestroyBindGroupLayout(data);
-                bindGroupLayoutPool.AddDestroyedId(cmd.destroyBindGroupLayout.id);
-                break;
-            }
-
-            case ResourceCommands::Type::DestroyFramebuffer:{
-                Assert(framebufferPool.IsValid(cmd.destroyFramebuffer.id));
-                auto& data = framebufferPool.Get(cmd.destroyFramebuffer.id);
-                _DestroyFramebuffer(data);
-                framebufferPool.AddDestroyedId(cmd.destroyFramebuffer.id);
-                break;
-            }
-            
-            default: Assert(false);
+            Assert(bufferPool.IsValid(command.id));
+            auto& data = bufferPool.Get(command.id);
+            _DestroyBuffer(data);
+            bufferPool.AddDestroyedId(command.id);
+            break;
         }
+
+        case ResourceCommands::Type::DestroyTexture2D:{
+            const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, destroyTexture2D);
+            Assert(texture2DPool.IsValid(command.id));
+            auto& data = texture2DPool.Get(command.id);
+            _DestroyTexture2D(data);
+            texture2DPool.AddDestroyedId(command.id);
+            break;
+        }
+
+        case ResourceCommands::Type::DestroyTexture2DArray:{
+            const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, destroyTexture2DArray);
+            Assert(texture2DArrayPool.IsValid(command.id));
+            _DestroyTexture2DArray(texture2DArrayPool.Get(command.id));
+            texture2DArrayPool.AddDestroyedId(command.id);
+            break;
+        }
+
+        case ResourceCommands::Type::DestroyCubemap:{
+            const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, destroyCubemap);
+            Assert(cubemapPool.IsValid(command.id));
+            _DestroyCubemap(cubemapPool.Get(command.id));
+            cubemapPool.AddDestroyedId(command.id);
+            break;
+        }
+
+        case ResourceCommands::Type::DestroyPipeline:{
+            const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, destroyPipeline);
+            Assert(pipelinePool.IsValid(command.id));
+            auto& data = pipelinePool.Get(command.id);
+            _DestroyPipeline(data);
+            pipelinePool.AddDestroyedId(command.id);
+            break;
+        }
+
+        case ResourceCommands::Type::DestroyBindGroupLayout:{
+            const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, destroyBindGroupLayout);
+            Assert(bindGroupLayoutPool.IsValid(command.id));
+            BindGroupLayoutData& data = bindGroupLayoutPool.Get(command.id);
+            _DestroyBindGroupLayout(data);
+            bindGroupLayoutPool.AddDestroyedId(command.id);
+            break;
+        }
+
+        case ResourceCommands::Type::DestroyFramebuffer:{
+            const auto& command = OD_GFX_COMMAND_FIELD(ResourceCommands, cmd, destroyFramebuffer);
+            Assert(framebufferPool.IsValid(command.id));
+            auto& data = framebufferPool.Get(command.id);
+            framebuffersToInitialize.erase(command.id);
+            _DestroyFramebuffer(data);
+            framebufferPool.AddDestroyedId(command.id);
+            break;
+        }
+
+        default: Assert(false);
     }
 }
 
@@ -3756,22 +3837,29 @@ Buffer VulkanGPUDevice::CreateBuffer(size_t size, BufferUsage usage, BufferMemor
     if(!_CreateBuffer(data, size, usage, memory)) return InvalidID;
     auto id = bufferPool.AllocId();
     bufferPool.CpuPushResource(id, data);
+    if(memory == BufferMemory::GPUOnly) gpuOnlyUploadBuffers.insert(id);
     return id;
 
     #else
 
     auto id = bufferPool.AllocId();
     multithreadRendererContext.simulationFrame->resourceCommands.CreateBuffer(id, size, usage, memory);
+    if(memory == BufferMemory::GPUOnly) gpuOnlyUploadBuffers.insert(id);
     return id;
 
     #endif
 }
 
 void VulkanGPUDevice::UpdatedBuffer(Buffer buffer, const void* data, size_t size){
-    multithreadRendererContext.simulationFrame->resourceCommands.UpdatedBuffer(buffer, data, size);
+    if(data == nullptr || size == 0) return;
+    auto& frame = *multithreadRendererContext.simulationFrame;
+    const auto* staged = IsThreaded() && gpuOnlyUploadBuffers.find(buffer) != gpuOnlyUploadBuffers.end()
+        ? GetStagingPool(frame).Stage(data, size) : nullptr;
+    frame.resourceCommands.UpdatedBuffer(buffer, staged != nullptr ? staged->data : data, size, staged);
 }
 
 void VulkanGPUDevice::DestroyBuffer(Buffer id){
+    gpuOnlyUploadBuffers.erase(id);
     multithreadRendererContext.simulationFrame->resourcePostCommands.DestroyBuffer(id);
 }
 
@@ -3782,22 +3870,29 @@ Texture2D VulkanGPUDevice::CreateTexture2D(Texture2DInfo& info){
     if(!_CreateTexture2D(data, info)) return InvalidID;
     auto id = texture2DPool.AllocId();
     texture2DPool.CpuPushResource(id, data);
+    if(info.format == ImageFormat::R8G8B8_UNORM || info.format == ImageFormat::R8G8B8_SRGB) rgbTextures.insert(id);
     return id;
 
     #else
 
     auto id = texture2DPool.AllocId();
     multithreadRendererContext.simulationFrame->resourceCommands.CreateTexture2D(id, info);
+    if(info.format == ImageFormat::R8G8B8_UNORM || info.format == ImageFormat::R8G8B8_SRGB) rgbTextures.insert(id);
     return id;
 
     #endif
 }
 
 void VulkanGPUDevice::UploadTexture2D(Texture2D texture, const void* data, size_t size, int mipLevel){
-    multithreadRendererContext.simulationFrame->resourceCommands.UploadTexture2D(texture, data, size, mipLevel);
+    if(data == nullptr || size == 0) return;
+    auto& frame = *multithreadRendererContext.simulationFrame;
+    const auto* staged = IsThreaded() && rgbTextures.find(texture) == rgbTextures.end()
+        ? GetStagingPool(frame).Stage(data, size) : nullptr;
+    frame.resourceCommands.UploadTexture2D(texture, staged != nullptr ? staged->data : data, size, mipLevel, staged);
 }
 
 void VulkanGPUDevice::DestroyTexture2D(Texture2D tex){
+    rgbTextures.erase(tex);
     multithreadRendererContext.simulationFrame->resourcePostCommands.DestroyTexture2D(tex);
 }
 
@@ -3807,19 +3902,26 @@ Texture2DArray VulkanGPUDevice::CreateTexture2DArray(Texture2DArrayInfo& info){
     if(!_CreateTexture2DArray(data, info)) return InvalidID;
     auto id = texture2DArrayPool.AllocId();
     texture2DArrayPool.CpuPushResource(id, data);
+    if(info.format == ImageFormat::R8G8B8_UNORM || info.format == ImageFormat::R8G8B8_SRGB) rgbTextureArrays.insert(id);
     return id;
 #else
     auto id = texture2DArrayPool.AllocId();
     multithreadRendererContext.simulationFrame->resourceCommands.CreateTexture2DArray(id, info);
+    if(info.format == ImageFormat::R8G8B8_UNORM || info.format == ImageFormat::R8G8B8_SRGB) rgbTextureArrays.insert(id);
     return id;
 #endif
 }
 
 void VulkanGPUDevice::UploadTexture2DArray(Texture2DArray texture, const void* data, size_t size, int arrayElement, int mipLevel){
-    multithreadRendererContext.simulationFrame->resourceCommands.UploadTexture2DArray(texture, data, size, arrayElement, mipLevel);
+    if(data == nullptr || size == 0) return;
+    auto& frame = *multithreadRendererContext.simulationFrame;
+    const auto* staged = IsThreaded() && rgbTextureArrays.find(texture) == rgbTextureArrays.end()
+        ? GetStagingPool(frame).Stage(data, size) : nullptr;
+    frame.resourceCommands.UploadTexture2DArray(texture, staged != nullptr ? staged->data : data, size, arrayElement, mipLevel, staged);
 }
 
 void VulkanGPUDevice::DestroyTexture2DArray(Texture2DArray tex){
+    rgbTextureArrays.erase(tex);
     multithreadRendererContext.simulationFrame->resourcePostCommands.DestroyTexture2DArray(tex);
 }
 
@@ -3830,26 +3932,37 @@ Cubemap VulkanGPUDevice::CreateCubemap(CubemapInfo& info){
     if(!_CreateCubemap(data, info)) return InvalidID;
     auto id = cubemapPool.AllocId();
     cubemapPool.CpuPushResource(id, data);
+    if(info.format == ImageFormat::R8G8B8_UNORM || info.format == ImageFormat::R8G8B8_SRGB) rgbCubemaps.insert(id);
     return id;
 
     #else
 
     auto id = cubemapPool.AllocId();
     multithreadRendererContext.simulationFrame->resourceCommands.CreateCubemap(id, info);
+    if(info.format == ImageFormat::R8G8B8_UNORM || info.format == ImageFormat::R8G8B8_SRGB) rgbCubemaps.insert(id);
     return id;
 
     #endif
 }
 
 void VulkanGPUDevice::UploadCubemap(Cubemap cubemap, const void* data, size_t size, int mipLevel){
-    multithreadRendererContext.simulationFrame->resourceCommands.UploadCubemap(cubemap, data, size, mipLevel);
+    if(data == nullptr || size == 0) return;
+    auto& frame = *multithreadRendererContext.simulationFrame;
+    const auto* staged = IsThreaded() && rgbCubemaps.find(cubemap) == rgbCubemaps.end()
+        ? GetStagingPool(frame).Stage(data, size) : nullptr;
+    frame.resourceCommands.UploadCubemap(cubemap, staged != nullptr ? staged->data : data, size, mipLevel, staged);
 }
 
 void VulkanGPUDevice::UploadCubemap(Cubemap cubemap, const void* data, size_t size, CubemapFace face, int mipLevel){
-    multithreadRendererContext.simulationFrame->resourceCommands.UploadCubemap(cubemap, data, size, face, mipLevel);
+    if(data == nullptr || size == 0) return;
+    auto& frame = *multithreadRendererContext.simulationFrame;
+    const auto* staged = IsThreaded() && rgbCubemaps.find(cubemap) == rgbCubemaps.end()
+        ? GetStagingPool(frame).Stage(data, size) : nullptr;
+    frame.resourceCommands.UploadCubemap(cubemap, staged != nullptr ? staged->data : data, size, face, mipLevel, staged);
 }
 
 void VulkanGPUDevice::DestroyCubemap(Cubemap cubemap){
+    rgbCubemaps.erase(cubemap);
     multithreadRendererContext.simulationFrame->resourcePostCommands.DestroyCubemap(cubemap);
 }
 
@@ -3876,6 +3989,25 @@ void VulkanGPUDevice::DestroyBindGroupLayout(BindGroupLayout layout){
 }
 
 BindGroup VulkanGPUDevice::CreateBindGroup(BindGroupInfo& info){
+    auto& frame = *multithreadRendererContext.simulationFrame;
+    bool usesFramebuffer = false;
+    for(uint32_t i = 0; i < info.entriesCount; ++i){
+        const auto framebuffer = info.entries[i].framebuffer;
+        if(framebuffer != InvalidID){
+            frame.renderCommands.TrackFramebufferUse(framebuffer);
+            persistentFramebufferBindings.insert(framebuffer);
+            usesFramebuffer = true;
+        }
+    }
+    if(usesFramebuffer){
+        if(!IsThreaded()){
+            ApplyFramebufferResizes(frame);
+        } else {
+            const auto id = bindGroupPool.AllocId();
+            frame.resourceCommands.CreateBindGroup(id, info);
+            return id;
+        }
+    }
     #ifdef DONT_DEFERRED_RESOURCE_CREATION
 
     BindGroupData data;
@@ -3894,6 +4026,8 @@ BindGroup VulkanGPUDevice::CreateBindGroup(BindGroupInfo& info){
 }
 
 BindGroup VulkanGPUDevice::CreateFrameBindGroup(BindGroupInfo& info){
+    auto& frame = *multithreadRendererContext.simulationFrame;
+    if(frame.TrackFramebufferBindings(info) && !IsThreaded()) ApplyFramebufferResizes(frame);
     auto id = bindGroupPool.AllocId();
     multithreadRendererContext.simulationFrame->resourceCommands.CreateFrameBindGroup(id, info);
     return id;
@@ -3912,14 +4046,64 @@ Framebuffer VulkanGPUDevice::CreateFramebuffer(FrameBufferCreateInfo& info){
     #else
 
     auto id = framebufferPool.AllocId();
+    // A queued creation executes after the resize batch.
+    multithreadRendererContext.simulationFrame->renderCommands.TrackFramebufferUse(id);
     multithreadRendererContext.simulationFrame->resourceCommands.CreateFramebuffer(id, info);
     return id;
 
     #endif
 }
 
+bool VulkanGPUDevice::ResizeFramebuffer(Framebuffer framebuffer, const FrameBufferCreateInfo& info){
+    auto& frame = *multithreadRendererContext.simulationFrame;
+    if(framebuffer == InvalidID || !IsValidFramebufferCreateInfo(info) ||
+        frame.renderCommands.HasOpenFramebufferPass() || frame.renderCommands.HasFramebufferUse(framebuffer) ||
+        persistentFramebufferBindings.find(framebuffer) != persistentFramebufferBindings.end()) return false;
+
+    frame.framebufferResizes.insert_or_assign(framebuffer, info);
+    return true;
+}
+
 void VulkanGPUDevice::DestroyFramebuffer(Framebuffer framebuffer){
-    multithreadRendererContext.simulationFrame->resourcePostCommands.DestroyFramebuffer(framebuffer);
+    auto& frame = *multithreadRendererContext.simulationFrame;
+    if(!frame.renderCommands.HasFramebufferUse(framebuffer)) frame.framebufferResizes.erase(framebuffer);
+    persistentFramebufferBindings.erase(framebuffer);
+    frame.resourcePostCommands.DestroyFramebuffer(framebuffer);
+}
+
+void VulkanGPUDevice::ApplyFramebufferResizes(RenderFrame& frame){
+    if(frame.framebufferResizes.empty()) return;
+
+    SyncGpu();
+
+    for(const auto& [id, info] : frame.framebufferResizes){
+        if(!framebufferPool.IsValid(id)) continue;
+        framebuffersToInitialize.erase(id);
+        _DestroyFramebuffer(framebufferPool.Get(id));
+    }
+    for(const auto& [id, info] : frame.framebufferResizes){
+        if(!framebufferPool.IsValid(id)) continue;
+        auto& data = framebufferPool.Get(id);
+        data = {};
+        if(!_CreateFramebuffer(data, info)){
+            framebufferPool.AddDestroyedId(id);
+            continue;
+        }
+        framebuffersToInitialize.insert_or_assign(id, info);
+    }
+    frame.framebufferResizes.clear();
+}
+
+void VulkanGPUDevice::InitializeResizedFramebuffers(RenderFrame& frame){
+    if(framebuffersToInitialize.empty()) return;
+
+    CommandBuffer initialization;
+    for(const auto& [id, info] : framebuffersToInitialize){
+        frame.renderCommands.TrackFramebufferUse(id);
+        RecordFramebufferInitialization(initialization, id, info.layout, info.mipLevels);
+    }
+    framebuffersToInitialize.clear();
+    ReplayRenderCommands(frame, initialization);
 }
 
 std::vector<Device::Profile> VulkanGPUDevice::GetProfiles(){
@@ -3930,3 +4114,5 @@ std::vector<Device::Profile> VulkanGPUDevice::GetProfiles(){
 
 }
 } // namespace OD
+
+#undef OD_GFX_COMMAND_FIELD

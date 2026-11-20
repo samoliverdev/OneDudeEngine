@@ -25,7 +25,6 @@ public:
 
     virtual bool SupportMultithread() override { return true; }
     
-    virtual void Init(bool multithread) override;
     virtual void Shut() override;
     virtual void StartRender() override;
     virtual void UpdateRender() override;
@@ -35,6 +34,7 @@ public:
     virtual void ImGuiNewFrame() override;
     virtual void SubmitImGuiDrawData(void* data, ImGuiDrawDataDestroyFunction destroy) override;
     virtual void ImGuiShutdown() override;
+    void* ImGuiTexture2D(Texture2D texture) override;
     virtual void* ImGuiFramebufferColorAttachment(Framebuffer framebuffer, uint32_t attachment) override;
     
     virtual CommandBuffer* GetCommandBuffer() override;
@@ -64,6 +64,7 @@ public:
     virtual BindGroup CreateFrameBindGroup(BindGroupInfo& info) override;
 
     virtual Framebuffer CreateFramebuffer(FrameBufferCreateInfo& info) override;
+    bool ResizeFramebuffer(Framebuffer framebuffer, const FrameBufferCreateInfo& info) override;
     virtual void DestroyFramebuffer(Framebuffer destroy) override;
 
     ResourceStats GetBufferStats(Buffer id) override; 
@@ -74,7 +75,6 @@ private:
     std::vector<Profile> profilesCpu;
     std::vector<Profile> profilesGpu;
 
-    bool multithread;
 
     struct BufferData{
         uint32_t buffer = 0;
@@ -155,6 +155,36 @@ private:
 
     std::vector<BindGroup> frameBindGroups;
 
+
+    struct RenderState{
+        Pipeline currentPipeline = InvalidID;
+        PipelineInfo currentPipelineInfo{};
+        GLint textureUnits[4][MaxBindingsLookUp]{};
+        GLuint uniformBindingPoints[4][MaxBindingsLookUp]{};
+        bool skipFramebufferPass = false;
+    } renderState;
+    void BeginRenderFrame();
+
+    void InitializeRendering() override;
+#ifdef TEST_NEW_CMD
+    void ExecuteResourceCommand(ResourceCommands::Type type, const void* payload);
+#else
+    void ExecuteResourceCommand(const ResourceCommands::Command& cmd);
+#endif
+#ifdef TEST_NEW_CMD
+    void ExecuteDestroyCommand(ResourceCommands::Type type, const void* payload);
+#else
+    void ExecuteDestroyCommand(const ResourceCommands::Command& cmd);
+#endif
+#ifdef TEST_NEW_CMD
+    void ExecuteRenderCommand(RenderFrame& frame, CommandBuffer::Type type, const void* payload);
+#else
+    void ExecuteRenderCommand(RenderFrame& frame, const CommandBuffer::Command& cmd);
+#endif
+    void FinishRenderFrame(RenderFrame& frame);
+    void ReplayRenderCommands(RenderFrame& frame, const CommandBuffer& commands);
+    void ApplyFramebufferResizes(RenderFrame& frame);
+    std::unordered_set<Framebuffer> persistentFramebufferBindings;
     void RunRender(RenderFrame& frame);
     void SyncSingleThreadData();
 

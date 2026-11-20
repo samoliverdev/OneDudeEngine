@@ -505,7 +505,7 @@ void BoidsSample::OnInit(){
     float posRange = 200;
     Entity boids = scene->AddEntity("Boids");
     
-    for(int i = 0; i < 1000*1; i++){
+    for(int i = 0; i < 1000*10; i++){
         Entity boid = scene->AddEntity("Boid" + std::to_string(random(0, 200)));
         ModelRendererComponent& mr = scene->AddComponent<ModelRendererComponent>(boid);
         mr.SetModel(boidModel);
@@ -525,7 +525,7 @@ void BoidsSample::OnInit(){
         //scene->SetParent(boids, boid);
     }
 
-    Application::AddModule<Editor>(false);
+    Application::AddModule<Editor>(true);
     scene->Start();
 }
 
