@@ -1955,7 +1955,7 @@ void VulkanGPUDevice::_DestroyFramebuffer(FramebufferData& data){
 
 #pragma region Device
 VulkanGPUDevice::VulkanGPUDevice(VulkanPresentMode mode): presentMode(mode){
-    vkInfo.apiName = "Vulkan";
+    vkInfo.apiName = GetName();
     vkInfo.version = 1;
     vkInfo.supportUniformBuffer = true;
 
@@ -3850,7 +3850,7 @@ Buffer VulkanGPUDevice::CreateBuffer(size_t size, BufferUsage usage, BufferMemor
     #endif
 }
 
-void VulkanGPUDevice::UpdatedBuffer(Buffer buffer, const void* data, size_t size){
+void VulkanGPUDevice::UpdateBufferImpl(Buffer buffer, const void* data, size_t size){
     if(data == nullptr || size == 0) return;
     auto& frame = *multithreadRendererContext.simulationFrame;
     const auto* staged = IsThreaded() && gpuOnlyUploadBuffers.find(buffer) != gpuOnlyUploadBuffers.end()
@@ -3883,7 +3883,7 @@ Texture2D VulkanGPUDevice::CreateTexture2D(Texture2DInfo& info){
     #endif
 }
 
-void VulkanGPUDevice::UploadTexture2D(Texture2D texture, const void* data, size_t size, int mipLevel){
+void VulkanGPUDevice::UploadTexture2DImpl(Texture2D texture, const void* data, size_t size, int mipLevel){
     if(data == nullptr || size == 0) return;
     auto& frame = *multithreadRendererContext.simulationFrame;
     const auto* staged = IsThreaded() && rgbTextures.find(texture) == rgbTextures.end()
@@ -3912,7 +3912,7 @@ Texture2DArray VulkanGPUDevice::CreateTexture2DArray(Texture2DArrayInfo& info){
 #endif
 }
 
-void VulkanGPUDevice::UploadTexture2DArray(Texture2DArray texture, const void* data, size_t size, int arrayElement, int mipLevel){
+void VulkanGPUDevice::UploadTexture2DArrayImpl(Texture2DArray texture, const void* data, size_t size, int arrayElement, int mipLevel){
     if(data == nullptr || size == 0) return;
     auto& frame = *multithreadRendererContext.simulationFrame;
     const auto* staged = IsThreaded() && rgbTextureArrays.find(texture) == rgbTextureArrays.end()
@@ -3945,7 +3945,7 @@ Cubemap VulkanGPUDevice::CreateCubemap(CubemapInfo& info){
     #endif
 }
 
-void VulkanGPUDevice::UploadCubemap(Cubemap cubemap, const void* data, size_t size, int mipLevel){
+void VulkanGPUDevice::UploadCubemapImpl(Cubemap cubemap, const void* data, size_t size, int mipLevel){
     if(data == nullptr || size == 0) return;
     auto& frame = *multithreadRendererContext.simulationFrame;
     const auto* staged = IsThreaded() && rgbCubemaps.find(cubemap) == rgbCubemaps.end()
@@ -3953,7 +3953,7 @@ void VulkanGPUDevice::UploadCubemap(Cubemap cubemap, const void* data, size_t si
     frame.resourceCommands.UploadCubemap(cubemap, staged != nullptr ? staged->data : data, size, mipLevel, staged);
 }
 
-void VulkanGPUDevice::UploadCubemap(Cubemap cubemap, const void* data, size_t size, CubemapFace face, int mipLevel){
+void VulkanGPUDevice::UploadCubemapImpl(Cubemap cubemap, const void* data, size_t size, CubemapFace face, int mipLevel){
     if(data == nullptr || size == 0) return;
     auto& frame = *multithreadRendererContext.simulationFrame;
     const auto* staged = IsThreaded() && rgbCubemaps.find(cubemap) == rgbCubemaps.end()

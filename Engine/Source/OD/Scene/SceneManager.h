@@ -1,5 +1,6 @@
 #pragma once
 #include "Scene.h"
+#include "OD/Serialization/Serialization.h"
 #include "OD/Core/Module.h"
 
 namespace OD{

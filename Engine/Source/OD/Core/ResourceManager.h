@@ -1,7 +1,7 @@
 #pragma once
 #pragma once
 #include "OD/Base.h"
-#include "OD/Serialization/Serialization.h"
+#include "OD/Serialization/SerializationCore.h"
 #include "OD/Utils/Allocators.h"
 #include "Resource.h"
 #include "ResourceAllocator.h"

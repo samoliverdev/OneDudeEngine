@@ -1,6 +1,6 @@
 #pragma once
 #include "OD/Defines.h"
-#include "OD/Serialization/Serialization.h"
+#include "OD/Serialization/SerializationCore.h"
 
 namespace OD{
 

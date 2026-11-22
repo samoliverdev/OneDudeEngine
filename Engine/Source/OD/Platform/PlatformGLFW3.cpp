@@ -122,9 +122,10 @@ void UpdateWindowTitle(GLFWwindow* window){
         char tmp[128*4];
         sprintf(
             tmp, 
-            "%s - %s - Opengl - Fps: %.2f", 
+            "%s - %s - %s - Fps: %.2f",
             ProjectManager::GetActiveProject() != nullptr ? ProjectManager::GetActiveProject()->name.c_str() : "None Project", 
             SceneManager::Get().GetActiveScene() != nullptr ? SceneManager::Get().GetActiveScene()->Path().c_str() : "None Scene",
+            graphicsDevice->GetName(),
             fps
         );
         #if !defined(__EMSCRIPTEN__)

@@ -1,8 +1,8 @@
 #pragma once
+#include <cstdint>
 #include "OD/Defines.h"
 #include "OD/Core/Math.h"
 #include "OD/Core/Color.h"
-#include "Camera.h"
 #include "RendererTypes.h"
 #include "OD/Gfx/Gfx.h"
 //#include "Framebuffer.h"
@@ -26,6 +26,7 @@ class UniformBuffer;
 struct TextParams;
 
 class GraphicsDevice;
+struct Camera;
 
 struct GraphicsStats{
     int drawCalls;
@@ -35,6 +36,8 @@ struct GraphicsStats{
     int uniformSet;
     int uniformBufferUpdates;
     int materialSubmitDatas;
+    // CPU upload payload bytes recorded this frame.
+    std::uint64_t uploadSize = 0;
 };
 
 struct GraphicsDebug{
@@ -148,6 +151,7 @@ class OD_API Graphics {
     friend class Material;
 public:
     static GraphicsStats& GetStats();
+    static std::uint64_t GetLastFrameUploadSize();
     static GPUMemoryStats& GetMemoryStats();
     static void TrackMemoryUsage(GraphicsMemoryCategory category, size_t oldBytes, size_t newBytes);
     static GraphicsDebug& GetGraphicsDebug();
@@ -209,7 +213,7 @@ public:
     static GraphicsDevice* GetGraphicsDevice();
 
 private:
-    static void SelectGraphicsDevice();
+    static bool SelectGraphicsDevice(const std::string& name);
     static void Initialize();
     static void Shutdown();
     static void _Begin();

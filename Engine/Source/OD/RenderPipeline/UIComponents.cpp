@@ -1,4 +1,5 @@
 #include "OD/pch.h"
+#include "OD/Graphics/Camera.h"
 #include "UIComponents.h"
 #include "OD/Core/ImGui.h"
 

@@ -39,5 +39,9 @@
 //#include "Serialization/SerializationFull.h"
 //#include "Scene/ECS.h"
 
+#include "Core/Math.h"
+#include "Serialization/SerializationCore.h"
+#include "Scene/ECS.h"
+
 //#include "Defines.h"
 #endif

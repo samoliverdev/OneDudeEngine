@@ -1,4 +1,5 @@
 #include "BuildsPanel.h"
+#include "OD/Graphics/Shader.h"
 #include "OD/Scene/SceneManager.h"
 #include "OD/Graphics/Model.h"
 #include "OD/Graphics/Texture.h"

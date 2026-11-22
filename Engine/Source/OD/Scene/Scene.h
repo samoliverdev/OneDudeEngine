@@ -1,19 +1,21 @@
 #pragma once
 #include "OD/Core/Resource.h"
 #include "OD/Core/Transform.h"
-#include "OD/Serialization/Serialization.h" //TODO: Remove this to optimization
-///#include "OD/Serialization/SerializationFull.h" //TODO: Remove this to optimization
-#include "OD/Graphics/Camera.h"
+#include "OD/Serialization/SerializationCore.h"
 #include <unordered_map>
 #include <string>
 #include <functional>
 #include <algorithm>
 #include "ECS.h"
+#include "Layers.h"
 
+namespace cereal{ class JSONInputArchive; }
 namespace sol{ class state; }
 namespace tf{ class Taskflow; }
 
 namespace OD{
+
+struct Camera;
 
 /*using Entity = entt::entity;
 using Registry = entt::registry;
@@ -25,74 +27,6 @@ class System;
 class Scene;
 class Model;
 class Prefab;
-
-enum OD_API_IMPORT Layers: uint32_t{
-    Layer0 = 0,
-    Layer1,
-    Layer2,
-    Layer3, 
-    Layer4,
-    Layer5, 
-    Layer6, 
-    Layer7, 
-    Layer8,
-    Layer9,
-    Layer10,
-    Layer11,
-    Layer12,
-    Layer13,
-    Layer14,
-    Layer15,
-    Layer16,
-    Layer17,
-    Layer18,
-    Layer19,
-    Layer20,
-    Layer21,
-    Layer22,
-    Layer23,
-    Layer24,
-    Layer25,
-    Layer26,
-    Layer27,
-    Layer28,
-    Layer29,
-    Layer30,
-    LayerCount // always last
-};
-
-constexpr int LayerNone = -1;
-/*constexpr int LayerMax = 10;
-constexpr int AllLayers = Layer0 | Layer1 | Layer2 | Layer3 | Layer4 | Layer5 | Layer6 | Layer7 | Layer8 | Layer9;*/
-
-constexpr uint32_t AllLayersMask = (1u << LayerCount) - 1;
-constexpr uint32_t NoneLayersMask = 0;
-
-inline constexpr uint32_t LayerToMask(int layerIndex){
-    return (1u << layerIndex);
-}
-
-struct OD_API LayerMask{
-    //int mask = AllLayers;
-    
-    static int GetLayerByName(const std::string& name);
-
-    uint32_t mask = AllLayersMask;
-
-    static inline LayerMask FromLayer(int layer) { return { LayerToMask(layer) }; }
-    static inline LayerMask FromLayers(std::initializer_list<int> layers) {
-        uint32_t m = 0;
-        for (int l : layers) m |= LayerToMask(l);
-        return { m };
-    }
-
-    bool Contains(int layer) const { return (mask & LayerToMask(layer)) != 0; }
-
-    template <class Archive>
-    void serialize(Archive & ar){
-        ArchiveDumpNVP(ar, mask);
-    }
-};
 
 struct OD_API GlobalSceneData{
     std::array<std::string, LayerCount> layerNames = {
@@ -436,7 +370,7 @@ private:
     void _AddEntityPrefab(entt::registry& registry, std::vector<entt::entity>& entities, std::vector<entt::entity>& allEntities, entt::entity root, std::string prefabPath, bool isRoot = false);
     void _Load(const char* path, entt::entity prefab);
     void _DestroyEntity(Entity entity, bool removeFromParent = false);
-    void _LoadTransform(ODInputArchive& archive, std::unordered_map<entt::entity,entt::entity>& loadLookup, entt::registry& registry, std::string componentName, bool handleRootPrefab = false);
+    void _LoadTransform(cereal::JSONInputArchive& archive, std::unordered_map<entt::entity,entt::entity>& loadLookup, entt::registry& registry, std::string componentName, bool handleRootPrefab = false);
     void _Unpack(Entity e, bool all, bool unpackRoot);
     Entity _DuplicateEntity(Entity e, bool isRoot);
     Entity _DuplicateEntity(Entity e, bool isRoot, Scene& other);

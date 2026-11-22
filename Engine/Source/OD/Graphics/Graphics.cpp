@@ -65,27 +65,29 @@ void GraphicsModuleInit(){
     LuaBindsDB::Get().RegisterLuaBind<Texture2D>();
 }
 
-std::vector<std::function<GraphicsDevice*()>> supportedGraphicsDevices = {
-    [](){ return new HeadlessGraphicsDevice(); },
+struct GraphicsDeviceFactory{
+    const char* name;
+    GraphicsDevice* (*create)();
+};
 
-    #if defined(__EMSCRIPTEN__)
-        #if defined(OPENGL_SUPPORT) 
-        [](){ return new OpenGLGraphicsDevice(); },
-        #endif
-    #else
-        #if defined(OPENGL_SUPPORT) 
-        [](){ return new OpenGLGraphicsDevice(); },
-        #endif
-        #if defined(WEBGPU_SUPPORT)
-        [](){ return new WebGPUGraphicsDevice(); },
-        #endif
-    #endif
+static const GraphicsDeviceFactory supportedGraphicsDevices[] = {
+#ifdef TestNewGPU_API
+    {Gfx::VulkanGPUDevice::Name, []() -> GraphicsDevice* { return new Gfx::VulkanGPUDevice(Gfx::VulkanPresentMode::Immediate); }},
+    {Gfx::OpenglGPUDevice::Name, []() -> GraphicsDevice* { return new Gfx::OpenglGPUDevice(); }},
+#else
+#ifdef OPENGL_SUPPORT
+    {OpenGLGraphicsDevice::Name, []() -> GraphicsDevice* { return new OpenGLGraphicsDevice(); }},
+#endif
+#if defined(WEBGPU_SUPPORT) && !defined(__EMSCRIPTEN__)
+    {WebGPUGraphicsDevice::Name, []() -> GraphicsDevice* { return new WebGPUGraphicsDevice(); }},
+#endif
+    {HeadlessGraphicsDevice::Name, []() -> GraphicsDevice* { return new HeadlessGraphicsDevice(); }},
+#endif
 };
 
 constexpr int MaxInstancesPerDraw = 1000;
 constexpr int MaxBonesPerDraw = 120;
 
-int curGraphicsDevice = 1;
 GraphicsDevice* graphicsDevice = nullptr;
 Gfx::Device* gfxDevice = nullptr;
 GraphicsStats gfxGraphicsStats{};
@@ -290,29 +292,20 @@ GraphicsDevice* Graphics::GetGraphicsDevice(){
     return graphicsDevice;
 }
 
-void Graphics::SelectGraphicsDevice(){
-    #ifdef TestNewGPU_API
-    graphicsDevice = new Gfx::VulkanGPUDevice(Gfx::VulkanPresentMode::Immediate);
-    //graphicsDevice = new Gfx::OpenglGPUDevice();
-    gfxDevice = dynamic_cast<Gfx::Device*>(graphicsDevice);
-    return;
-    #endif
-    
-    if(curGraphicsDevice >= supportedGraphicsDevices.size()){
-        curGraphicsDevice = supportedGraphicsDevices.size() - 1;
-    }  
+bool Graphics::SelectGraphicsDevice(const std::string& name){
+    const bool useDefault = name.empty() || name == "Any";
+    for(const auto& backend : supportedGraphicsDevices){
+        if(!useDefault && name != backend.name) continue;
 
-    Assert(curGraphicsDevice >= 0);
-    Assert(curGraphicsDevice < supportedGraphicsDevices.size());
-    Assert(supportedGraphicsDevices.size() < 5);
+        graphicsDevice = backend.create();
+#ifdef TestNewGPU_API
+        gfxDevice = dynamic_cast<Gfx::Device*>(graphicsDevice);
+#endif
+        return true;
+    }
 
-    graphicsDevice = supportedGraphicsDevices[curGraphicsDevice]();
-
-    /*#if defined(WEBGPU_SUPPORT)
-    graphicsDevice = new WebGPUGraphicsDevice();
-    #elif defined(OPENGL_SUPPORT) 
-    graphicsDevice = new OpenGLGraphicsDevice();
-    #endif*/
+    LogError("Graphics device '{}' is unavailable in this build", name);
+    return false;
 }
 
 void Graphics::Initialize(){
@@ -327,6 +320,8 @@ void Graphics::Initialize(){
     #ifdef TestNewGPU_API
     CameraData camData;
     Matrix4 identity = Matrix4Identity;
+
+    gfxDevice->SetUploadCounter(&gfxGraphicsStats.uploadSize);
 
     camBuffer = gfxDevice->CreateBuffer(sizeof(CameraData), Gfx::BufferUsage::Uniform, Gfx::BufferMemory::GPUOnly);
     Graphics::TrackMemoryUsage(GraphicsMemoryCategory::Buffer, 0, sizeof(CameraData));
@@ -535,6 +530,12 @@ void Graphics::CreateLuaBind(sol::state& lua){
     );
 }
 
+static std::uint64_t lastFrameUploadSize = 0;
+
+std::uint64_t Graphics::GetLastFrameUploadSize(){
+    return lastFrameUploadSize;
+}
+
 GraphicsStats& Graphics::GetStats(){ 
 #ifdef TestNewGPU_API
     return gfxGraphicsStats;
@@ -585,7 +586,9 @@ void Graphics::End(){
 void Graphics::_Begin(){
     graphicsDevice->_Begin(); 
 #ifdef TestNewGPU_API
+    const auto uploadSize = gfxGraphicsStats.uploadSize;
     gfxGraphicsStats = {};
+    gfxGraphicsStats.uploadSize = uploadSize;
 #endif
     ++graphicsFrameIndex;
 
@@ -605,7 +608,8 @@ void Graphics::_Begin(){
 }
 
 void Graphics::_End(){
-    graphicsDevice->_End(); 
+    graphicsDevice->_End();
+    lastFrameUploadSize = GetStats().uploadSize;
 }
 
 bool Graphics::HasBegin(){ 

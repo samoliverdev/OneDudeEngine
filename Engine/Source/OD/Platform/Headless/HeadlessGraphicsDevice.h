@@ -6,6 +6,9 @@ namespace OD{
 
 class HeadlessGraphicsDevice: public GraphicsDevice{
 public:
+    static constexpr const char* Name = "Headless";
+    const char* GetName() const override { return Name; }
+
     virtual void LoadContext(void* data) override;
 
     virtual GraphicsStats& GetStats() override;

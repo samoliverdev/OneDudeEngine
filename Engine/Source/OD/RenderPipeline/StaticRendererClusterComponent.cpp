@@ -1,4 +1,5 @@
 #include "OD/pch.h"
+#include "OD/Graphics/Material.h"
 #include "StaticRendererClusterComponent.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Graphics/Mesh.h"

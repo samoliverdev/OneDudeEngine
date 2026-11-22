@@ -41,6 +41,7 @@ struct GraphicsDeviceInfo{
 class OD_API GraphicsDevice {
 public:
     virtual ~GraphicsDevice(){}
+    virtual const char* GetName() const = 0;
 
 
     virtual GraphicsStats& GetStats() = 0;

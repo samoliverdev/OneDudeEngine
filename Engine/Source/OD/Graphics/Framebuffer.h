@@ -4,6 +4,7 @@
 #include "OD/Platform/WebGPU/WebGPU.h"
 #include "OD/Core/Resource.h"
 #include "OD/Gfx/Gfx.h"
+#include "RendererTypes.h"
 #include <vector>
 
 namespace sol{ class state; }
@@ -53,7 +54,6 @@ struct OD_API RenderPassInfo{
     bool swapChainTarget = false;
 };
 
-constexpr int MAX_FRAMEBUFFER_RENDER_PASSES = 128;
 
 class OD_API FramebufferRenderPass{
 public:

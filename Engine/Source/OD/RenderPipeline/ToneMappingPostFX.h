@@ -1,7 +1,7 @@
 #pragma once
 #include "RendererFeature.h"
 #include "OD/Base.h"
-#include "OD/Serialization/Serialization.h"
+#include "OD/Serialization/SerializationCore.h"
 
 namespace OD{
 

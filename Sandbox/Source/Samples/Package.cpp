@@ -49,7 +49,7 @@ void PackageSample::OnInit(){
     //Ref<Package> package = CreateRef<MinizPackage>("Sandbox/PackageTest.zip");
 
     //PhysFS::Init();
-    PhysFS::Mount("Sandbox/PackageTest.zip");
+    if(!PhysFS::Mount("Sandbox/PackageTest.zip")) return;
     ResourceManager::Get().Mount(PhysFS::GetPackage());
     
     //Ref<Texture2D> tex = Texture2D::CreateFromPackage("image.png", *PhysFS::GetPackage(), {});

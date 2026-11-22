@@ -1029,7 +1029,7 @@ GraphicsDeviceInfo OpenglGPUDevice::GetInfo(){
 }
 
 OpenglGPUDevice::OpenglGPUDevice(){
-    info.apiName = "OpenGL";
+    info.apiName = GetName();
     info.version = 4;
     info.supportUniformBuffer = true;
 
@@ -2292,7 +2292,7 @@ Buffer OpenglGPUDevice::CreateBuffer(size_t size, BufferUsage usage, BufferMemor
     #endif
 }
 
-void OpenglGPUDevice::UpdatedBuffer(Buffer buffer, const void* data, size_t size){
+void OpenglGPUDevice::UpdateBufferImpl(Buffer buffer, const void* data, size_t size){
     multithreadRendererContext.simulationFrame->resourceCommands.UpdatedBuffer(buffer, data, size);
 }
 
@@ -2318,7 +2318,7 @@ Texture2D OpenglGPUDevice::CreateTexture2D(Texture2DInfo& info){
     #endif
 }
 
-void OpenglGPUDevice::UploadTexture2D(Texture2D texture, const void* data, size_t size, int mipLevel){
+void OpenglGPUDevice::UploadTexture2DImpl(Texture2D texture, const void* data, size_t size, int mipLevel){
     multithreadRendererContext.simulationFrame->resourceCommands.UploadTexture2D(texture, data, size, mipLevel);
 }
 
@@ -2340,7 +2340,7 @@ Texture2DArray OpenglGPUDevice::CreateTexture2DArray(Texture2DArrayInfo& info){
 #endif
 }
 
-void OpenglGPUDevice::UploadTexture2DArray(Texture2DArray texture, const void* data, size_t size, int arrayElement, int mipLevel){
+void OpenglGPUDevice::UploadTexture2DArrayImpl(Texture2DArray texture, const void* data, size_t size, int arrayElement, int mipLevel){
     multithreadRendererContext.simulationFrame->resourceCommands.UploadTexture2DArray(texture, data, size, arrayElement, mipLevel);
 }
 
@@ -2366,11 +2366,11 @@ Cubemap OpenglGPUDevice::CreateCubemap(CubemapInfo& info){
     #endif
 }
 
-void OpenglGPUDevice::UploadCubemap(Cubemap cubemap, const void* data, size_t size, int mipLevel){
+void OpenglGPUDevice::UploadCubemapImpl(Cubemap cubemap, const void* data, size_t size, int mipLevel){
     multithreadRendererContext.simulationFrame->resourceCommands.UploadCubemap(cubemap, data, size, mipLevel);
 }
 
-void OpenglGPUDevice::UploadCubemap(Cubemap cubemap, const void* data, size_t size, CubemapFace face, int mipLevel){
+void OpenglGPUDevice::UploadCubemapImpl(Cubemap cubemap, const void* data, size_t size, CubemapFace face, int mipLevel){
     multithreadRendererContext.simulationFrame->resourceCommands.UploadCubemap(cubemap, data, size, face, mipLevel);
 }
 

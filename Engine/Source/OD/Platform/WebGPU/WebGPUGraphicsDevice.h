@@ -12,8 +12,13 @@
 
 namespace OD{
 
+struct FrameBufferSpecification;
+
 class WebGPUGraphicsDevice: public GraphicsDevice{
 public:
+    static constexpr const char* Name = "WebGPU";
+    const char* GetName() const override { return Name; }
+
     WebGPUGraphicsDevice();
 
     virtual void LoadContext(void* data) override;

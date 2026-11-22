@@ -17,7 +17,7 @@ namespace Gfx{
 
 using ImGuiDrawDataDestroyFunction = void(*)(void*);
 
-static constexpr uint32_t InvalidID = std::numeric_limits<uint32_t>::max();
+static constexpr uint32_t InvalidID = (std::numeric_limits<uint32_t>::max)();
 using Texture = uint32_t;
 using Pipeline = uint32_t;
 using Framebuffer = uint32_t;
@@ -517,7 +517,7 @@ public:
         /*if(size == 0) return nullptr;
 
         if(blocks.empty()){
-            blocks.push_back(std::make_unique<MemoryBlock>(std::max(DefaultBlockSize, size)));
+            blocks.push_back(std::make_unique<MemoryBlock>((std::max)(DefaultBlockSize, size)));
         }
 
         MemoryBlock* block = blocks[currentBlock].get();
@@ -528,7 +528,7 @@ public:
         currentBlock++;
 
         if(currentBlock >= blocks.size()){
-            blocks.push_back(std::make_unique<MemoryBlock>(std::max(DefaultBlockSize, size)));
+            blocks.push_back(std::make_unique<MemoryBlock>((std::max)(DefaultBlockSize, size)));
         }
 
         return blocks[currentBlock]->Allocate(size, alignment);*/
@@ -540,7 +540,7 @@ public:
             ++currentBlock;
         }
 
-        blocks.push_back(std::make_unique<MemoryBlock>(std::max(DefaultBlockSize, size)));
+        blocks.push_back(std::make_unique<MemoryBlock>((std::max)(DefaultBlockSize, size)));
         currentBlock = blocks.size() - 1;
 
         return blocks[currentBlock]->Allocate(size, alignment);
@@ -1624,7 +1624,7 @@ private:
             commands.Emplace<Tag, Payload>(std::forward<Args>(args)...);
         }
     }
-    static constexpr size_t NoWindowEnd = std::numeric_limits<size_t>::max();
+    static constexpr size_t NoWindowEnd = (std::numeric_limits<size_t>::max)();
     size_t windowEnd = NoWindowEnd;
     bool waitingForWindowEnd = false;
 #endif
@@ -1759,6 +1759,9 @@ public:
     virtual void* ImGuiTexture2D(Texture2D texture){ return nullptr; }
     virtual bool ImGuiFramebufferNeedsVerticalFlip() const { return true; }
 
+    // The caller owns and resets this counter on the recording thread.
+    void SetUploadCounter(std::uint64_t* counter){ uploadCounter = counter; }
+
     virtual ResourceStats GetBufferStats(Buffer id){ return {}; }
 
     virtual CommandBuffer* GetCommandBuffer(){ return nullptr; }
@@ -1768,18 +1771,33 @@ public:
     virtual void DestroyPipeline(Pipeline id){}
 
     virtual Buffer CreateBuffer(size_t size, BufferUsage usage, BufferMemory memory){ return InvalidID; }
-    virtual void UpdatedBuffer(Buffer buffer, const void* data, size_t size){}
+    void UpdatedBuffer(Buffer buffer, const void* data, size_t size){
+        UpdateBufferImpl(buffer, data, size);
+        if(uploadCounter != nullptr && data != nullptr) *uploadCounter += size;
+    }
     virtual void DestroyBuffer(Buffer id){}
 
     virtual Texture2D CreateTexture2D(Texture2DInfo& info){ return InvalidID; }
-    virtual void UploadTexture2D(Texture2D texture, const void* data, size_t size, int mipLevel = 0){}
+    void UploadTexture2D(Texture2D texture, const void* data, size_t size, int mipLevel = 0){
+        UploadTexture2DImpl(texture, data, size, mipLevel);
+        if(uploadCounter != nullptr && data != nullptr) *uploadCounter += size;
+    }
     virtual void DestroyTexture2D(Texture2D tex){}
     virtual Texture2DArray CreateTexture2DArray(Texture2DArrayInfo& info){ return InvalidID; }
-    virtual void UploadTexture2DArray(Texture2DArray texture, const void* data, size_t size, int arrayElement, int mipLevel = 0){}
+    void UploadTexture2DArray(Texture2DArray texture, const void* data, size_t size, int arrayElement, int mipLevel = 0){
+        UploadTexture2DArrayImpl(texture, data, size, arrayElement, mipLevel);
+        if(uploadCounter != nullptr && data != nullptr) *uploadCounter += size;
+    }
     virtual void DestroyTexture2DArray(Texture2DArray tex){}
     virtual Cubemap CreateCubemap(CubemapInfo& info){ return InvalidID; }
-    virtual void UploadCubemap(Cubemap cubemap, const void* data, size_t size, int mipLevel = 0){}
-    virtual void UploadCubemap(Cubemap cubemap, const void* data, size_t size, CubemapFace face, int mipLevel = 0){}
+    void UploadCubemap(Cubemap cubemap, const void* data, size_t size, int mipLevel = 0){
+        UploadCubemapImpl(cubemap, data, size, mipLevel);
+        if(uploadCounter != nullptr && data != nullptr) *uploadCounter += size;
+    }
+    void UploadCubemap(Cubemap cubemap, const void* data, size_t size, CubemapFace face, int mipLevel = 0){
+        UploadCubemapImpl(cubemap, data, size, face, mipLevel);
+        if(uploadCounter != nullptr && data != nullptr) *uploadCounter += size;
+    }
     virtual void DestroyCubemap(Cubemap cubemap){}
 
     virtual BindGroupLayout CreateBindGroupLayout(BindGroupLayoutInfo& info){ return InvalidID; }
@@ -1796,10 +1814,16 @@ public:
     virtual std::vector<Profile> GetProfiles(){ return {}; }
 
 protected:
+    virtual void UpdateBufferImpl(Buffer buffer, const void* data, size_t size){}
+    virtual void UploadTexture2DImpl(Texture2D texture, const void* data, size_t size, int mipLevel){}
+    virtual void UploadTexture2DArrayImpl(Texture2DArray texture, const void* data, size_t size, int arrayElement, int mipLevel){}
+    virtual void UploadCubemapImpl(Cubemap cubemap, const void* data, size_t size, int mipLevel){}
+    virtual void UploadCubemapImpl(Cubemap cubemap, const void* data, size_t size, CubemapFace face, int mipLevel){}
     virtual void InitializeRendering(){}
     bool IsThreaded() const { return renderingMode == RenderingMode::Threaded; }
 
 private:
+    std::uint64_t* uploadCounter = nullptr;
     RenderingMode renderingMode = RenderingMode::Threaded;
     bool initialized = false;
 };

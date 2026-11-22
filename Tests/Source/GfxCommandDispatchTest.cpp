@@ -114,3 +114,32 @@ TEST(GfxCommandDispatch, ImmediateImGuiUsesAColorPreservingOverlay){
     EXPECT_TRUE(overlay.preserveColor);
 }
 #endif
+
+TEST(GfxCommandDispatch, PublicUploadCallsCountPayloadBytes){
+    class TestDevice : public Device{
+    public:
+        int bufferWrites = 0;
+    private:
+        void UpdateBufferImpl(Buffer, const void*, size_t) override { ++bufferWrites; }
+    } device;
+
+    std::uint64_t uploadSize = 0;
+    device.SetUploadCounter(&uploadSize);
+
+    const int data[6]{};
+    device.CreateBuffer(1024, BufferUsage::Vertex, BufferMemory::GPUOnly);
+    device.UpdatedBuffer(1, data, sizeof(int));
+    device.UploadTexture2D(2, data, sizeof(int));
+    device.UploadTexture2DArray(3, data, sizeof(int), 0);
+    device.UploadCubemap(4, data, sizeof(data));
+    device.UploadCubemap(4, data, sizeof(int), static_cast<CubemapFace>(0));
+    device.UpdatedBuffer(1, data, 0);
+    device.UpdatedBuffer(1, nullptr, sizeof(data));
+
+    EXPECT_EQ(uploadSize, 10 * sizeof(int));
+    EXPECT_EQ(device.bufferWrites, 3);
+
+    uploadSize = 0;
+    device.UpdatedBuffer(1, data, sizeof(data));
+    EXPECT_EQ(uploadSize, sizeof(data));
+}

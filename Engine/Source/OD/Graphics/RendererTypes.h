@@ -6,6 +6,6 @@
 
 namespace OD {
 
-
+constexpr int MAX_FRAMEBUFFER_RENDER_PASSES = 128;
 
 }

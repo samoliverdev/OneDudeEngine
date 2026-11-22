@@ -1,6 +1,8 @@
 #include "OD/pch.h"
 #include "TerrainNavigation.h"
+#include "TerrainComponents.h"
 #include "OD/Graphics/Geometry.h"
+#include "OD/Graphics/Mesh.h"
 #include "OD/Navmesh/Navmesh.h"
 
 namespace OD{

@@ -3,7 +3,7 @@
 #include "OD/Graphics/Culling.h"
 #include "OD/Graphics/Model.h"
 #include "OD/Graphics/UniformBuffer.h"
-#include "OD/Serialization/Serialization.h"
+#include "OD/Serialization/SerializationCore.h"
 #include "OD/Scene/Ecs.h"
 #include "OD/Core/Color.h"
 

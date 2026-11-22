@@ -19,6 +19,9 @@ void RendererStatsPanel::OnGui() {
     if(ImGui::BeginTabBar("RendererTabs")){
         if(ImGui::BeginTabItem("General")){
             ImGui::Text("DrawCalls: %d", Graphics::GetStats().drawCalls);
+            const auto uploadSize = Graphics::GetLastFrameUploadSize();
+            ImGui::Text("GPU uploads (last frame): %.2f MiB (%llu bytes)",
+                uploadSize / (1024.0 * 1024.0), static_cast<unsigned long long>(uploadSize));
             ImGui::Text("UniformSets: %d", Graphics::GetStats().uniformSet);
             ImGui::Text("uniformBufferUpdates: %d", Graphics::GetStats().uniformBufferUpdates);
             ImGui::Text("ShaderBinds: %d", Graphics::GetStats().shaderBinds);

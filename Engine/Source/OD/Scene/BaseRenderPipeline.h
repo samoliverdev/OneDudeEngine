@@ -1,9 +1,11 @@
 #pragma once
-#include "OD/Graphics/Framebuffer.h"
-#include "OD/Graphics/Camera.h"
+#include "Scene.h"
 #include "OD/Core/Transform.h"
 
 namespace OD{
+
+struct Camera;
+class Framebuffer;
 
 class OD_API BaseRenderPipeline: public System{
 public:

@@ -758,6 +758,7 @@ void WebGPUGraphicsDevice::SetCamera(Camera& inCamera){
     cameraDrawData.projection = camera.projection;
     cameraDrawData.view = camera.view;
     wgpuQueueWriteBuffer(queue, cameraUniformBuffer, 0, &cameraDrawData, sizeof(CameraDrawData));
+    stats.uploadSize += sizeof(CameraDrawData);
 }
 
 Camera WebGPUGraphicsDevice::GetCamera(){
@@ -954,6 +955,7 @@ void WebGPUGraphicsDevice::BindMaterial(Material& mat){
         Assert(material.currentTextureSlot < maxTexSlots /*32*/);
         //memset(material.wgData.mainUniformData, 0, material.wgData.materialMainSetDef.bufferSize);
         wgpuQueueWriteBuffer(queue, material.wgData.mainUniformBuffer, 0, material.wgData.mainUniformData, material.wgData.materialMainSetDef.bufferSize);
+        stats.uploadSize += material.wgData.materialMainSetDef.bufferSize;
         //if(material.isDirty){
         UpdateMaterialMainSet(mat, texs);
         //}
@@ -994,6 +996,7 @@ void WebGPUGraphicsDevice::DrawMesh(Mesh& mesh, Matrix4 modelMatrix, OD::PerDraw
 
     Assert(curPerDrawData < perDrawDatas.size());
     wgpuQueueWriteBuffer(queue, perDrawDatas[curPerDrawData].uniformBuffer, 0, &modelMatrix, sizeof(Matrix4));
+    stats.uploadSize += sizeof(Matrix4);
     wgpuRenderPassEncoderSetBindGroup(renderPass, 1, perDrawDatas[curPerDrawData].bindGroup, 0, nullptr);
     curPerDrawData += 1;
 
@@ -1025,7 +1028,9 @@ void WebGPUGraphicsDevice::DrawMeshSkinned(Mesh& mesh, Matrix4 model, Matrix4* a
 
     Assert(curPerDrawSkinnedData < perDrawSkinnedDatas.size());
     wgpuQueueWriteBuffer(queue, perDrawSkinnedDatas[curPerDrawSkinnedData].uniformBuffer, 0, &model, sizeof(Matrix4));
+    stats.uploadSize += sizeof(Matrix4);
     wgpuQueueWriteBuffer(queue, perDrawSkinnedDatas[curPerDrawSkinnedData].uniformBuffer1, 0, animMatrix, sizeof(Matrix4) * count);
+    stats.uploadSize += sizeof(Matrix4) * count;
     wgpuRenderPassEncoderSetBindGroup(renderPass, 1, perDrawSkinnedDatas[curPerDrawSkinnedData].bindGroup, 0, nullptr);
     curPerDrawSkinnedData += 1;
 
@@ -1047,6 +1052,7 @@ void WebGPUGraphicsDevice::DrawMeshInstancing(Mesh& mesh, Matrix4* modelMatrixs,
 
         Assert(curPerDrawInstancingData < perDrawInstancingDatas.size());
         wgpuQueueWriteBuffer(queue, perDrawInstancingDatas[curPerDrawInstancingData], 0, inmodelMatrixs, sizeof(Matrix4) * inCount);
+        stats.uploadSize += sizeof(Matrix4) * inCount;
         wgpuRenderPassEncoderSetVertexBuffer(
             renderPass, 
             5, 
@@ -1189,37 +1195,57 @@ bool WebGPUGraphicsDevice::MeshCreateOrSubmit(
 
     mesh.wgData.vertexBuffer = CreateBuffer(sizeof(Vector3) * vertices->size(), "VertexBuffer");
     wgpuQueueWriteBuffer(queue, mesh.wgData.vertexBuffer, 0, vertices->data(), sizeof(Vector3) * vertices->size());
+    stats.uploadSize += sizeof(Vector3) * vertices->size();
     mesh.vertexCount = vertices->size();
 
     if(indices != nullptr && indices->size() > 0){
         mesh.wgData.indexBuffer = CreateIndexBuffer(sizeof(unsigned int) * indices->size(), "IndexBuffer");
         wgpuQueueWriteBuffer(queue, mesh.wgData.indexBuffer, 0, indices->data(), sizeof(unsigned int) * indices->size());
+        stats.uploadSize += sizeof(unsigned int) * indices->size();
         mesh.indiceCount = indices->size();
     }
 
     size_t targetUvSize = uv == nullptr || uv->size() <= 0 ? sizeof(Vector3) : sizeof(Vector3) * uv->size();
     mesh.wgData.uvBuffer = CreateBuffer(targetUvSize, "UvBuffer");
-    if(uv != nullptr) wgpuQueueWriteBuffer(queue, mesh.wgData.uvBuffer, 0, uv->data(), sizeof(Vector3) * uv->size());
+    if(uv != nullptr) {
+        wgpuQueueWriteBuffer(queue, mesh.wgData.uvBuffer, 0, uv->data(), sizeof(Vector3) * uv->size());
+        stats.uploadSize += sizeof(Vector3) * uv->size();
+    }
 
     size_t targetNormalSize = normals == nullptr || normals->size() <= 0 ? sizeof(Vector3) : sizeof(Vector3) * normals->size();
     mesh.wgData.normalBuffer = CreateBuffer(targetNormalSize, "NormalBuffer");
-    if(normals != nullptr) wgpuQueueWriteBuffer(queue, mesh.wgData.normalBuffer, 0, normals->data(), sizeof(Vector3) * normals->size());
+    if(normals != nullptr) {
+        wgpuQueueWriteBuffer(queue, mesh.wgData.normalBuffer, 0, normals->data(), sizeof(Vector3) * normals->size());
+        stats.uploadSize += sizeof(Vector3) * normals->size();
+    }
 
     size_t colorTargetSize = colors == nullptr || colors->size() <= 0 ? sizeof(Vector4) : sizeof(Vector4) * colors->size();
     mesh.wgData.colorBuffer = CreateBuffer(colorTargetSize, "ColorBuffer");
-    if(colors != nullptr) wgpuQueueWriteBuffer(queue, mesh.wgData.colorBuffer, 0, colors->data(), sizeof(Vector4) * colors->size());
+    if(colors != nullptr) {
+        wgpuQueueWriteBuffer(queue, mesh.wgData.colorBuffer, 0, colors->data(), sizeof(Vector4) * colors->size());
+        stats.uploadSize += sizeof(Vector4) * colors->size();
+    }
 
     size_t tangentTargetSize = tangents == nullptr || tangents->size() <= 0 ? sizeof(Vector3) : sizeof(Vector3) * tangents->size();
     mesh.wgData.tangentBuffer = CreateBuffer(tangentTargetSize, "TangentBuffer");
-    if(tangents != nullptr) wgpuQueueWriteBuffer(queue, mesh.wgData.tangentBuffer, 0, tangents->data(), sizeof(Vector3) * tangents->size());
+    if(tangents != nullptr) {
+        wgpuQueueWriteBuffer(queue, mesh.wgData.tangentBuffer, 0, tangents->data(), sizeof(Vector3) * tangents->size());
+        stats.uploadSize += sizeof(Vector3) * tangents->size();
+    }
 
     size_t jointTargetSize = influences == nullptr || influences->size() <= 0 ? sizeof(IVector4) : sizeof(IVector4) * influences->size();
     mesh.wgData.jointBuffer = CreateBuffer(jointTargetSize, "JointBuffer");
-    if(influences != nullptr) wgpuQueueWriteBuffer(queue, mesh.wgData.jointBuffer, 0, influences->data(), sizeof(IVector4) * influences->size());
+    if(influences != nullptr) {
+        wgpuQueueWriteBuffer(queue, mesh.wgData.jointBuffer, 0, influences->data(), sizeof(IVector4) * influences->size());
+        stats.uploadSize += sizeof(IVector4) * influences->size();
+    }
 
     size_t weightTargetSize = weights == nullptr || weights->size() <= 0 ? sizeof(Vector4) : sizeof(Vector4) * weights->size();
     mesh.wgData.weightsBuffer = CreateBuffer(weightTargetSize, "WeightsBuffer");
-    if(weights != nullptr) wgpuQueueWriteBuffer(queue, mesh.wgData.weightsBuffer, 0, weights->data(), sizeof(Vector4) * weights->size());
+    if(weights != nullptr) {
+        wgpuQueueWriteBuffer(queue, mesh.wgData.weightsBuffer, 0, weights->data(), sizeof(Vector4) * weights->size());
+        stats.uploadSize += sizeof(Vector4) * weights->size();
+    }
 
     return true;
 }
@@ -1445,6 +1471,7 @@ void WebGPUGraphicsDevice::WriteMipMaps(
         source.bytesPerRow = 4 * mipLevelSize.width;
         source.rowsPerImage = mipLevelSize.height;
         wgpuQueueWriteTexture(queue, &destination, pixels.data(), pixels.size(), &source, &mipLevelSize);
+        stats.uploadSize += pixels.size();
 
         previousLevelPixels = std::move(pixels);
         previousMipLevelSize = mipLevelSize;

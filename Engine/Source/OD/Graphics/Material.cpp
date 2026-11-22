@@ -577,9 +577,8 @@ void Material::OnGui(){
         const std::string& name = i.first;
         MaterialMap& map = i.second;*/
 
-    for(auto& i: properties){
-        const std::string& name = i;
-        MaterialMap& map = maps[i];
+    for(const auto& name : properties){
+        MaterialMap& map = maps[name];
 
         if(map.type == MaterialMap::Type::Float){
             if(map.valueFloatMax != map.valueFloatMin){
@@ -633,30 +632,36 @@ void Material::OnGui(){
         }
 
         if(map.type == MaterialMap::Type::Texture){
-            #ifdef TestNewGPU_API
-            continue;
-            #endif
-            if(map.texture == nullptr) continue;
-            const float widthSize = 60;
-            float aspect = 1;
-
-            if(map.texture != nullptr){
-                Assert(map.texture->Height() != 0);
-                aspect = map.texture->Width() / map.texture->Height();
+            constexpr float previewWidth = 60;
+            void* preview = nullptr;
+            float previewHeight = previewWidth;
+            if(map.texture && map.texture->Width() > 0 && map.texture->Height() > 0){
+#ifdef TestNewGPU_API
+                if(gfxDevice != nullptr && map.texture->tex != Gfx::InvalidID)
+                    preview = gfxDevice->ImGuiTexture2D(map.texture->tex);
+#else
+                preview = map.texture->RenderId();
+#endif
+                previewHeight *= static_cast<float>(map.texture->Height()) / map.texture->Width();
             }
 
+            ImGui::PushID(name.c_str());
             ImGui::BeginGroup();
-            ImVec2 imagePos = ImGui::GetCursorPos();
-            //ImGui::Image((void*)(uint64_t)map.texture->RenderId(), ImVec2(widthSize, widthSize * aspect), ImVec2(0, 1), ImVec2(1, 0));
-            ImGui::Image(map.texture->RenderId(), ImVec2(widthSize, widthSize * aspect), ImVec2(0, 1), ImVec2(1, 0));
-            ImGui::SetCursorPos(imagePos);
-            if(ImGui::SmallButton("X")){
-                map.texture = Texture2D::LoadDefautlTexture2D();
-                toSave = true;
-                isDirty = isDirtyUniformData = true;
+            if(preview != nullptr){
+                const ImVec2 imagePos = ImGui::GetCursorPos();
+                ImGui::Image(preview, ImVec2(previewWidth, previewHeight), ImVec2(0, 1), ImVec2(1, 0));
+                ImGui::SetCursorPos(imagePos);
+                if(ImGui::SmallButton("X")){
+                    keepAlive = map.texture;
+                    map.texture = Texture2D::LoadDefautlTexture2D();
+                    toSave = true;
+                    isDirty = isDirtyUniformData = true;
+                }
+            } else {
+                ImGui::Button(map.texture ? "Texture" : "Empty", ImVec2(previewWidth, previewWidth));
             }
             ImGui::EndGroup();
-            if(ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)){
+            if(map.texture && ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)){
                 ImGui::_SelectionAsset(map.texture);
             }
 
@@ -665,14 +670,17 @@ void Material::OnGui(){
                     //LogInfo("Dragdrop Path: {}", path->generic_string());
                     //TODO: Maybe check if AssetManager::Get().LoadAsset<Texture2D> is valid
                     keepAlive = map.texture; // Avoid opengl crach on imgui becose text was deleted
-                    map.texture = ResourceManager::Get().LoadByPath<Texture2D>(path->generic_string());
+                    auto texture = ResourceManager::Get().LoadByPath<Texture2D>(path->generic_string());
+                    if(!texture) return;
+                    SetTexture(name.c_str(), texture);
                     toSave = true;
                     isDirty = isDirtyUniformData = true;
                 }
             });
 
             ImGui::SameLine();
-            ImGui::TextUnformatted(name.c_str()); //ImGui::Text(name.c_str());
+            ImGui::TextUnformatted(name.c_str());
+            ImGui::PopID();
         }
     }
 

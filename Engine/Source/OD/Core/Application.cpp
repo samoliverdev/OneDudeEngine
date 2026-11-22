@@ -96,14 +96,17 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
     width = appConfig.startWidth;
     heigth = appConfig.startHeight;
 
-    Graphics::SelectGraphicsDevice();
+    if(!Graphics::SelectGraphicsDevice(appConfig.graphicsDeviceName)){
+        Log::Shutdown();
+        return false;
+    }
 
     if(Platform::SystemStartup(appConfig) == false) return false;
 
     ////////////////////////////////
     #ifdef TestNewGPU_API
     gpuDevice = dynamic_cast<Gfx::Device*>(Graphics::GetGraphicsDevice());
-    gpuDevice->Init(Gfx::RenderingMode::Immediate); //appConfig.renderingMode);
+    gpuDevice->Init(appConfig.renderingMode);
     #endif
     ////////////////////////////////
 
@@ -135,8 +138,8 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
     };
 
     //OD::AssetManager::Get().StartHotReload();
-    if(project->defaultPackagePath.empty() == false && PathExists(project->defaultPackagePath)){
-        PhysFS::Mount(project->defaultPackagePath.c_str());
+    if(project->defaultPackagePath.empty() == false && PathExists(project->defaultPackagePath) &&
+       PhysFS::Mount(project->defaultPackagePath.c_str())){
         ResourceManager::Get().Mount(PhysFS::GetPackage());
     }
 
@@ -179,6 +182,7 @@ void Application::DrawImGui(std::function<void()> func){
 
 void Application::Loop(){
     MemoryTracker::BeginFrame();
+    Graphics::GetStats().uploadSize = 0;
     if(hasLoadGlobalSetting == false){
         hasLoadGlobalSetting = true;
         GlobalSettings::Get().Load("../GlobalSettings");

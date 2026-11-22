@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include "OD/Gfx/RenderingMode.h"
 
 namespace sol{ 
     class state; 
@@ -23,6 +24,8 @@ struct ApplicationConfig{
     int startWidth;
     int startHeight;
     std::string name;
+    std::string graphicsDeviceName;
+    Gfx::RenderingMode renderingMode = Gfx::RenderingMode::Immediate;
     bool transparentWindows = false;
 };
 

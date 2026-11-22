@@ -1,4 +1,5 @@
 #include "OD/pch.h"
+#include "OD/Graphics/Material.h"
 #include "OD/Core/ResourceManager.h"
 #include "Terrain.h"
 #include "Heightmap.h"

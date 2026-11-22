@@ -18,6 +18,7 @@
 #include "OD/Navmesh/Navmesh.h"
 #include "OD/Graphics/Geometry.h"
 #include "OD/Graphics/Graphics.h"
+#include "OD/Graphics/GraphicsDevice.h"
 #include "OD/Graphics/UniformBuffer.h"
 #include "OD/Graphics/InstancingBuffer.h"
 #include "OD/Graphics/ComputeShader.h"
@@ -3421,6 +3422,25 @@ glm::mat4 getLightSpaceMatrix2(Camera& cam, Vector3 lightDir, const float nearPl
     return math::simdMul(lightProjection, lightView);
 }
 
+static Matrix4 GetShadowRenderMatrix(const Matrix4& lightViewProjection, bool zeroToOneDepth){
+    if(!zeroToOneDepth) return lightViewProjection;
+
+    // Map clip Z from [-W, W] to [0, W] for Vulkan rasterization and atlas sampling.
+    Matrix4 result = lightViewProjection;
+    for(int column = 0; column < 4; ++column){
+        result[column][2] = 0.5f * (lightViewProjection[column][2] + lightViewProjection[column][3]);
+    }
+    return result;
+}
+
+static bool ShadowUsesZeroToOneDepth(){
+#ifdef TestNewGPU_API
+    return Graphics::GetGraphicsDevice()->GetInfo().apiName == "Vulkan";
+#else
+    return false;
+#endif
+}
+
 void ShadowSplitData::SetupCascade(ShadowSplitData* splitData, int count, Camera& cam, Transform& light, std::vector<float>& shadowCascadeLevels){
     //float shadowDistance = cam.farClip;
     //shadowDistance = 500;
@@ -3452,8 +3472,9 @@ void ShadowSplitData::SetupCascade(ShadowSplitData* splitData, int count, Camera
 
     Assert(lightMatrixs.size() == count);
 
+    const bool zeroToOneDepth = ShadowUsesZeroToOneDepth();
     for(int i = 0; i < count; i++){
-        splitData[i].projViewMatrix = lightMatrixs[i];
+        splitData[i].projViewMatrix = GetShadowRenderMatrix(lightMatrixs[i], zeroToOneDepth);
         //splitData[i].splitDistance = shadowCascadeLevels[i];
         //splitData[i].frustum = frustums[i];
         //splitData[i].frustum = CreateFrustumFromMatrix2(math::transpose(lightMatrixs[i]));
@@ -3465,9 +3486,9 @@ void ShadowSplitData::ComputeSpotShadowData(ShadowSplitData* splitData, LightCom
     auto lightProjection = glm::perspective(Mathf::Deg2Rad(light.coneAngleOuter*2), 1.0f, 0.1f, light.radius);
     auto lightView = glm::lookAt(transform.Position(), transform.Position() - (-transform.Forward()), Vector3Up);
 
-    splitData->projViewMatrix = lightProjection * lightView;
-    //splitData->frustum = CreateFrustumFromMatrix2(math::transpose(splitData->projViewMatrix));
-    splitData->frustum = CreateFrustumFromMatrix(splitData->projViewMatrix);
+    const Matrix4 lightViewProjection = lightProjection * lightView;
+    splitData->projViewMatrix = GetShadowRenderMatrix(lightViewProjection, ShadowUsesZeroToOneDepth());
+    splitData->frustum = CreateFrustumFromMatrix(lightViewProjection);
 }
 
 void ShadowSplitData::ComputePointShadowData(ShadowSplitData* splitData, LightComponent& light, Transform& transform){
@@ -3494,8 +3515,9 @@ void ShadowSplitData::ComputePointShadowData(ShadowSplitData* splitData, LightCo
         shadowProj * 
         glm::lookAt(lightPos, lightPos + glm::vec3( 0.0, 0.0,-1.0), glm::vec3(0.0,-1.0, 0.0)));
 
+    const bool zeroToOneDepth = ShadowUsesZeroToOneDepth();
     for(int i = 0; i < 6; i++){
-        splitData[i].projViewMatrix = shadowMats[i];
+        splitData[i].projViewMatrix = GetShadowRenderMatrix(shadowMats[i], zeroToOneDepth);
         //splitData[i].frustum = CreateFrustumFromMatrix2(math::transpose(shadowMats[i]));
         splitData[i].frustum = CreateFrustumFromMatrix(shadowMats[i]);
     }

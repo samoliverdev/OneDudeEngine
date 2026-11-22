@@ -12,6 +12,9 @@ namespace Gfx{
 
 class OpenglGPUDevice: public GraphicsDevice, public Device{
 public:
+    static constexpr const char* Name = "OpenGL";
+    const char* GetName() const override { return Name; }
+
     OpenglGPUDevice();
 
     virtual GraphicsStats& GetStats() override;
@@ -43,18 +46,13 @@ public:
     virtual void DestroyPipeline(Pipeline id) override;
 
     virtual Buffer CreateBuffer(size_t size, BufferUsage usage, BufferMemory memory) override;
-    virtual void UpdatedBuffer(Buffer buffer, const void* data, size_t size) override;
     virtual void DestroyBuffer(Buffer id) override;
 
     virtual Texture2D CreateTexture2D(Texture2DInfo& info) override;
-    virtual void UploadTexture2D(Texture2D texture, const void* data, size_t size, int mipLevel = 0) override;
     virtual void DestroyTexture2D(Texture2D tex) override;
     virtual Texture2DArray CreateTexture2DArray(Texture2DArrayInfo& info) override;
-    virtual void UploadTexture2DArray(Texture2DArray texture, const void* data, size_t size, int arrayElement, int mipLevel) override;
     virtual void DestroyTexture2DArray(Texture2DArray tex) override;
     virtual Cubemap CreateCubemap(CubemapInfo& info) override;
-    virtual void UploadCubemap(Cubemap cubemap, const void* data, size_t size, int mipLevel = 0) override;
-    virtual void UploadCubemap(Cubemap cubemap, const void* data, size_t size, CubemapFace face, int mipLevel = 0) override;
     virtual void DestroyCubemap(Cubemap cubemap) override;
 
     virtual BindGroupLayout CreateBindGroupLayout(BindGroupLayoutInfo& info) override;
@@ -72,6 +70,12 @@ public:
     virtual std::vector<Profile> GetProfiles() override;
 
 private:
+    void UpdateBufferImpl(Buffer buffer, const void* data, size_t size) override;
+    void UploadTexture2DImpl(Texture2D texture, const void* data, size_t size, int mipLevel) override;
+    void UploadTexture2DArrayImpl(Texture2DArray texture, const void* data, size_t size, int arrayElement, int mipLevel) override;
+    void UploadCubemapImpl(Cubemap cubemap, const void* data, size_t size, int mipLevel) override;
+    void UploadCubemapImpl(Cubemap cubemap, const void* data, size_t size, CubemapFace face, int mipLevel) override;
+
     std::vector<Profile> profilesCpu;
     std::vector<Profile> profilesGpu;
 

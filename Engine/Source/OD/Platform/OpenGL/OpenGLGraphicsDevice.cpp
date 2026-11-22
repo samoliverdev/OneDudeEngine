@@ -127,7 +127,7 @@ GLenum meshDrawModeLookup[] = {
 };  
 
 OpenGLGraphicsDevice::OpenGLGraphicsDevice(){
-    info.apiName = "OpenGL";
+    info.apiName = GetName();
     info.version = OpenGLVersion;
     info.supportUniformBuffer = true;
 }
@@ -351,11 +351,13 @@ void OpenGLGraphicsDevice::Initialize(){
         glGenBuffers(1, &wiredCubeEBO);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, wiredCubeEBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+        stats.uploadSize += sizeof(indices);
         glCheckError();
     
         glGenBuffers(1, &wiredCubeVBO);
         glBindBuffer(GL_ARRAY_BUFFER, wiredCubeVBO);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertex), vertex, GL_STATIC_DRAW);
+        stats.uploadSize += sizeof(vertex);
         glCheckError();
     
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
@@ -532,6 +534,7 @@ void OpenGLGraphicsDevice::Initialize(){
     glBindBuffer(GL_ARRAY_BUFFER, globalMat4VBO);
     Matrix4 m = Matrix4Identity;
     glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4), &m, GL_STATIC_DRAW); //GL_DYNAMIC_DRAW //GL_STREAM_DRAW
+    stats.uploadSize += sizeof(Matrix4);
 }
 
 void OpenGLGraphicsDevice::Shutdown(){
@@ -653,6 +656,7 @@ void OpenGLGraphicsDevice::SetCamera(Camera& inCamera){
     glBindBuffer(GL_UNIFORM_BUFFER, cameraDataBuffer);
     glCheckError();
     glBufferData(GL_UNIFORM_BUFFER, sizeof(CameraData), &data, GL_STATIC_DRAW); //GL_DYNAMIC_DRAW
+    stats.uploadSize += sizeof(CameraData);
     glCheckError();
     stats.uniformBufferUpdates += 1;
     #endif
@@ -809,7 +813,9 @@ int OpenGLGraphicsDevice::SubShaderGetLocation(SubShader& shader, const char* na
 void OpenGLGraphicsDevice::SubShaderSetFloat(SubShader& shader, const char* name, float value){
     Graphics::GetStats().uniformSet += 1;
     debugData.UniformSet(name);
-    glUniform1f(SubShaderGetLocation(shader, name), value);
+    const GLint location = SubShaderGetLocation(shader, name);
+    glUniform1f(location, value);
+    if(location >= 0) stats.uploadSize += sizeof(GLfloat);
     glCheckError();
     /*glCheckError2([&](){ 
         LogError("UniformName: %s ShaderPath: %s", name, path.c_str()); 
@@ -819,13 +825,17 @@ void OpenGLGraphicsDevice::SubShaderSetFloat(SubShader& shader, const char* name
 void OpenGLGraphicsDevice::SubShaderSetFloat(SubShader& shader, const char* name, float* value, int count){
     stats.uniformSet += 1;
     debugData.UniformSet(name);
-    glUniform1fv(SubShaderGetLocation(shader, name), (GLsizei)count, (GLfloat*)value);
+    const GLint location = SubShaderGetLocation(shader, name);
+    glUniform1fv(location, (GLsizei)count, (GLfloat*)value);
+    if(location >= 0) stats.uploadSize += sizeof(GLfloat) * count;
     glCheckError();
 }
 
 void OpenGLGraphicsDevice::SubShaderSetInt(SubShader& shader, const char* name, int value){
     stats.uniformSet += 1;
-    glUniform1i(SubShaderGetLocation(shader, name), value);
+    const GLint location = SubShaderGetLocation(shader, name);
+    glUniform1i(location, value);
+    if(location >= 0) stats.uploadSize += sizeof(GLint);
     glCheckError();
     /*glCheckError2([&](){ 
         LogError("UniformName: %s ShaderPath: %s", name, path.c_str()); 
@@ -834,7 +844,9 @@ void OpenGLGraphicsDevice::SubShaderSetInt(SubShader& shader, const char* name, 
 
 void OpenGLGraphicsDevice::SubShaderSetVector2(SubShader& shader, const char* name, Vector2 value){
     Graphics::GetStats().uniformSet += 1;
-    glUniform2f(SubShaderGetLocation(shader, name), value.x, value.y);
+    const GLint location = SubShaderGetLocation(shader, name);
+    glUniform2f(location, value.x, value.y);
+    if(location >= 0) stats.uploadSize += sizeof(GLfloat) * 2;
     glCheckError();
 }
 
@@ -843,7 +855,9 @@ void OpenGLGraphicsDevice::SubShaderSetVector3(SubShader& shader, const char* na
     debugData.UniformSet(name);
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
-    glUniform3f(SubShaderGetLocation(shader, name), value.x, value.y, value.z);
+    const GLint location = SubShaderGetLocation(shader, name);
+    glUniform3f(location, value.x, value.y, value.z);
+    if(location >= 0) stats.uploadSize += sizeof(GLfloat) * 3;
     glCheckError();
     /*glCheckError2([&](){ 
         LogError("UniformName: %s ShaderPath: %s", name, path.c_str()); 
@@ -855,7 +869,9 @@ void OpenGLGraphicsDevice::SubShaderSetVector4(SubShader& shader, const char* na
     debugData.UniformSet(name);
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
-    glUniform4f(SubShaderGetLocation(shader, name), value.x, value.y, value.z, value.w);
+    const GLint location = SubShaderGetLocation(shader, name);
+    glUniform4f(location, value.x, value.y, value.z, value.w);
+    if(location >= 0) stats.uploadSize += sizeof(GLfloat) * 4;
     glCheckError();
 }
 
@@ -864,7 +880,9 @@ void OpenGLGraphicsDevice::SubShaderSetVector4(SubShader& shader, const char* na
     debugData.UniformSet(name);
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
-    glUniform4fv(SubShaderGetLocation(shader, name), (GLsizei)count, (GLfloat*)value);
+    const GLint location = SubShaderGetLocation(shader, name);
+    glUniform4fv(location, (GLsizei)count, (GLfloat*)value);
+    if(location >= 0) stats.uploadSize += sizeof(GLfloat) * 4 * count;
     glCheckError();
 }
 
@@ -873,7 +891,9 @@ void OpenGLGraphicsDevice::SubShaderSetMatrix4(SubShader& shader, const char* na
     debugData.UniformSet(name);
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
-    glUniformMatrix4fv(SubShaderGetLocation(shader, name), 1, GL_FALSE, glm::value_ptr(static_cast<glm::mat4>(value)));
+    const GLint location = SubShaderGetLocation(shader, name);
+    glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(static_cast<glm::mat4>(value)));
+    if(location >= 0) stats.uploadSize += sizeof(GLfloat) * 16;
     glCheckError();
     /*glCheckError2([&](){ 
         LogError("UniformName: %s ShaderPath: %s", name, path.c_str()); 
@@ -885,7 +905,9 @@ void OpenGLGraphicsDevice::SubShaderSetMatrix4(SubShader& shader, const char* na
     debugData.UniformSet(name);
     //if(curBindShaderRenderId != rendererId) Bind(*this);
 
-    glUniformMatrix4fv(SubShaderGetLocation(shader, name), (GLsizei)value.size(), GL_FALSE, glm::value_ptr(value[0]));
+    const GLint location = SubShaderGetLocation(shader, name);
+    glUniformMatrix4fv(location, (GLsizei)value.size(), GL_FALSE, glm::value_ptr(value[0]));
+    if(location >= 0) stats.uploadSize += sizeof(GLfloat) * 16 * value.size();
     //Set(GetLocation(name), &value[0], (unsigned int)value.size());
     glCheckError();
     /*glCheckError2([&](){ 
@@ -901,7 +923,9 @@ void OpenGLGraphicsDevice::SubShaderSetMatrix4(SubShader& shader, const char* na
     Graphics::GetStats().uniformSet += 1;
     debugData.UniformSet(name);
     //if(curBindShaderRenderId != rendererId) Bind(*this);
-    glUniformMatrix4fv(SubShaderGetLocation(shader, name), (GLsizei)count, GL_FALSE, (GLfloat*)value);
+    const GLint location = SubShaderGetLocation(shader, name);
+    glUniformMatrix4fv(location, (GLsizei)count, GL_FALSE, (GLfloat*)value);
+    if(location >= 0) stats.uploadSize += sizeof(GLfloat) * 16 * count;
     glCheckError();
 }
 
@@ -1302,6 +1326,7 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
             glBindBuffer(GL_UNIFORM_BUFFER, mat.glData.mainBuffer);
             glCheckError();
             glBufferData(GL_UNIFORM_BUFFER, mat.glData.mainBufferDef.size, mat.glData.mainUniformData, GL_STATIC_DRAW); //GL_DYNAMIC_DRAW
+            if(mat.glData.mainUniformData != nullptr) stats.uploadSize += mat.glData.mainBufferDef.size;
             glCheckError();
         }
         unsigned int index2 = glGetUniformBlockIndex(mat.currentShader[mat.currentPass].drawTypes[drawType]->glData.id, "Main");
@@ -1545,6 +1570,7 @@ void OpenGLGraphicsDevice::BindMaterial(Material& mat, int drawType){
             glBindBuffer(GL_UNIFORM_BUFFER, material.glData.mainBuffer);
             glCheckError();
             glBufferData(GL_UNIFORM_BUFFER, material.glData.mainBufferDef.size, material.glData.mainUniformData, GL_STATIC_DRAW); //GL_DYNAMIC_DRAW
+            if(material.glData.mainUniformData != nullptr) stats.uploadSize += material.glData.mainBufferDef.size;
             glCheckError();
             stats.uniformBufferUpdates += 1;
         }
@@ -1627,6 +1653,7 @@ void OpenGLGraphicsDevice::InstancingBufferSetData(InstancingBuffer& buffer, con
     glBindBuffer(GL_ARRAY_BUFFER, buffer.glData.id);
     glCheckError();
     glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * count, data, GL_STATIC_DRAW); //GL_STREAM_DRAW
+    if(data != nullptr) stats.uploadSize += sizeof(Matrix4) * count;
     glCheckError();
 }
 
@@ -1636,6 +1663,7 @@ void OpenGLGraphicsDevice::InstancingBufferSetData(InstancingBuffer& buffer, con
     glBindBuffer(GL_ARRAY_BUFFER, buffer.glData.id);
     glCheckError();
     glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4x3) * count, data, GL_STATIC_DRAW); //GL_STREAM_DRAW
+    if(data != nullptr) stats.uploadSize += sizeof(Matrix4x3) * count;
     glCheckError();
 }
 
@@ -1991,6 +2019,7 @@ void OpenGLGraphicsDevice::DrawLinesComamnd(Vector3 color, int lineWidth){
         stats.drawCalls += 1;
         int batchVertexCount = std::min<int>(lineCommandsData.size() - i, 2 * MAX_LINES_VERTEX_DRAWCALL * 3);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * batchVertexCount, &lineCommandsData[i]);
+        stats.uploadSize += sizeof(float) * batchVertexCount;
 	    glCheckError();
         OnDrawAssetsTest();
         glDrawArrays(GL_LINES, 0, batchVertexCount/3);
@@ -2031,6 +2060,7 @@ void OpenGLGraphicsDevice::DrawLine(Vector3 start, Vector3 end, Vector3 color, i
 
 	glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(line), line);
+    stats.uploadSize += sizeof(line);
     OnDrawAssetsTest();
 	glDrawArrays(GL_LINES, 0, 2);
     glCheckError();
@@ -2073,6 +2103,7 @@ void OpenGLGraphicsDevice::DrawLine(Matrix4 model, Vector3 start, Vector3 end, V
 
 	glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(line), line);
+    stats.uploadSize += sizeof(line);
     OnDrawAssetsTest();
 	glDrawArrays(GL_LINES, 0, 2);
     glCheckError();
@@ -2250,7 +2281,8 @@ void OpenGLGraphicsDevice::DrawText(Font& f, Material& s, std::string text, Matr
             { quadMax.x, quadMax.y, 0, texCoordMax.x, texCoordMax.y }           
         };
         glBindBuffer(GL_ARRAY_BUFFER, textQuadVBO);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices); 
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+        stats.uploadSize += sizeof(vertices);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glCheckError();
 
@@ -2335,7 +2367,8 @@ void OpenGLGraphicsDevice::DrawText(Font& f, Material& s, std::string text, Matr
             { quadMax.x, quadMax.y, 0, texCoordMax.x, texCoordMax.y }           
         };
         glBindBuffer(GL_ARRAY_BUFFER, textQuadVBO);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices); 
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+        stats.uploadSize += sizeof(vertices);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glCheckError();
 
@@ -2524,12 +2557,14 @@ bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
         glGenBuffers(1, &mesh.glData.vertexVbo);
         glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.vertexVbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * vertices->size(), &(*vertices)[0], GL_STATIC_DRAW ); //GL_STATIC_DRAW
+        stats.uploadSize += sizeof(Vector3) * vertices->size();
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)0);
         glCheckError();
     } else {
         glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.vertexVbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * vertices->size(), &(*vertices)[0], GL_STATIC_DRAW); //GL_STATIC_DRAW
+        stats.uploadSize += sizeof(Vector3) * vertices->size();
     }
     mesh.vertexCount = vertices->size();
 
@@ -2539,10 +2574,12 @@ bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
             glGenBuffers(1, &mesh.glData.ebo);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.glData.ebo);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices->size() * sizeof(unsigned int), &(*indices)[0], GL_STATIC_DRAW );
+            stats.uploadSize += indices->size() * sizeof(unsigned int);
             glCheckError();
         } else {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.glData.ebo);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices->size() * sizeof(unsigned int), &(*indices)[0], GL_STATIC_DRAW);
+            stats.uploadSize += indices->size() * sizeof(unsigned int);
         }
     }
     mesh.indiceCount = indices->size();
@@ -2553,12 +2590,14 @@ bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
             glGenBuffers(1, &mesh.glData.uvVbo);
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.uvVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * uv->size(), &(*uv)[0], GL_STATIC_DRAW );
+            stats.uploadSize += sizeof(Vector3) * uv->size();
             glEnableVertexAttribArray(1);
             glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)0);
             glCheckError();
         } else {
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.uvVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * uv->size(), &(*uv)[0], GL_STATIC_DRAW);
+            stats.uploadSize += sizeof(Vector3) * uv->size();
             glCheckError();
         }
     }
@@ -2568,12 +2607,14 @@ bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
             glGenBuffers(1, &mesh.glData.normalVbo);
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.normalVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * normals->size(), &(*normals)[0], GL_STATIC_DRAW );
+            stats.uploadSize += sizeof(Vector3) * normals->size();
             glEnableVertexAttribArray(2);
             glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)0);
             glCheckError();
         } else {
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.normalVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * normals->size(), &(*normals)[0], GL_STATIC_DRAW);
+            stats.uploadSize += sizeof(Vector3) * normals->size();
             glCheckError();
         }
     }
@@ -2583,12 +2624,14 @@ bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
             glGenBuffers(1, &mesh.glData.colorVbo);
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.colorVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Vector4) * colors->size(), &(*colors)[0], GL_STATIC_DRAW );
+            stats.uploadSize += sizeof(Vector4) * colors->size();
             glEnableVertexAttribArray(3);
             glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4), (void*)0);
             glCheckError();
         } else {
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.colorVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Vector4) * colors->size(), &(*colors)[0], GL_STATIC_DRAW);
+            stats.uploadSize += sizeof(Vector4) * colors->size();
             glCheckError();
         }
     }
@@ -2598,12 +2641,14 @@ bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
             glGenBuffers(1, &mesh.glData.tangentVbo);
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.tangentVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * tangents->size(), &(*tangents)[0], GL_STATIC_DRAW );
+            stats.uploadSize += sizeof(Vector3) * tangents->size();
             glEnableVertexAttribArray(4);
             glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vector3), (void*)0);
             glCheckError();
         } else {
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.tangentVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Vector3) * tangents->size(), &(*tangents)[0], GL_STATIC_DRAW);
+            stats.uploadSize += sizeof(Vector3) * tangents->size();
             glCheckError();
         }
     }
@@ -2614,12 +2659,14 @@ bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
             glGenBuffers(1, &mesh.glData.jointVbo);
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.jointVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(IVector4) * influences->size(), &(*influences)[0], GL_STATIC_DRAW );
+            stats.uploadSize += sizeof(IVector4) * influences->size();
             glEnableVertexAttribArray(5);
             glVertexAttribIPointer(5, 4, GL_INT, sizeof(IVector4), (void*)0);
             glCheckError();
         } else {
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.jointVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(IVector4) * influences->size(), &(*influences)[0], GL_STATIC_DRAW);
+            stats.uploadSize += sizeof(IVector4) * influences->size();
             glCheckError();
         }
     }
@@ -2630,12 +2677,14 @@ bool OpenGLGraphicsDevice::MeshCreateOrSubmit(
             glGenBuffers(1, &mesh.glData.weightsVbo);
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.weightsVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Vector4) * weights->size(), &(*weights)[0], GL_STATIC_DRAW );
+            stats.uploadSize += sizeof(Vector4) * weights->size();
             glEnableVertexAttribArray(6);
             glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vector4), (void*)0);
             glCheckError();
         } else {
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.weightsVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Vector4) * weights->size(), &(*weights)[0], GL_STATIC_DRAW);
+            stats.uploadSize += sizeof(Vector4) * weights->size();
             glCheckError();
         }
     }
@@ -2665,6 +2714,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingModelMatrixs(Mesh& mesh){
             glGenBuffers(1, &mesh.glData.instancingModelMatrixsVbo);
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.instancingModelMatrixsVbo); 
             glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * mesh.instancingModelMatrixs.size(), &mesh.instancingModelMatrixs[0], GL_STATIC_DRAW); //GL_STREAM_DRAW GL_DYNAMIC_DRAW
+            stats.uploadSize += sizeof(Matrix4) * mesh.instancingModelMatrixs.size();
             glCheckError();
 
             std::size_t vec4Size = sizeof(glm::vec4);
@@ -2687,6 +2737,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingModelMatrixs(Mesh& mesh){
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.instancingModelMatrixsVbo);
             //glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Matrix4) * instancingModelMatrixs.size(), &instancingModelMatrixs[0]);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * mesh.instancingModelMatrixs.size(), &mesh.instancingModelMatrixs[0], GL_STATIC_DRAW); //GL_STREAM_DRAW
+            stats.uploadSize += sizeof(Matrix4) * mesh.instancingModelMatrixs.size();
             glCheckError();
         }
     }
@@ -2710,6 +2761,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
             glGenBuffers(1, &mesh.glData.instancingModelMatrixsVbo);
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.instancingModelMatrixsVbo);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * count, modelMatrixs, GL_STATIC_DRAW); //GL_DYNAMIC_DRAW //GL_STREAM_DRAW
+            if(modelMatrixs != nullptr) stats.uploadSize += sizeof(Matrix4) * count;
             glCheckError();
 
             std::size_t vec4Size = sizeof(glm::vec4);
@@ -2732,6 +2784,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
             glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.instancingModelMatrixsVbo);
             //glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Matrix4) * instancingModelMatrixs.size(), &instancingModelMatrixs[0]);
             glBufferData(GL_ARRAY_BUFFER, sizeof(Matrix4) * count, modelMatrixs, GL_STATIC_DRAW); //GL_STREAM_DRAW
+            if(modelMatrixs != nullptr) stats.uploadSize += sizeof(Matrix4) * count;
             glCheckError();
 
             #ifndef USE_VAO
@@ -2819,6 +2872,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
 
     // Copy data to persistent mapped memory
     std::memcpy((char*)mesh.glData.instancingMappedPtr + frameOffset, modelMatrixs, frameSize);
+    stats.uploadSize += frameSize;
 
     // Rebind buffer for draw (not needed every time if using VAO, but done here for safety)
     glBindBuffer(GL_ARRAY_BUFFER, mesh.glData.instancingModelMatrixsVbo);
@@ -2869,6 +2923,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
 
     // Copy matrices to mapped buffer
     std::memcpy(drawData.mappedPtr, modelMatrixs, bufferSize);
+    stats.uploadSize += bufferSize;
 
     // Bind VAO if enabled
     #ifdef USE_VAO
@@ -2955,6 +3010,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
 
     // just memcpy (no map/unmap per frame)
     std::memcpy(drawData.mappedPtr, modelMatrixs, bufferSize);
+    stats.uploadSize += bufferSize;
 
     #else
     //--------------------------------------------------
@@ -2970,6 +3026,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
     // Option 1 (recommended): orphan + subdata
     glBufferData(GL_ARRAY_BUFFER, bufferSize, nullptr, GL_DYNAMIC_DRAW); // orphan
     glBufferSubData(GL_ARRAY_BUFFER, 0, bufferSize, modelMatrixs);
+    if(modelMatrixs != nullptr) stats.uploadSize += bufferSize;
 
     // Option 2 (alternative): map/unmap
     /*
@@ -2978,6 +3035,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
 
     if(ptr){
         memcpy(ptr, modelMatrixs, bufferSize);
+        stats.uploadSize += bufferSize;
         glUnmapBuffer(GL_ARRAY_BUFFER);
     }
     */
@@ -3059,6 +3117,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
 
     // Copy matrices to mapped buffer
     std::memcpy(drawData.mappedPtr, modelMatrixs, bufferSize);
+    stats.uploadSize += bufferSize;
 
     // Bind VAO if enabled
     #ifdef USE_VAO
@@ -3135,6 +3194,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
 
     // Just memcpy
     std::memcpy(drawData.mappedPtr, modelMatrixs, bufferSize);
+    stats.uploadSize += bufferSize;
 
 #else
     //--------------------------------------------------
@@ -3149,6 +3209,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
     // Orphan + upload (best for avoiding stalls)
     glBufferData(GL_ARRAY_BUFFER, bufferSize, nullptr, GL_DYNAMIC_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, bufferSize, modelMatrixs);
+    if(modelMatrixs != nullptr) stats.uploadSize += bufferSize;
 
     // Alternative (if you want mapping instead):
     /*
@@ -3157,6 +3218,7 @@ void OpenGLGraphicsDevice::MeshSubmitInstancingCustomModelMatrixs(Mesh& mesh, Ma
 
     if(ptr){
         memcpy(ptr, modelMatrixs, bufferSize);
+        stats.uploadSize += bufferSize;
         glUnmapBuffer(GL_ARRAY_BUFFER);
     }
     */
@@ -4268,6 +4330,11 @@ void OpenGLGraphicsDevice::Texture2DGenerate(Texture2D& tex, unsigned int inWidt
 
     glBindTexture(GL_TEXTURE_2D, tex.glData.id);
     glTexImage2D(GL_TEXTURE_2D, 0, tex.glData.internalFormat, tex.width, tex.height, 0, tex.glData.imageFormat, TextureDataTypeFormatLookupMipmap[(int)dataType], data);
+    if(data != nullptr){
+        const auto channels = tex.glData.imageFormat == GL_RED ? 1 : tex.glData.imageFormat == GL_RGB ? 3 : 4;
+        const auto componentSize = dataType == TextureDataType::UnsignedByte ? 1 : sizeof(GLuint);
+        stats.uploadSize += static_cast<std::uint64_t>(tex.width) * tex.height * channels * componentSize;
+    }
     glCheckError();
     
     if(tex.mipmap == true) glGenerateMipmap(GL_TEXTURE_2D);
@@ -4483,6 +4550,7 @@ bool OpenGLGraphicsDevice::Texture2DUpdateRegion(Texture2D& tex,int x,int y,int 
     glPixelStorei(GL_UNPACK_ALIGNMENT,1);glPixelStorei(GL_UNPACK_ROW_LENGTH,0);
     glPixelStorei(GL_UNPACK_SKIP_ROWS,0);glPixelStorei(GL_UNPACK_SKIP_PIXELS,0);
     glTexSubImage2D(GL_TEXTURE_2D,0,x,y,w,h,format,type==TextureDataType::Float?GL_FLOAT:GL_UNSIGNED_BYTE,data);
+    if(data != nullptr) stats.uploadSize += static_cast<std::uint64_t>(w) * h * (format == GL_RED ? 1 : 4) * (type == TextureDataType::Float ? sizeof(GLfloat) : 1);
     if(tex.settings.mipmap) glGenerateMipmap(GL_TEXTURE_2D);
     glPixelStorei(GL_UNPACK_ALIGNMENT,alignment);glPixelStorei(GL_UNPACK_ROW_LENGTH,rowLength);
     glPixelStorei(GL_UNPACK_SKIP_ROWS,skipRows);glPixelStorei(GL_UNPACK_SKIP_PIXELS,skipPixels);
@@ -4557,6 +4625,7 @@ bool OpenGLGraphicsDevice::Texture2DArrayCreate(Texture2DArray& tex, const std::
     int _i = 0;
     for(auto i: datas){
         glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, _i, width, height, 1, imageFormat, GL_UNSIGNED_BYTE, i);
+        stats.uploadSize += static_cast<std::uint64_t>(width) * height * (imageFormat == GL_RGB ? 3 : 4);
         glCheckError();
         _i += 1;
     }
@@ -4679,6 +4748,7 @@ bool OpenGLGraphicsDevice::CubemapCreateFromFile(
             glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 
                          0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data
             );
+            if(data != nullptr) stats.uploadSize += static_cast<std::uint64_t>(width) * height * 3;
             glCheckError();
             stbi_image_free(data);
         } else {
@@ -4806,6 +4876,7 @@ void renderCube(unsigned int& cubeVAO, unsigned int& cubeVBO ){
 
         glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        Graphics::GetStats().uploadSize += sizeof(vertices);
 
     #ifdef USE_VAO
         // VAO stores attribute state
@@ -4881,6 +4952,7 @@ bool OpenGLGraphicsDevice::CubemapCreateFromFileHDR(Cubemap& cubemap, const char
         glGenTextures(1, &hdrTexture);
         glBindTexture(GL_TEXTURE_2D, hdrTexture);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, data); // note how we specify the texture's data value to be float
+        if(data != nullptr) stats.uploadSize += static_cast<std::uint64_t>(width) * height * 3 * sizeof(GLfloat);
         glCheckError();
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -5019,6 +5091,7 @@ Ref<Cubemap> OpenGLGraphicsDevice::CubemapCreateFromFileHDR(const char* hdri){
         glGenTextures(1, &hdrTexture);
         glBindTexture(GL_TEXTURE_2D, hdrTexture);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, data); // note how we specify the texture's data value to be float
+        if(data != nullptr) stats.uploadSize += static_cast<std::uint64_t>(width) * height * 3 * sizeof(GLfloat);
         glCheckError();
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -5706,6 +5779,7 @@ void OpenGLGraphicsDevice::UniformBufferSetData(UniformBuffer& buffer, const voi
         size,
         data
     );
+    if(data != nullptr) stats.uploadSize += size;
     glCheckError();
     stats.uniformBufferUpdates += 1;
 }
@@ -5759,6 +5833,7 @@ void OpenGLGraphicsDevice::ComputeBufferSetData(ComputeBuffer& buffer, const voi
         size,
         data
     );
+    if(data != nullptr) stats.uploadSize += size;
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     #endif
@@ -5853,6 +5928,7 @@ void OpenGLGraphicsDevice::ComputeShaderSetTexture(ComputeShader& shader, const 
     glBindTexture(GL_TEXTURE_2D, (GLuint)(uintptr_t)tex->RenderId());
 
     glUniform1i(loc, shader.glData.textureSlot);
+    if(loc >= 0) stats.uploadSize += sizeof(GLint);
 
     shader.glData.textureSlot++;
     #endif
@@ -5870,6 +5946,7 @@ void OpenGLGraphicsDevice::ComputeShaderSetTexture(ComputeShader& shader, const 
         glBindTexture(GL_TEXTURE_2D, tex);
 
         glUniform1i(loc, shader.glData.textureSlot);
+        if(loc >= 0) stats.uploadSize += sizeof(GLint);
     } else {
         GLuint tex = fb->glData.colorAttachments[attachment];// (GLuint)(uintptr_t)fb->ColorAttachmentId(attachment);
         GLenum format = InternalFormatLookup[(int)fb->specification.colorAttachments[attachment].colorFormat]; //FramebufferFormatToGL(spec.format);
@@ -5906,24 +5983,30 @@ void OpenGLGraphicsDevice::ComputeShaderSetComputeBuffer(ComputeShader& shader, 
 void OpenGLGraphicsDevice::ComputeShaderSetInt(ComputeShader& shader, const char* name, int v){
     #ifdef OpenGL46
     glUseProgram(shader.glData.id);
-    glUniform1i(GetUniformLocation(shader, name), v);
+    const GLint location = GetUniformLocation(shader, name);
+    glUniform1i(location, v);
+    if(location >= 0) stats.uploadSize += sizeof(GLint);
     #endif
 }
 
 void OpenGLGraphicsDevice::ComputeShaderSetFloat(ComputeShader& shader, const char* name, float v){
     #ifdef OpenGL46
     glUseProgram(shader.glData.id);
-    glUniform1f(GetUniformLocation(shader, name), v);
+    const GLint location = GetUniformLocation(shader, name);
+    glUniform1f(location, v);
+    if(location >= 0) stats.uploadSize += sizeof(GLfloat);
     #endif
 }
 
 void OpenGLGraphicsDevice::ComputeShaderSetVector4(ComputeShader& shader, const char* name, Vector4 v){
     #ifdef OpenGL46
     glUseProgram(shader.glData.id);
+    const GLint location = GetUniformLocation(shader, name);
     glUniform4f(
-        GetUniformLocation(shader, name),
+        location,
         v.x, v.y, v.z, v.w
     );
+    if(location >= 0) stats.uploadSize += sizeof(GLfloat) * 4;
     #endif
 }
 

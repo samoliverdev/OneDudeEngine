@@ -2,7 +2,9 @@
 #include <OD/Scene/Scene.h>
 #include <OD/Core/Color.h>
 #include <OD/Core/Action.h>
+#include <OD/Graphics/Material.h>
 #include <OD/Graphics/Model.h>
+#include <OD/Graphics/Shader.h>
 #include <OD/Graphics/InstancingBuffer.h>
 #include <OD/RenderPipeline/RendererFeature.h>
 #include <OD/RenderPipeline/RenderContext.h>

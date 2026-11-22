@@ -101,7 +101,7 @@ private:
     std::byte* Allocate(CommandType type, size_t offset){
         static_assert(std::is_trivially_copyable_v<Payload>);
         constexpr size_t totalSize = AlignUp(PayloadOffset + sizeof(Payload));
-        static_assert(totalSize <= std::numeric_limits<CommandSizeType>::max());
+        static_assert(totalSize <= (std::numeric_limits<CommandSizeType>::max)());
 
         if(totalSize > capacity - size) Grow(totalSize);
         auto* record = data.get() + offset;
@@ -115,7 +115,7 @@ private:
     }
 
     void Grow(size_t requiredBytes){
-        constexpr size_t maxCapacity = std::numeric_limits<size_t>::max() & ~(Alignment - 1);
+        constexpr size_t maxCapacity = (std::numeric_limits<size_t>::max)() & ~(Alignment - 1);
         if(requiredBytes > maxCapacity - size) throw std::bad_array_new_length{};
 
         size_t newCapacity = capacity == 0 ? 64 * 1024 : capacity;

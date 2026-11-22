@@ -8,6 +8,9 @@ namespace OD{
 
 class OpenGLGraphicsDevice: public GraphicsDevice{
 public:
+    static constexpr const char* Name = "OpenGL";
+    const char* GetName() const override { return Name; }
+
     OpenGLGraphicsDevice();
 
     virtual void LoadContext(void* data) override;

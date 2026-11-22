@@ -6,6 +6,7 @@
 #include "OD/Graphics/Material.h"
 #include "OD/Graphics/Graphics.h"
 #include "OD/Graphics/Framebuffer.h"
+#include "OD/Graphics/Mesh.h"
 #include "OD/Navmesh/Navmesh.h"
 #include "OD/TerrainSystem/TerrainPhysics.h"
 #include "OD/Physics/PhysicsSystem.h"

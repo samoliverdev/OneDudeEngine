@@ -1,7 +1,8 @@
 #pragma once
+#include "OD/Graphics/Camera.h"
 #include "OD/Defines.h"
 #include "OD/Scene/Scene.h"
-#include "OD/Serialization/Serialization.h"
+#include "OD/Serialization/SerializationCore.h"
 #include "RenderingPath.h"
 #include "PassRenderSettings.h"
 

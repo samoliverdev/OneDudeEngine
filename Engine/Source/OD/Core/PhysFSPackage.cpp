@@ -20,39 +20,43 @@ public:
 PhysFSPackage package;
 
 void PhysFS::Init(){
-    PHYSFS_init(nullptr);
-    Assert(PHYSFS_isInit());
+    if(PHYSFS_init(nullptr) || PHYSFS_isInit()) return;
+
+    const PHYSFS_ErrorCode code = PHYSFS_getLastErrorCode();
+    if(code == PHYSFS_ERR_OK){
+        LogWarning("PhysFS unavailable: initialization failed and the library did not retain an error code");
+    }else{
+        LogWarning("PhysFS unavailable: initialization failed (code {}): {}", static_cast<int>(code), PHYSFS_getErrorByCode(code));
+    }
 }
 
 bool PhysFS::Mount(const char* path, bool highPriority){
-    int r = PHYSFS_mount(path, "/", highPriority ? 0 : 1);
-    if(!r){
-        const char* err = PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode());
-        LogFatal("PhysFS mount error: {}", err);
-        Assert(false);
-    }
+    if(!PHYSFS_isInit()) return false;
+    if(PHYSFS_mount(path, "/", highPriority ? 0 : 1)) return true;
 
-    return true;
+    const char* err = PHYSFS_getErrorByCode(PHYSFS_getLastErrorCode());
+    LogWarning("PhysFS mount error: {}", err);
+    return false;
 }
 
 bool PhysFS::Unmount(const char* path){
-    int r = PHYSFS_unmount(path);
-    return r != 0;
+    return PHYSFS_isInit() && PHYSFS_unmount(path) != 0;
 }
 
 void PhysFS::Shutdown(){
-    PHYSFS_deinit();
+    if(PHYSFS_isInit()) PHYSFS_deinit();
 }
 
 Package* PhysFS::GetPackage(){
-    return &package;
+    return PHYSFS_isInit() ? &package : nullptr;
 }
 
 bool PhysFSPackage::HasFile(const char* path){
-    return PHYSFS_exists(path) != 0;
+    return PHYSFS_isInit() && PHYSFS_exists(path) != 0;
 }
 
 size_t PhysFSPackage::GetFileSize(const char* path) const{
+    if(!PHYSFS_isInit()) return 0;
     PHYSFS_File* file = PHYSFS_openRead(path);
     if(!file) return 0;
 
@@ -63,6 +67,7 @@ size_t PhysFSPackage::GetFileSize(const char* path) const{
 }
 
 bool PhysFSPackage::ReadFileData(const char* path, void*& outData, size_t& outSize){
+    if(!PHYSFS_isInit()) return false;
     PHYSFS_File* file = PHYSFS_openRead(path);
     if(!file) return false;
 
@@ -88,6 +93,7 @@ void PhysFSPackage::FreeFileData(void*& data){
 }
 
 bool PhysFSPackage::ReadFile(const char* path, std::vector<uint8_t>& outData){
+    if(!PHYSFS_isInit()) return false;
     PHYSFS_File* file = PHYSFS_openRead(path);
     if(!file) return false;
 
@@ -106,8 +112,10 @@ bool PhysFSPackage::ReadFile(const char* path, std::vector<uint8_t>& outData){
 
 std::vector<std::string> PhysFSPackage::ListFiles(const char* directory) const{
     std::vector<std::string> result;
+    if(!PHYSFS_isInit()) return result;
 
     char** rc = PHYSFS_enumerateFiles(directory);
+    if(!rc) return result;
     char** i = rc;
 
     /*while(*i != nullptr){
@@ -135,6 +143,7 @@ std::vector<std::string> PhysFSPackage::ListFiles(const char* directory) const{
 
 std::vector<std::string> PhysFSPackage::ListFilesRecursive(const char* directory) const{
     std::vector<std::string> result;
+    if(!PHYSFS_isInit()) return result;
 
     // Precompute separator
     const char* separator = "";
@@ -147,6 +156,7 @@ std::vector<std::string> PhysFSPackage::ListFilesRecursive(const char* directory
     }
 
     char** rc = PHYSFS_enumerateFiles(directory);
+    if(!rc) return result;
     char** i = rc;
 
     while(*i != nullptr){
