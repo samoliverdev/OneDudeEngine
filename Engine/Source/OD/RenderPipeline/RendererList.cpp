@@ -4,6 +4,8 @@
 #include "OD/Graphics/Mesh.h"
 #include "OD/Graphics/UniformBuffer.h"
 #include "OD/Graphics/Graphics.h"
+#include "OD/Graphics/Camera.h"
+#include "OD/Graphics/InstancingBuffer.h"
 #include "OD/Core/Instrumentor.h"
 #include "OD/Core/ResourceManager.h"
 #include "MeshRendererComponent.h"

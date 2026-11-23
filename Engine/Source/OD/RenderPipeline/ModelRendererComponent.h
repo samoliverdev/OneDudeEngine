@@ -2,7 +2,6 @@
 #include "OD/Defines.h"
 #include "OD/Graphics/Culling.h"
 #include "OD/Graphics/Model.h"
-#include "OD/Graphics/UniformBuffer.h"
 #include "OD/Serialization/SerializationCore.h"
 #include "OD/Scene/Ecs.h"
 #include "OD/Core/Color.h"
@@ -11,6 +10,7 @@ namespace OD{
 
 class Model;
 class Scene;
+class UniformBuffer;
 
 class StandRenderPipeline;
 

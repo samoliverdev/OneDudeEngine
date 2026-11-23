@@ -2,6 +2,7 @@
 #include "ModelRendererComponent.h"
 #include "StandRenderPipeline.h"
 #include "OD/Graphics/Model.h"
+#include "OD/Graphics/Material.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Serialization/CerealImGui.h"
 

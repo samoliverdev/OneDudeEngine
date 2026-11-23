@@ -7,7 +7,6 @@
 #include "Time.h"
 #include "Log.h"
 #include "Instrumentor.h"
-#include "JobSystem.h"
 #include "Lua.h"
 #include "PhysFSPackage.h"
 #include "OD/Core/ResourceManager.h"

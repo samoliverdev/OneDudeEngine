@@ -13,6 +13,7 @@
 #include <OD/RenderPipeline/MeshRendererComponent.h>
 #include <OD/Graphics/Model.h>
 #include <OD/Graphics/Cubemap.h>
+#include <OD/Graphics/Material.h>
 #include <OD/Editor/Editor.h>
 
 void PackageSample::OnInit(){

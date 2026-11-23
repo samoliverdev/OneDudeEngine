@@ -4,6 +4,8 @@
 #include <OD/Graphics/Graphics.h>
 #include <OD/Graphics/Framebuffer.h>
 #include <OD/Graphics/Mesh.h>
+#include <OD/Graphics/Shader.h>
+#include <OD/Graphics/Material.h>
 #include <OD/Core/Application.h>
 #include <OD/Core/ImGui.h>
 #include <assert.h>

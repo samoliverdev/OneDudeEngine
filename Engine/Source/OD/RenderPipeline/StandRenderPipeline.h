@@ -3,38 +3,28 @@
 #include "OD/Scene/Scene.h"
 #include "OD/Scene/BaseRenderPipeline.h"
 #include "OD/Graphics/Culling.h"
-#include "OD/Graphics/Shader.h"
-#include "OD/Graphics/Mesh.h"
-#include "OD/Graphics/Framebuffer.h"
-#include "OD/Graphics/Material.h"
-#include "OD/Graphics/Cubemap.h"
 #include "OD/Graphics/Graphics.h"
-#include "CameraComponent.h"
-#include "MeshRendererComponent.h"
 #include "LightComponent.h"
 #include "EnvironmentComponent.h"
 #include "RendererList.h"
-#include "RenderContext.h"
 #include "RendererFeature.h"
+#include "RenderContext.h"
 
 #define UseAsGlobal 1
 
 namespace OD{
 
 class ComputeShader;
+class Framebuffer;
+class Mesh;
+class Material;
+class RenderContex;
+struct EnvironmentComponent;
 
 class OD_API PostFXTest: public PostFX{
 public:
-    PostFXTest(int option):_option(option){
-        _ppShader = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/BasicPostProcessing.glsl"));
-
-        Assert(_ppShader != nullptr);
-    }
-
-    void OnRenderImage(Ref<Framebuffer>& src, Ref<Framebuffer>& dst, RenderContext& context) override {
-        _ppShader->SetFloat("option", _option);
-        Graphics::DrawQuadPostProcessing(src.get(), dst.get(), *_ppShader);
-    }
+    PostFXTest(int option);
+    void OnRenderImage(Ref<Framebuffer>& src, Ref<Framebuffer>& dst, RenderContext& context) override;
 
 private:
     int _option;
@@ -43,18 +33,8 @@ private:
 
 class OD_API GamaCorrectionPP: public PostFX{
 public:
-    GamaCorrectionPP(){
-        gamaCorrection = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/GamaCorrectionPP.glsl"));
-    }
-
-    void OnRenderImage(Ref<Framebuffer>& src, Ref<Framebuffer>& dst, RenderContext& context) override{
-        //Graphics::DrawQuadPostProcessing(src, dst, *gamaCorrection);
-
-        Graphics::BeginFramebuffer(*dst);
-        gamaCorrection->SetTexture("mainTex", src, 0);
-        Graphics::DrawFullScreenQuad(*gamaCorrection, Matrix4Identity);
-        Graphics::EndFramebuffer();
-    }
+    GamaCorrectionPP();
+    void OnRenderImage(Ref<Framebuffer>& src, Ref<Framebuffer>& dst, RenderContext& context) override;
 
 private:
     Ref<Material> gamaCorrection = nullptr;
@@ -62,18 +42,8 @@ private:
 
 class OD_API GamaCorrectionPass: public RenderPass{
 public:
-    GamaCorrectionPass(){
-        gamaCorrection = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/GamaCorrectionPP.glsl"));
-    }
-
-    void Execute(Scene& scene, RenderContext& context, RenderFrameData& data) override{
-        //Graphics::DrawQuadPostProcessing(src, dst, *gamaCorrection);
-
-        Graphics::BeginFramebuffer(*data.dst);
-        gamaCorrection->SetTexture("mainTex", data.src, 0);
-        Graphics::DrawFullScreenQuad(*gamaCorrection, Matrix4Identity);
-        Graphics::EndFramebuffer();
-    }
+    GamaCorrectionPass();
+    void Execute(Scene& scene, RenderContext& context, RenderFrameData& data) override;
 
 private:
     Ref<Material> gamaCorrection = nullptr;
@@ -271,8 +241,7 @@ public:
     enum class Type{
         Forward,
         Deferred,
-        EntityIdDraw,
-        All
+        EntityIdDraw
     };
     
     CameraRenderer();
@@ -322,7 +291,7 @@ private:
     GamaCorrectionPass gamaCorrectionPass;
 
     void RunRenderDataLoop();
-    void AddRenderData(RenderData& data, Type type);
+    void AddRenderData(RenderData& data, Type type, const Frustum& frustum);
     void RenderVisibleGeometry(EnvironmentSettings& environmentSettings);
     void RenderVisibleGeometryNew(EnvironmentSettings& environmentSettings);
     void RenderSprites();

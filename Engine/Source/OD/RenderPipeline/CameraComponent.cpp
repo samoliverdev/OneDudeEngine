@@ -1,6 +1,7 @@
 #include "OD/pch.h"
 #include "CameraComponent.h"
 #include "OD/Scene/SceneMeta.h"
+#include "OD/Scene/Scene.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Core/Math.h"
 #include "OD/Core/Lua.h"

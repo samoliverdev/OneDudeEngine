@@ -1,6 +1,7 @@
 #include "OD/pch.h"
 #include "LightComponent.h"
 #include "OD/Scene/SceneMeta.h"
+#include "OD/Scene/Scene.h"
 #include "OD/Serialization/CerealImGui.h"
 #include "OD/Core/ImGui.h"
 #include "OD/Core/Lua.h"

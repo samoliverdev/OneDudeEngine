@@ -11,17 +11,24 @@
 #include "OD/Graphics/Font.h"
 #include "OD/Graphics/UniformBuffer.h"
 #include "OD/Graphics/ComputeShader.h"
+#include "OD/Graphics/Framebuffer.h"
+#include "OD/Graphics/Mesh.h"
+#include "OD/Graphics/Shader.h"
+#include "OD/Graphics/Material.h"
+#include "OD/Graphics/Cubemap.h"
 #include "OD/Graphics/Gizmos.h"
 #include "OD/Graphics/Ultis.h"
 #include "OD/RenderPipeline/SkinnedBoneSocket.h"
 #include "OD/RenderPipeline/MeshRendererComponent.h"
 #include "OD/RenderPipeline/ModelRendererComponent.h"
 #include "OD/RenderPipeline/TextRendererComponent.h"
+#include "OD/RenderPipeline/CameraComponent.h"
 #include "OD/RenderPipeline/UIComponents.h"
 #include "OD/RenderPipeline/Text3DRendererComponent.h"
 #include "OD/RenderPipeline/StaticRendererClusterComponent.h"
 #include "OD/RenderPipeline/DecalRendererComponent.h"
 #include "OD/RenderPipeline/EnvironmentProbeComponent.h"
+#include "EnvironmentComponent.h"
 #include "OD/Animation/Animator.h"
 #include "TextRendererComponent.h"
 #include "MeshRendererComponent.h"
@@ -184,6 +191,47 @@ void StandRenderPipelineModuleInit(){
 
     RendererFeatureGlobal::Get().RegisterRendererFeature<RendererFeatureTest>("RendererFeatureTest");
 }
+
+#pragma region Other
+
+PostFXTest::PostFXTest(int option):_option(option){
+    _ppShader = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/BasicPostProcessing.glsl"));
+
+    Assert(_ppShader != nullptr);
+}
+
+void PostFXTest::OnRenderImage(Ref<Framebuffer>& src, Ref<Framebuffer>& dst, RenderContext& context){
+    _ppShader->SetFloat("option", _option);
+    Graphics::DrawQuadPostProcessing(src.get(), dst.get(), *_ppShader);
+}
+
+GamaCorrectionPP::GamaCorrectionPP(){
+    gamaCorrection = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/GamaCorrectionPP.glsl"));
+}
+
+void GamaCorrectionPP::OnRenderImage(Ref<Framebuffer>& src, Ref<Framebuffer>& dst, RenderContext& context){
+    //Graphics::DrawQuadPostProcessing(src, dst, *gamaCorrection);
+
+    Graphics::BeginFramebuffer(*dst);
+    gamaCorrection->SetTexture("mainTex", src, 0);
+    Graphics::DrawFullScreenQuad(*gamaCorrection, Matrix4Identity);
+    Graphics::EndFramebuffer();
+}
+
+GamaCorrectionPass::GamaCorrectionPass(){
+    gamaCorrection = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/GamaCorrectionPP.glsl"));
+}
+
+void GamaCorrectionPass::Execute(Scene& scene, RenderContext& context, RenderFrameData& data){
+    //Graphics::DrawQuadPostProcessing(src, dst, *gamaCorrection);
+
+    Graphics::BeginFramebuffer(*data.dst);
+    gamaCorrection->SetTexture("mainTex", data.src, 0);
+    Graphics::DrawFullScreenQuad(*gamaCorrection, Matrix4Identity);
+    Graphics::EndFramebuffer();
+}
+
+#pragma endregion 
 
 #pragma region Shadows
 Shadows::Shadows(){
@@ -738,12 +786,6 @@ void CameraRenderer::RenderPassNew(CameraRenderPass& inpass, RenderContext* rend
         opaqueForwardOnlyDrawTarget.Clean();
         blendDrawTarget.Clean();
         decalDrawTarget.Clean();
-        entityIdDrawTarget.Clean();
-
-        entityIdDrawSettings.enableIntancing = false;
-        entityIdDrawSettings.renderQueueRange = RenderQueueRange::All;
-        entityIdDrawSettings.sortType = SortType::None;
-        entityIdDrawTarget.sortType = RendererList::SortType::None;// RendererList::SortType::CommonOpaque;
 
         //----------Opaque Settings-----------
         opaqueDrawSettings.enableIntancing = true;
@@ -796,7 +838,7 @@ void CameraRenderer::RenderPassNew(CameraRenderPass& inpass, RenderContext* rend
             // all other filters in one test
             if((f & pass.collectSettings.rejectIfAny) != 0) return;
 
-            AddRenderData(data, type); 
+            AddRenderData(data, type, camera.frustum);
             if(pass.settings.drawShadow){
                 shadows.AddRenderData(data);
             } 
@@ -846,12 +888,6 @@ void CameraRenderer::RunRenderDataLoop(){
     opaqueForwardOnlyDrawTarget.Clean();
     blendDrawTarget.Clean();
     decalDrawTarget.Clean();
-    entityIdDrawTarget.Clean();
-
-    entityIdDrawSettings.enableIntancing = false;
-    entityIdDrawSettings.renderQueueRange = RenderQueueRange::All;
-    entityIdDrawSettings.sortType = SortType::None;
-    entityIdDrawTarget.sortType = RendererList::SortType::None;// RendererList::SortType::CommonOpaque;
 
     //----------Opaque Settings-----------
     opaqueDrawSettings.enableIntancing = true;
@@ -905,13 +941,6 @@ void CameraRenderer::RunRenderDataLoop(){
             blendDrawTarget
         );
     });
-    context->GetScene()->GetTaskflow().emplace([&](){
-        context->RunComputeRenderList(
-            {camera.frustum, true}, 
-            entityIdDrawSettings,
-            entityIdDrawTarget
-        );
-    });
     shadows.AddRunComputeRenderList();
     context->GetScene()->GetExecutor().run(context->GetScene()->GetTaskflow()).wait(); 
     context->GetScene()->GetTaskflow().clear();
@@ -925,7 +954,7 @@ void CameraRenderer::RunRenderDataLoop(){
 
     context->UpdateRenderData(*scene, *passCtx);
     context->RenderDataLoopNew([&](RenderData& data){
-        AddRenderData(data, CameraRenderer::Type::All); 
+        AddRenderData(data, CameraRenderer::Type::Deferred, camera.frustum);
         //if(data.HasFlag(RenderData::Flag::RenderShadow) == true){
             shadows.AddRenderData(data);
         //} 
@@ -952,11 +981,11 @@ void CameraRenderer::RunRenderDataLoop(){
     #endif
 }
 
-void CameraRenderer::AddRenderData(RenderData& data, CameraRenderer::Type type){
+void CameraRenderer::AddRenderData(RenderData& data, CameraRenderer::Type type, const Frustum& frustum){
     //Assert(Mathf::HasNaN(camera.view) == false);
     //Assert(HasNaN(camera.frustum) == false);
 
-    if(data.aabb.isOnFrustum(camera.frustum) == false && data.HasFlag(RenderData::Flag::AlwaysDraw) == false) return;
+    if(data.aabb.isOnFrustum(frustum) == false && data.HasFlag(RenderData::Flag::AlwaysDraw) == false) return;
 
     switch(type){
         case CameraRenderer::Type::Forward:
@@ -972,16 +1001,15 @@ void CameraRenderer::AddRenderData(RenderData& data, CameraRenderer::Type type){
         context->AddDrawRenderers(data, decalDrawSettings, decalDrawTarget);
         break;
 
-        case CameraRenderer::Type::EntityIdDraw:
-        context->AddDrawRenderers(data, entityIdDrawSettings, entityIdDrawTarget);
-        break;
+        case CameraRenderer::Type::EntityIdDraw: {
+            if(data.instancingBuffer != INVALID_RESOURCE_ID) break;
 
-        case CameraRenderer::Type::All:
-        context->AddDrawRenderers(data, opaqueDrawSettings, opaqueDrawTarget);
-        context->AddDrawRenderers(data, opaqueForwardOnlyDrawSettings, opaqueForwardOnlyDrawTarget);
-        context->AddDrawRenderers(data, blendDrawSettings, blendDrawTarget);
-        context->AddDrawRenderers(data, decalDrawSettings, decalDrawTarget);
-        context->AddDrawRenderers(data, entityIdDrawSettings, entityIdDrawTarget);
+            const uint32_t encodedId = data.entityId + 1u; // Zero is reserved for the background.
+            Vector4 perDrawData(0.0f, data.targetMatrix[1][3], data.targetMatrix[2][3], data.targetMatrix[3][3]);
+            static_assert(sizeof(float) == sizeof(uint32_t));
+            std::memcpy(&perDrawData.x, &encodedId, sizeof(encodedId));
+            context->AddDrawRenderers(data, entityIdDrawSettings, entityIdDrawTarget, perDrawData);
+        }
         break;
     }
 
@@ -1816,9 +1844,17 @@ std::vector<PostFX*> CameraRenderer::GetPostFXs(EnvironmentSettings& environment
 }
 
 void CameraRenderer::RenderEntityIds(Camera cam, RenderContext* renderContext){
-    context->SetupCameraProperties(cam);
-    context->BeginDrawToScreen();
+    context = renderContext;
+    entityIdDrawTarget.Clean();
+    entityIdDrawTarget.sortType = RendererList::SortType::None;
+    entityIdDrawSettings.enableIntancing = false;
+    entityIdDrawSettings.renderQueueRange = RenderQueueRange::All;
+    entityIdDrawSettings.sortType = SortType::None;
+    context->RenderDataLoopNew2([&](RenderData& data){
+        AddRenderData(data, CameraRenderer::Type::EntityIdDraw, cam.frustum);
+    });
 
+    context->SetupCameraProperties(cam);
     context->BeginDrawEntityIds();
     context->DrawEntityIds(entityIdDrawTarget);
     context->EndDrawEntityIds();
@@ -1860,10 +1896,8 @@ Ref<Framebuffer> StandRenderPipeline::FinalColor(){
 }
 
 int StandRenderPipeline::ReadEntityId(int x, int y){
-    if(overrideCamera != nullptr){
-        cameraRenderer.RenderEntityIds(*overrideCamera, renderContext.get());
-    }
-
+    if(overrideCamera == nullptr || x < 0 || y < 0 || x >= overrideCamera->width || y >= overrideCamera->height) return 0;
+    cameraRenderer.RenderEntityIds(*overrideCamera, renderContext.get());
     return renderContext->ReadPixeIntFromEntityIdsFramebuffer(x, y);
 }
 

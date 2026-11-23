@@ -2,6 +2,7 @@
 #include "ViewportPanel.h"
 #include "OD/Core/Input.h"
 #include "OD/Editor/Editor.h"
+#include "OD/Graphics/Framebuffer.h"
 #include "OD/RenderPipeline/StandRenderPipeline.h"
 #include "OD/RenderPipeline/ModelRendererComponent.h"
 #include "OD/Gfx/Gfx.h"
@@ -148,17 +149,17 @@ void ViewportPanel::OnGui(){
     // The Gfx path does not implement integer framebuffer readback yet.
 #ifndef TestNewGPU_API
     if(Input::IsMouseButtonDown(MouseButton::Left) && editor->gizmoInteractionState.isOver == false && sceneRunning == false && ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows) && !TerrainEditor::IsEditing(*scene,editor->GetSelectionEntity())){
-        int entityId = renderPipeline->ReadEntityId(mouseX, mouseY) - 1;
-    
         ImVec2 _mousePos = ImGui::GetMousePos();
         bool insideViewport =
         _mousePos.x >= editor->viewportBounds[0].x && _mousePos.x <= editor->viewportBounds[1].x &&
         _mousePos.y >= editor->viewportBounds[0].y && _mousePos.y <= editor->viewportBounds[1].y;
 
         if(insideViewport){
+            uint32_t encodedId = static_cast<uint32_t>(renderPipeline->ReadEntityId(mouseX, mouseY));
+            uint32_t entityId = encodedId - 1u;
             LogInfo("ReadPixel(1): {}", (unsigned int)entityId);
 
-            if(entityId >= 0){
+            if(encodedId != 0){
                 bool holdMultSelection = Input::IsKey(KeyCode::LShift);
 
                 if(holdMultSelection){

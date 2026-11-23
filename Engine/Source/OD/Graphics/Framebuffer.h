@@ -1,7 +1,6 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Platform/OpenGL/GL.h"
-#include "OD/Platform/WebGPU/WebGPU.h"
 #include "OD/Core/Resource.h"
 #include "OD/Gfx/Gfx.h"
 #include "RendererTypes.h"
@@ -112,7 +111,6 @@ private:
     FramebufferType type;
     FrameBufferSpecification specification;
     FramebufferDataGL;
-    FramebufferDataWG;
 
     Gfx::Framebuffer framebuffer = Gfx::InvalidID;
     std::string passName;

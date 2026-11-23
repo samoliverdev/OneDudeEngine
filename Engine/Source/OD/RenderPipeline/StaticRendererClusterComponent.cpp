@@ -4,6 +4,7 @@
 #include "OD/Core/ImGui.h"
 #include "OD/Graphics/Mesh.h"
 #include "OD/Graphics/Model.h"
+#include "OD/Graphics/InstancingBuffer.h"
 
 namespace OD{
 

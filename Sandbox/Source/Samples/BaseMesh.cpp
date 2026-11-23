@@ -5,6 +5,7 @@
 #include <OD/Graphics/Material.h>
 #include <OD/Graphics/Graphics.h>
 #include <OD/Graphics/CommandBuffer.h>
+#include <OD/Graphics/Camera.h>
 #include <OD/Scene/Scene.h>
 #include <OD/Scene/GroupOfComps.h>
 #include <OD/Core/Input.h>

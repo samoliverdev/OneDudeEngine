@@ -22,6 +22,7 @@
 #include "OD/Graphics/UniformBuffer.h"
 #include "OD/Graphics/InstancingBuffer.h"
 #include "OD/Graphics/ComputeShader.h"
+#include "OD/Graphics/Framebuffer.h"
 #include "OD/Graphics/Gizmos.h"
 #include "OD/Scene/SceneManager.h"
 #include "OD/Editor/Editor.h"
@@ -127,7 +128,7 @@ struct alignas(16) SSSParameters3
     float padding[2]; 
 };
 
-inline void SetPerInstanceData(Matrix4& matrix, Vector4& data){
+inline void SetPerInstanceData(Matrix4& matrix, const Vector4& data){
     matrix[0][3] = data.x;
     matrix[1][3] = data.y;
     matrix[2][3] = data.z;
@@ -363,6 +364,7 @@ void RenderContext::BeginDrawToScreenNew(){
 }
 
 void RenderContext::BeginDrawEntityIds(){
+    entityIdOutColor->Resize(cam.width, cam.height);
     Graphics::BeginFramebuffer(*entityIdOutColor);
     ScreenClean();
 }
@@ -2234,6 +2236,7 @@ void tf_for_each4(tf::Taskflow& taskflow, Iter begin, Iter end, size_t num_tasks
 
 //////////////////////////////////////////
 inline void FillMeshRenderData(RenderContext& ctx, RenderData& data, MeshRendererComponent& c, TransformComponent& t, InfoComponent& info, entt::entity e){
+    data.entityId = entt::to_integral(e);
     data.layer = info.layer;
 
     data.distance = math::distance2(ctx.GetCamera().viewPos, t.Position());
@@ -2268,6 +2271,7 @@ inline void FillMeshRenderData(RenderContext& ctx, RenderData& data, MeshRendere
 }
 
 inline void FillStaticMeshRenderData(RenderContext& ctx, RenderData& data, StaticRendererComponent& s, MeshRendererComponent& c, TransformComponent& t, InfoComponent& info, entt::entity e){
+    data.entityId = entt::to_integral(e);
     data.layer = info.layer;
 
     data.distance = math::distance2(ctx.GetCamera().viewPos, t.Position());
@@ -2299,6 +2303,7 @@ inline void FillStaticMeshRenderData(RenderContext& ctx, RenderData& data, Stati
 }
 
 inline void FillSkinnedMeshRenderData(RenderContext& ctx, RenderData& data, SkinnedMeshRendererComponent& c, TransformComponent& t, InfoComponent& info, entt::entity e){
+    data.entityId = entt::to_integral(e);
     data.layer = info.layer;
 
     data.distance = math::distance2(ctx.GetCamera().viewPos, t.Position());
@@ -2338,6 +2343,7 @@ inline void FillSkinnedMeshRenderData(RenderContext& ctx, RenderData& data, Skin
 }
 
 inline void FillModelRenderData(RenderContext& ctx, RenderData& data, ModelRendererComponent& c, TransformComponent& t, InfoComponent& info, entt::entity e, Model* model, const Model::RenderTarget& target){
+    data.entityId = entt::to_integral(e);
     //TODO: maybe move distance, targetMatrix, aabb from the this to cacl once for ModelRendererComponent
     data.layer = info.layer;
 
@@ -2386,6 +2392,7 @@ inline void FillModelRenderData(RenderContext& ctx, RenderData& data, ModelRende
 }
 
 inline void FillStaticModelRenderData(RenderContext& ctx, RenderData& data, StaticRendererComponent& s, ModelRendererComponent& c, TransformComponent& t, InfoComponent& info, entt::entity e, Model* model, const Model::RenderTarget& target, int index){
+    data.entityId = entt::to_integral(e);
     data.layer = info.layer;
 
     data.distance = math::distance2(ctx.GetCamera().viewPos, t.Position());
@@ -2421,6 +2428,7 @@ inline void FillStaticModelRenderData(RenderContext& ctx, RenderData& data, Stat
 }
 
 inline void FillSkinnedModelRenderData(RenderContext& ctx, RenderData& data, SkinnedModelRendererComponent& c, TransformComponent& t, InfoComponent& info, entt::entity e, Model* model, const Model::RenderTarget& target){
+    data.entityId = entt::to_integral(e);
     data.layer = info.layer;
     
     data.distance = math::distance2(ctx.GetCamera().viewPos, t.Position());
@@ -2491,6 +2499,7 @@ inline void UpdateSkinnedData(SkinnedModelRendererComponent& skinned){
 }
 
 inline void FillDecalRenderData(RenderContext& ctx, RenderData& data, DecalRendererComponent& decal, InfoComponent& info, TransformComponent& trans, Model* decalMesh, entt::entity entity){
+    data.entityId = entt::to_integral(entity);
     data.distance = math::distance2(ctx.GetCamera().viewPos, trans.Position());
     data.targetMaterial = decal.material->GetId();
     data.customShadowPass = INVALID_RESOURCE_ID;
@@ -2748,6 +2757,7 @@ void RenderContext::UpdateRenderData(Scene& scene, RendererFeatureContext& passC
 
                 for(auto& renderTarget: subchunk.targets){
                     RenderData& data = renderData.GetNew(0); //RenderData data;
+                    data.entityId = entt::to_integral(entity);
                     data.distance = math::distance2(cam.viewPos, t.PositionReadSafe());
                     data.targetMaterial = renderTarget.targetMaterial == nullptr ? INVALID_RESOURCE_ID : renderTarget.targetMaterial->GetId();
                     data.customShadowPass = INVALID_RESOURCE_ID;
@@ -2777,6 +2787,7 @@ void RenderContext::UpdateRenderData(Scene& scene, RendererFeatureContext& passC
 
                 subchunk.drawIntancingCommands.Each([&](DrawInstancingCommand2& cmd){
                     RenderData& data = renderData.GetNew(0); //RenderData data;
+                    data.entityId = entt::to_integral(entity);
                     data.distance = math::distance2(cam.viewPos, t.PositionReadSafe());
                     data.targetMaterial = cmd.material;
                     data.customShadowPass = INVALID_RESOURCE_ID;
@@ -2869,7 +2880,12 @@ inline bool HasAnyTags(const std::vector<uint32_t>& a, const std::vector<uint32_
     return false;
 }
 
-void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings, RendererList& target){
+void RenderContext::AddDrawRenderers(
+    RenderData& data,
+    DrawingSettings& settings,
+    RendererList& target,
+    const std::optional<Vector4>& perDrawData
+){
     /*auto* materialView = ResourceManager::Get().GetAllocatorView<Material>();
     auto* meshView = ResourceManager::Get().GetAllocatorView<Mesh>();
     auto* uniformBufferView = ResourceManager::Get().GetAllocatorView<UniformBuffer>();
@@ -2916,9 +2932,17 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
 
     bool isInstancing = mat->EnableInstancingValid() && settings.enableIntancing;*/
 
+    Matrix4 perDrawMatrix;
+    const Matrix4* drawMatrix = &data.targetMatrix;
+    if(perDrawData){
+        perDrawMatrix = data.targetMatrix;
+        SetPerInstanceData(perDrawMatrix, *perDrawData);
+        drawMatrix = &perDrawMatrix;
+    }
+
     if(data.posePalette != nullptr){
         target.AddSkinnedDrawCommand({
-            data.targetMatrix,
+            *drawMatrix,
             //data.perDrawData,
             targetMaterial->CurrentShader(targetMaterial->MainPass()).drawTypes[1]->GetId(),
             targetMaterial->GetId(),
@@ -2936,7 +2960,7 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
             });
         } else{
             target.AddDrawInstancingCommand(DrawInstancingCommand4{
-                data.targetMatrix,
+                *drawMatrix,
                 targetMaterial->CurrentShader(targetMaterial->MainPass()).drawTypes[2]->GetId(),
                 targetMaterial->GetId(),
                 targetMesh->GetId(),
@@ -2944,7 +2968,7 @@ void RenderContext::AddDrawRenderers(RenderData& data, DrawingSettings& settings
         }
     } else {
         target.AddDrawCommand({
-            data.targetMatrix,
+            *drawMatrix,
             //data.perDrawData,
             targetMaterial->CurrentShader(targetMaterial->MainPass()).drawTypes[0]->GetId(),
             targetMaterial->GetId(),

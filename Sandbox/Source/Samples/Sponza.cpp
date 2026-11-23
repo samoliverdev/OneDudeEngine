@@ -10,6 +10,9 @@
 #include <OD/RenderPipeline/LightComponent.h>
 #include <OD/Graphics/Model.h>
 #include <OD/Graphics/Cubemap.h>
+#include <OD/Graphics/Material.h>
+#include <OD/Graphics/Model.h>
+#include <OD/Graphics/Shader.h>
 #include <OD/Editor/Editor.h>
 //#include <OD/RenderPipeline/DeferredRenderPipeline.h>
 

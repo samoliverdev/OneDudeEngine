@@ -1,13 +1,14 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Core/Color.h"
-#include "OD/Core/Math.h"
-#include "OD/Scene/Scene.h"
+#include "OD/Scene/ECS.h"
 #include "OD/Serialization/SerializationCore.h"
 
 namespace sol{ class state; }
 
 namespace OD{
+
+class Scene;
 
 struct OD_API LightComponent{
     friend class StandRenderPipeline;

@@ -1,11 +1,9 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Base.h"
-#include "OD/Graphics/Graphics.h"
-#include "OD/Graphics/Camera.h"
-#include "OD/Graphics/InstancingBuffer.h"
 #include "OD/Core/Math.h"
 #include "OD/Core/AlignedAllocator.h"
+#include "OD/Core/Resource.h"
 #include "RenderPipelineUtils.h"
 //#include <EASTL/vector.h>
 

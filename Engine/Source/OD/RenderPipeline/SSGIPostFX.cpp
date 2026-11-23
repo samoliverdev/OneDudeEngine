@@ -5,6 +5,7 @@
 #include "OD/Graphics/Framebuffer.h"
 #include "OD/Graphics/Material.h"
 #include "OD/Graphics/Shader.h"
+#include "OD/Graphics/Camera.h"
 #include "OD/Core/Application.h"
 #include "OD/Serialization/CerealImGui.h"
 

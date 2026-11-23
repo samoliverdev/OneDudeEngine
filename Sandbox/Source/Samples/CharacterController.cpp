@@ -8,6 +8,9 @@
 #include <OD/Audio/AudioClip.h>
 #include <OD/Audio/AudioSystem.h>
 #include <OD/Physics/PhysicsSystem.h>
+#include <OD/Graphics/Material.h>
+#include <OD/Graphics/Shader.h>
+#include <OD/Graphics/Model.h>
 #include <OD/RenderPipeline/EnvironmentComponent.h>
 #include <OD/RenderPipeline/LightComponent.h>
 #include <OD/RenderPipeline/CameraComponent.h>

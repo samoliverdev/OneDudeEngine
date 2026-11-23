@@ -2,8 +2,6 @@
 #include "OD/Defines.h"
 #include "OD/Scene/ECS.h"
 #include "OD/Graphics/Culling.h"
-//#include "OD/Graphics/Mesh.h"
-//#include "OD/Graphics/Material.h"
 #include "OD/Animation/Skeleton.h"
 
 namespace OD{

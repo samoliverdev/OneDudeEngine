@@ -7,6 +7,7 @@
 #include <OD/Graphics/Shader.h>
 #include <OD/Graphics/Model.h>
 #include <OD/Graphics/Texture.h>
+#include <OD/Graphics/Material.h>
 #include <OD/RenderPipeline/ModelRendererComponent.h>
 #include <OD/RenderPipeline/LightComponent.h>
 #include <OD/RenderPipeline/EnvironmentComponent.h>

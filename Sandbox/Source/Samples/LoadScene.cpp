@@ -2,6 +2,7 @@
 #include "LoadScene.h"
 #include "Standard/Module.h"
 #include <OD/Core/Application.h>
+#include <OD/Graphics/Texture.h>
 #include <OD/Scene/SceneManager.h>
 #include <OD/Editor/Editor.h>
 

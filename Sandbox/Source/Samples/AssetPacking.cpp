@@ -13,6 +13,7 @@
 #include <OD/Graphics/Model.h>
 #include <OD/Graphics/Cubemap.h>
 #include <OD/Graphics/Texture.h>
+#include <OD/Graphics/Material.h>
 #include <OD/Editor/Editor.h>
 #include <OD/Editor/ExtraPanels/BuildsPanel.h>
 

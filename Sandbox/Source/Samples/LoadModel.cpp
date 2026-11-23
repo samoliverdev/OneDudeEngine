@@ -7,6 +7,7 @@
 #include <OD/Graphics/Model.h>
 #include <OD/Graphics/Shader.h>
 #include <OD/Graphics/Texture.h>
+#include <OD/Graphics/Material.h>
 #include <OD/Graphics/InstancingBuffer.h>
 #include <OD/Graphics/Graphics.h>
 

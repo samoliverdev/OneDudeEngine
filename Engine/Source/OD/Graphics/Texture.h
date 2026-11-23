@@ -1,7 +1,6 @@
 #pragma once
 #include "OD/Core/Resource.h"
 #include "OD/Platform/OpenGL/GL.h"
-#include "OD/Platform/WebGPU/WebGPU.h"
 #include "OD/Gfx/Gfx.h"
 
 namespace cereal{
@@ -142,7 +141,6 @@ private:
     Texture2DSetting settings{};
     bool isComplete = false;
     Texture2DDataGL;
-    Texture2DDataWG;
 
     Gfx::Texture2D tex = Gfx::InvalidID;
 

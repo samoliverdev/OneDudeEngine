@@ -252,7 +252,6 @@ private:
     
     bool isComplete = false;
     MaterialDataGL;
-    MaterialDataWG;
 
     void SetFloat(const char* name, float value, float min, float max);
     

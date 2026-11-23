@@ -49,13 +49,12 @@ OD::ApplicationConfig GetStartAppConfig(){
     return OD::ApplicationConfig{
         0, 0,
         800, 600,
-        "Game1",
-        false
+        "Game1"
     };
 }
 
 OD::Module* CreateMainModule(){
-    int i = 10; //10; //-1; //35;
+    int i = 23; //10; //-1; //35;
 
     #ifdef TestNewGPU_API
     i = 10; //34; //22; //10; //-4; //-3; //-2;

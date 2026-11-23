@@ -10,6 +10,7 @@
 #include <OD/Graphics/Material.h>
 #include <OD/Graphics/UniformBuffer.h>
 #include <OD/Graphics/ComputeBuffer.h>
+#include <OD/Graphics/Camera.h>
 #include <OD/Graphics/Graphics.h>
 
 struct BlurParams{

@@ -1,7 +1,6 @@
 #pragma once
 #include "OD/Defines.h"
 #include "OD/Core/AlignedAllocator.h"
-#include "OD/Graphics/Framebuffer.h"
 #include "OD/Core/ResourceManager.h"
 #include "ChunkedVector.h"
 #include "RenderData.h"
@@ -12,13 +11,17 @@
 #include "PostFX.h"
 #include "RendererFeature.h"
 #include "RenderingPath.h"
+#include "OD/Graphics/Camera.h"
 #include <vector>
 #include <functional>
+#include <optional>
 
 namespace OD{
 
 class Scene;
+class Framebuffer;
 class UniformBuffer;
+class Model;
 class InstancingBuffer;
 class RendererFeature;
 class ComputeShader;
@@ -258,7 +261,12 @@ public:
 
     void DrawPostFXs(Scene& scene, RendererFeatureContext& passCtx, RenderFrameData& data, RenderPass* last = nullptr, RenderPassEvent pass = RenderPassEvent::PostProcess);
 
-    void AddDrawRenderers(RenderData& renderData, DrawingSettings& settings, RendererList& target);
+    void AddDrawRenderers(
+        RenderData& renderData,
+        DrawingSettings& settings,
+        RendererList& target,
+        const std::optional<Vector4>& perDrawData = std::nullopt
+    );
     void DrawRenderersBuffer(RendererList& commandBuffer, bool sort = false, bool deferred = false, bool isDecal = false);
     void DrawZPreePassRenderersBuffer(RendererList& commandBuffer, bool sort = false, bool post = false);
 

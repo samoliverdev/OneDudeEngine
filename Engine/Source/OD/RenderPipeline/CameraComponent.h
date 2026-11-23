@@ -1,7 +1,6 @@
 #pragma once
 #include "OD/Graphics/Camera.h"
 #include "OD/Defines.h"
-#include "OD/Scene/Scene.h"
 #include "OD/Serialization/SerializationCore.h"
 #include "RenderingPath.h"
 #include "PassRenderSettings.h"
@@ -11,6 +10,7 @@ namespace sol{ class state; }
 namespace OD{
 
 class Framebuffer;
+struct TransformComponent;
 
 struct OD_API CameraComponent{
     enum class Type{

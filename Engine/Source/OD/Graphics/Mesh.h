@@ -2,7 +2,6 @@
 #include "OD/Core/Resource.h"
 #include "OD/Core/Math.h"
 #include "OD/Platform/OpenGL/GL.h"
-#include "OD/Platform/WebGPU/WebGPU.h"
 #include "OD/Gfx/Gfx.h"
 
 namespace OD {
@@ -126,7 +125,6 @@ private:
     size_t ramUsage;
     size_t vramUsage = 0;
     MeshDataGL;
-    MeshDataWG;
 
     void Bind();
     size_t CalculateRamUsage();

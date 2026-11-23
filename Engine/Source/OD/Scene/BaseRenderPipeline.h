@@ -15,6 +15,7 @@ public:
     virtual void SetOverrideCamera(Camera* cam, Transform trans) = 0;
     virtual Ref<Framebuffer> FinalColor() = 0;
 
+    //TODO: Change this to uint32_t
     virtual int ReadEntityId(int x, int y){ return 0; }
 };
 

@@ -6,6 +6,7 @@
 #include <OD/Scene/SceneManager.h>
 #include <OD/Graphics/Graphics.h>
 #include <OD/Graphics/Cubemap.h>
+#include <OD/Graphics/Material.h>
 #include <OD/RenderPipeline/EnvironmentComponent.h>
 #include <OD/RenderPipeline/ModelRendererComponent.h>
 #include <OD/RenderPipeline/CameraComponent.h>

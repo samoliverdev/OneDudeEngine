@@ -2,6 +2,9 @@
 #include "Animator.h"
 #include "Ultis/CameraMovement.h"
 #include "Ultis/Ultis.h"
+#include <OD/Graphics/Shader.h>
+#include <OD/Graphics/Model.h>
+#include <OD/Graphics/Material.h>
 #include <OD/Scene/SceneManager.h>
 #include <OD/RenderPipeline/LightComponent.h>
 #include <OD/RenderPipeline/CameraComponent.h>

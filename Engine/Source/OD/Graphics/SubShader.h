@@ -4,7 +4,6 @@
 #include "RendererTypes.h"
 
 #include "OD/Platform/OpenGL/GL.h"
-#include "OD/Platform/WebGPU/WebGPU.h"
 
 #include "OD/Gfx/Gfx.h"
 
@@ -123,7 +122,6 @@ struct OD_API SubShader: public Resource{
     //std::unordered_map<std::string, int> uniforms;
     //std::vector<std::string> _uniforms;
     SubShaderDataGL;
-    SubShaderDataWG;
 
     //Gfx::Pipeline _pipeline = Gfx::InvalidID;
     Gfx::Pipeline _pipelines[MAX_FRAMEBUFFER_RENDER_PASSES];

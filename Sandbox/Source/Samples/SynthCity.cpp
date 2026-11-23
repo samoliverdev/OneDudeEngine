@@ -9,6 +9,7 @@
 #include <OD/Graphics/Model.h>
 #include <OD/Graphics/Shader.h>
 #include <OD/Graphics/Cubemap.h>
+#include <OD/Graphics/Material.h>
 #include <OD/Core/Application.h>
 #include "Ultis/CameraMovement.h"
 #include "Ultis/Ultis.h"

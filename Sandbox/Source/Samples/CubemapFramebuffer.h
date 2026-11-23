@@ -9,6 +9,7 @@ namespace OD{
     class SubShader;
     class InstancingBuffer;
     class Framebuffer;
+    class Material;
 }
 
 using namespace OD;

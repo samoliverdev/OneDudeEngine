@@ -3,6 +3,7 @@
 #include "Ultis/CameraMovement.h"
 #include "Ultis/Ultis.h"
 #include "Standard/Ultis/FastNoiseLiteCpp.h"
+#include <OD/Graphics/Material.h>
 #include <OD/Terrain/Terrain.h>
 #include <OD/RenderPipeline/ModelRendererComponent.h>
 #include <OD/RenderPipeline/StaticRendererClusterComponent.h>
