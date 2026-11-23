@@ -114,7 +114,7 @@ struct alignas(16) PipelineData{
 
     float _SkyLightIntensity;
     float _ShadowDistance;
-    float _Pad0;
+    float _EnvironmentReflectionIntensity = 1.0f;
     float _Pad1;
 
     int _DirectionalLightCount;
@@ -239,7 +239,9 @@ public:
     void EndDeferredPass();
 
     void DeferredCopyToForwardPass();
-    void DrawDeferredLight(int index = -1, bool combinedIndirect = false);
+    void DrawDeferredLight(int index = -1, bool combinedIndirect = false, bool specularOcclusion = false);
+    void SetGlobalAO(Ref<Framebuffer> ao);
+    const Ref<Framebuffer>& GetGlobalAO() const { return globalAO; }
     void DrawDeferredLightOther(int index, Vector3 pos, Vector3 dir, float size, bool isCone);
 
     void CleanSSS();
@@ -316,6 +318,7 @@ private:
     Ref<Material> deferredGBufferShader;
     Ref<Material> deferredLightPassShader;
     Ref<Material> deferredLightPass;
+    Ref<Framebuffer> globalAO;
     Ref<Material> deferredLightDirSinglePass;
     Ref<Material> deferredLightDirSingleOtherPass;
     Ref<Mesh> skyboxMesh;

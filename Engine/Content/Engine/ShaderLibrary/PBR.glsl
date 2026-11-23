@@ -107,7 +107,7 @@ vec3 AmbientLight(Surface surfaceWS){
 	//float mip = PerceptualRoughnessToMipmapLevel(surfaceWS.roughness); //surfaceWS.smoothness * MAX_REFLECTION_LOD
 	float mip = surfaceWS.roughness * MAX_REFLECTION_LOD;
     //vec3 prefilteredColor = _AmbientLight + textureLod(_PrefilterMap, R, mip).rgb * _SkyLightIntensity;    
-    vec3 prefilteredColor = _AmbientLight.rgb + SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSampler, R, mip).rgb * _SkyLightIntensity;   
+    vec3 prefilteredColor = _AmbientLight.rgb + SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSampler, R, mip).rgb * _SkyLightIntensity * _EnvironmentReflectionIntensity;
     vec2 brdf = SampleTexture2D(_BrdfLUT, _BrdfLUTSampler, vec2(max(dot(surfaceWS.normal, surfaceWS.viewDirection), 0.0), surfaceWS.roughness)).rg;
     vec3 specular = /*_AmbientLight +*/ (prefilteredColor * (F * brdf.x + brdf.y));
 
@@ -171,7 +171,7 @@ vec3 AmbientLight2(Surface surfaceWS) {
     vec3 F_coat = fresnelSchlickRoughness(NdotV, F0_coat, surfaceWS.clearCoatRoughness) * surfaceWS.clearCoat;
     
     float mipCoat = surfaceWS.clearCoatRoughness * MAX_REFLECTION_LOD;
-    vec3 prefilteredCoat = _AmbientLight.rgb + SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSampler, R, mipCoat).rgb * _SkyLightIntensity;
+    vec3 prefilteredCoat = _AmbientLight.rgb + SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSampler, R, mipCoat).rgb * _SkyLightIntensity * _EnvironmentReflectionIntensity;
     vec2 brdfCoat = SampleTexture2D(_BrdfLUT, _BrdfLUTSampler, vec2(NdotV, surfaceWS.clearCoatRoughness)).rg;
     vec3 specularCoat = prefilteredCoat * (F_coat * brdfCoat.x + brdfCoat.y);
     
@@ -189,7 +189,7 @@ vec3 AmbientLight2(Surface surfaceWS) {
     vec3 diffuseBase = (_AmbientLight.rgb + cubeIrradiance * _SkyLightIntensity) * surfaceWS.color;
     
     float mipBase = surfaceWS.roughness * MAX_REFLECTION_LOD;
-    vec3 prefilteredBase = _AmbientLight.rgb + SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSampler, R, mipBase).rgb * _SkyLightIntensity;   
+    vec3 prefilteredBase = _AmbientLight.rgb + SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSampler, R, mipBase).rgb * _SkyLightIntensity * _EnvironmentReflectionIntensity;
     vec2 brdfBase = SampleTexture2D(_BrdfLUT, _BrdfLUTSampler, vec2(NdotV, surfaceWS.roughness)).rg;
     vec3 specularBase = prefilteredBase * (F_base * brdfBase.x + brdfBase.y);
     
@@ -416,12 +416,30 @@ struct GI{
     vec3 clearCoatSpecularLighting;
 };
 
-GI GetGI(Surface surface){
+float GetSkyReflectionVisibility(float ao, vec3 bentNormal, vec3 reflection, float roughness){
+    ao = clamp(ao, 0.0, 1.0);
+    float bentLengthSquared = dot(bentNormal, bentNormal);
+    if(bentLengthSquared < 0.0001 || ao <= 0.0 || ao >= 1.0) return ao;
+
+    // Cosine-weighted AO estimates the aperture of the visible cone.
+    float visibleAngle = acos(sqrt(1.0 - ao));
+    float lobeAngle = acos(1.0 - clamp(roughness * roughness, 0.001, 1.0));
+    float separation = acos(clamp(dot(bentNormal, reflection) * inversesqrt(bentLengthSquared), -1.0, 1.0));
+
+    // Approximate the fraction of the specular lobe inside the visible cone.
+    float overlap = 1.0 - smoothstep(abs(visibleAngle - lobeAngle), visibleAngle + lobeAngle, separation);
+    float coverage = min((1.0 - cos(visibleAngle)) / (1.0 - cos(lobeAngle)), 1.0);
+    return overlap * coverage;
+}
+
+GI GetGI(Surface surface, float skyVisibility, vec3 bentNormal){
     GI gi;
 
     vec3 N = normalize(surface.normal); //surface.normal;
     vec3 V = normalize(surface.viewDirection); //surface.viewDirection;
     vec3 R = reflect(-V, N);
+    float reflectionIntensity = _EnvironmentReflectionIntensity *
+        GetSkyReflectionVisibility(skyVisibility, bentNormal, R, surface.roughness);
 
     vec3 F0 = mix(vec3(0.04), surface.color, surface.metallic);
     vec3 F = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, surface.roughness);
@@ -440,11 +458,13 @@ GI GetGI(Surface surface){
 
     #if defined(SPECULAR_BRDF_GGX)
     float mip = surface.roughness * MAX_REFLECTION_LOD;
-    vec3 specular = _AmbientLight.rgb + SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSampler, R, mip).rgb * _SkyLightIntensity;
+    vec3 specular = _AmbientLight.rgb + SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSampler, R, mip).rgb * _SkyLightIntensity * reflectionIntensity;
     gi.specularLighting = SpecularIBL_GGX(specular, F, max(dot(N, V), 0.0), surface.roughness);
 
+    float coatReflectionIntensity = _EnvironmentReflectionIntensity *
+        GetSkyReflectionVisibility(skyVisibility, bentNormal, R, surface.clearCoatRoughness);
     float clearCoatMip = surface.clearCoatRoughness * MAX_REFLECTION_LOD;
-    vec3 clearCoatSpecular = _AmbientLight.rgb + SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSampler, R, clearCoatMip).rgb * _SkyLightIntensity;
+    vec3 clearCoatSpecular = _AmbientLight.rgb + SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSampler, R, clearCoatMip).rgb * _SkyLightIntensity * coatReflectionIntensity;
     clearCoatSpecular *= 2.5;
 
     vec3 coatPrefilter = clearCoatSpecular;// SpecularIBL_GGX(gi.clearCoatSpecular, F, max(dot(N,V),0.0), surfaceWS.clearCoatRoughness); 
@@ -455,12 +475,16 @@ GI GetGI(Surface surface){
 
     #if defined(SPECULAR_BRDF_GGX_CUSTOM)
     float mip = surface.roughness * MAX_REFLECTION_LOD;
-    vec3 specular = _AmbientLight.rgb + SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSampler, R, mip).rgb * _SkyLightIntensity;
+    vec3 specular = _AmbientLight.rgb + SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSampler, R, mip).rgb * _SkyLightIntensity * reflectionIntensity;
     gi.specularLighting = SpecularIBL_SkinGGX(specular, F, max(dot(N, V), 0.0), surface.roughness);
     gi.clearCoatSpecularLighting = vec3(0);
     #endif
 
     return gi;
+}
+
+GI GetGI(Surface surface){
+    return GetGI(surface, 1.0, vec3(0.0));
 }
 
 vec3 EvaluateDirectLight(Surface surface, Light light){
@@ -623,7 +647,7 @@ LightingResult AmbientLightNew(Surface s){
 
     float mip = s.roughness * MAX_REFLECTION_LOD;
     vec3 R = reflect(-s.viewDirection, s.normal);
-    vec3 prefiltered = SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSampler, R, mip).rgb;
+    vec3 prefiltered = SampleTextureCubeLod(_PrefilterMap, _PrefilterMapSampler, R, mip).rgb * _EnvironmentReflectionIntensity;
 
     vec2 brdf = SampleTexture2D(_BrdfLUT, _BrdfLUTSampler,
         vec2(max(dot(s.normal, s.viewDirection), 0.0), s.roughness)).rg;

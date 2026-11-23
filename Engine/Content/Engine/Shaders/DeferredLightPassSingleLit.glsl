@@ -4,6 +4,7 @@
     DepthMask False
     DepthTest ALWAYS
     MultiCompile _ INDIRECTPLUSDIRECTIONAL INDIRECT DIRECTIONAL
+    MultiCompile _ SCREENSPACEAO
     RenderPass Forward
 #pragma EndPassDef
 
@@ -21,6 +22,9 @@ Texture2D(0, 13, gEmission, gEmissionSampler)
 Texture2D(0, 14, gOther, gOtherSampler)
 Texture2D(0, 15, gDepth, gDepthSampler)
 Texture2D(0, 16, sss, sssSampler)
+#if defined(SCREENSPACEAO) && (defined(INDIRECT) || defined(INDIRECTPLUSDIRECTIONAL))
+Texture2D(0, 17, _ScreenSpaceAO, screenSpaceAOSampler)
+#endif
 
 #if defined(VERTEX) && defined(MainPass)
     In(0) vec3 vPos;
@@ -84,6 +88,10 @@ Texture2D(0, 16, sss, sssSampler)
         surface.color = Albedo.rgb;
         surface.alpha = 1.0;
         surface.occlusion = AO;
+        vec4 screenSpaceAO = vec4(1.0, 0.0, 0.0, 0.0);
+        #if defined(SCREENSPACEAO) && (defined(INDIRECT) || defined(INDIRECTPLUSDIRECTIONAL))
+            screenSpaceAO = SampleTexture2D(_ScreenSpaceAO, screenSpaceAOSampler, texCoord);
+        #endif
         surface.metallic = Metallic;
         //surface.smoothness = Specular;
         surface.roughness = Specular; //clamp(1.0 - surface.smoothness, 0.05, 1);
@@ -95,7 +103,7 @@ Texture2D(0, 16, sss, sssSampler)
         //return;
 
         //BRDF brdf = GetBRDF(surface);
-        GI gi = GetGI(surface);
+        GI gi = GetGI(surface, screenSpaceAO.r, screenSpaceAO.gba);
 
         FragColor = vec4(1, 1, 1, 1);
 

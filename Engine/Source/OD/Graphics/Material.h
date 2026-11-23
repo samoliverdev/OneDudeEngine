@@ -159,6 +159,7 @@ public:
     static void SetGlobalMatrix4(const char* name, Matrix4* value, int count);
     static void SetGlobalTexture(const char* name, Ref<Texture2D> tex);
     static void SetGlobalTexture(const char* name, Ref<Framebuffer> tex, int attachment);
+    static void ClearGlobalTexture(const char* name);
     static void SetGlobalCubemap(const char* name, Ref<Cubemap> tex);
     static void SetGlobalUniformBuffer(const char* name, Ref<UniformBuffer> buffer, int bind);
 

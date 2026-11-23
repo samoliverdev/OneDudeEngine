@@ -42,6 +42,7 @@ struct OD_API EnvironmentSettings{
     Ref<Framebuffer> skyPrefilterMapF = nullptr;
 
     float skyLightIntensity = 1;
+    float environmentReflectionIntensity = 1.0f;
 
     ShadowQuality directionalshadowQuality = ShadowQuality::High;
     ShadowQuality othershadowQuality = ShadowQuality::Median;
@@ -53,6 +54,7 @@ struct OD_API EnvironmentSettings{
     //AntiAliasing antiAliasing;
     //MSAAQuality msaaQuality = MSAAQuality::MSAA_4;
 
+    bool enableSpecularOcclusion = false;
     bool enableSSS = false;
     float sssSurfaceThickness = 0.005f;
     float sssBilinearThreshold = 0.02f;
@@ -70,6 +72,7 @@ struct OD_API EnvironmentSettings{
     void serialize(Archive& ar){
         ArchiveDumpNVP(ar, environmentSky);
         ArchiveDumpNVP(ar, environmentLight);
+        ArchiveDumpNVP(ar, environmentReflectionIntensity);
         ArchiveDumpNVP(ar, ambient);
         ArchiveDumpNVP(ar, cleanColor);
         ArchiveDumpNVP(ar, directionalshadowQuality);
@@ -78,6 +81,7 @@ struct OD_API EnvironmentSettings{
         ArchiveDumpNVP(ar, shadowDistance);
         ArchiveDumpNVP(ar, shadowBias);
 
+        ArchiveDumpNVP(ar, enableSpecularOcclusion);
         ArchiveDumpNVP(ar, enableSSS);
         ArchiveDumpNVP(ar, sssSurfaceThickness);
         ArchiveDumpNVP(ar, sssBilinearThreshold);

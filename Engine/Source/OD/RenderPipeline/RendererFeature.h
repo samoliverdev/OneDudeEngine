@@ -56,6 +56,12 @@ public:
     virtual void AddPass(RenderPass* pass){}
 };
 
+class OD_API CameraProjectionRenderPass{
+public:
+    virtual ~CameraProjectionRenderPass() = default;
+    virtual void ConfigureProjection(Camera& camera) = 0;
+};
+
 class OD_API RendererPasses: public IRenderer{
 public:
     std::vector<RenderPass*> passes;

@@ -716,6 +716,11 @@ void CameraRenderer::RenderPassNew(CameraRenderPass& inpass, RenderContext* rend
     if(inpass.settings.drawPostProcessing == false) passCtx->GetRenderPasses()[(int)RenderPassEvent::PostProcessBeforeForward].clear();
     if(inpass.settings.drawPostProcessing == false) passCtx->GetRenderPasses()[(int)RenderPassEvent::PostProcess].clear();
     if(inpass.settings.drawUI == false) passCtx->GetRenderPasses()[(int)RenderPassEvent::UI].clear();
+    for(auto* renderPass : passCtx->GetRenderPasses()[(int)RenderPassEvent::PostProcess]){
+        if(auto* projectionPass = dynamic_cast<CameraProjectionRenderPass*>(renderPass)){
+            projectionPass->ConfigureProjection(camera);
+        }
+    }
     passCtx->GetRenderPasses()[(int)RenderPassEvent::PostProcess].push_back(&gamaCorrectionPass);
 
     shadows.Setup(context, shadowSettings, camera);
@@ -1023,6 +1028,7 @@ void CameraRenderer::RenderVisibleGeometryNew(EnvironmentSettings& environmentSe
     }
 
     context->SetupCameraProperties(camera);
+    context->SetGlobalAO(nullptr);
     context->BeginDrawToScreenNew();
 
     Ref<Material> targetSkyMaterial = nullptr;
@@ -1034,6 +1040,7 @@ void CameraRenderer::RenderVisibleGeometryNew(EnvironmentSettings& environmentSe
         targetSkyMaterial = environmentSettings.skyCustomMaterial;
     }
     context->skyMaterial = targetSkyMaterial;
+    context->pipelineData._EnvironmentReflectionIntensity = environmentSettings.environmentReflectionIntensity;
 
     context->pipelineData._AmbientLight = ToLinear((Vector4)environmentSettings.ambient);
 
@@ -1104,13 +1111,30 @@ void CameraRenderer::RenderVisibleGeometryNew(EnvironmentSettings& environmentSe
             context->DrawSSS(lighting.mainDirectionalLightDir, settings);
         }
  
+        auto& ssao = environmentSettings.ssao;
+        if(ssao.enable && ssao.debugView != SSAOFeature::DebugView::Off &&
+           !pass.isReflectionProbePass && camera.type != Camera::Type::Preview && camera.type != Camera::Type::Reflection){
+            auto debugAO = ssao.GenerateAO(*context, ssao.debugView == SSAOFeature::DebugView::BentNormals);
+            if(debugAO != nullptr){
+                context->BeginForwardPass();
+                ssao.DrawDebug(debugAO);
+                context->EndForwardPass();
+                context->EndDrawToScreenNew();
+                return;
+            }
+        }
+        if(pass.settings.drawPostProcessing && ssao.enable && ssao.publishGlobalAO){
+            context->SetGlobalAO(ssao.GenerateAO(*context));
+        }
+
         context->BeginForwardPass();
 
+        const bool specularOcclusion = environmentSettings.enableSpecularOcclusion;
         if(lighting.curDirLightsCount <= 0){
-            context->DrawDeferredLight(-1);
+            context->DrawDeferredLight(-1, false, specularOcclusion);
         } else {
             for(int i = 0; i < lighting.curDirLightsCount; i++){
-                context->DrawDeferredLight(i, i == 0);
+                context->DrawDeferredLight(i, i == 0, specularOcclusion);
             }
         }
         
@@ -1168,6 +1192,7 @@ void CameraRenderer::RenderVisibleGeometryNew(EnvironmentSettings& environmentSe
     context->EndUIPass();
 
     context->EndDrawToScreenNew();
+    context->SetGlobalAO(nullptr);
 }
 
 void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSettings){
@@ -1246,6 +1271,7 @@ void CameraRenderer::RenderVisibleGeometry(EnvironmentSettings& environmentSetti
         targetSkyMaterial = environmentSettings.skyCustomMaterial;
     }
     context->skyMaterial = targetSkyMaterial;
+    context->pipelineData._EnvironmentReflectionIntensity = environmentSettings.environmentReflectionIntensity;
 
     context->pipelineData._AmbientLight = ToLinear((Vector4)environmentSettings.ambient);
 

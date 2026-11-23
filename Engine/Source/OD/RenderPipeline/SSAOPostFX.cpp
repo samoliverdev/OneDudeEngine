@@ -5,7 +5,6 @@
 #include "OD/Graphics/Framebuffer.h"
 #include "OD/Graphics/Material.h"
 #include "OD/Graphics/Shader.h"
-#include "OD/Core/Application.h"
 #include "OD/Serialization/CerealImGui.h"
 
 namespace OD{
@@ -13,12 +12,16 @@ namespace OD{
 void SSAOFeature::OnGui() {
     cereal::ImGuiArchive gui;
     gui(*this);
+    int selectedView = static_cast<int>(debugView);
+    if(ImGui::Combo("Debug View", &selectedView, "Off\0Ambient Occlusion\0Bent Normals\0")){
+        debugView = static_cast<DebugView>(selectedView);
+    }
 }
 
 SSAOFeature::SSAOFeature(){
-    #ifndef TestNewGPU_API
     enable = false;
     event = RenderPassEvent::PostProcessBeforeForward;
+    #ifndef TestNewGPU_API
     aoPass = ResourceManager::Get().Create<Material>(Shader::CreateFromFile("Engine/Shaders/SSAOPostFX.glsl"));
     Assert(aoPass != nullptr);
 
@@ -28,7 +31,6 @@ SSAOFeature::SSAOFeature(){
 
     std::uniform_real_distribution<float> randomFloats(0.0, 1.0); // random floats between [0.0, 1.0]
     std::default_random_engine generator;
-    ssaoKernel;
     for (unsigned int i = 0; i < 64; ++i){
         glm::vec3 sample(
             randomFloats(generator) * 2.0 - 1.0, 
@@ -63,96 +65,133 @@ SSAOFeature::SSAOFeature(){
 }
 
 void SSAOFeature::AddRenderPasses(IRenderer& renderer, RenderContext& context){
-    renderer.AddPass(this);
+    #ifndef TestNewGPU_API
+    if(context.isDeferred && compose) renderer.AddPass(this);
+    #endif
 }
 
-void SSAOFeature::Execute(Scene& scene, RenderContext& context, RenderFrameData& data){
+Ref<Framebuffer> SSAOFeature::GenerateAO(RenderContext& context, bool debugBentNormals){
     #ifndef TestNewGPU_API
-    if(context.isDeferred == false){
-        Graphics::BlitFramebuffer(data.src.get(), data.dst.get());
-        return;
-    }
-    auto spec = data.src->Specification();
-    spec.colorAttachments[0].colorFormat = FramebufferTextureFormat::RGBA16F;
+    auto deferred = context.GetDeferredFramebuffer();
+    auto spec = deferred->Specification();
+    spec.colorAttachments = {{FramebufferTextureFormat::RGBA16F}};
     spec.createDepth = false;
     
-    auto ao1 = ResourceManager::Get().Create<Framebuffer>(spec);
-    auto ao2 = ResourceManager::Get().Create<Framebuffer>(spec);
+    const auto fullSpec = spec;
+    int divisor = 1;
+    switch(resolutionMode){
+        case ResolutionMode::Half: divisor = 2; break;
+        case ResolutionMode::Quarter: divisor = 4; break;
+        default: break;
+    }
 
-    Ref<Framebuffer> deferred = context.GetDeferredFramebuffer();
+    spec.width = std::max(1, (fullSpec.width + divisor - 1) / divisor);
+    spec.height = std::max(1, (fullSpec.height + divisor - 1) / divisor);
+    auto ao1 = ResourceManager::Get().Create<Framebuffer>(spec);
+    const bool guided = divisor > 1 && upsampleMode == UpsampleMode::Guided;
 
     aoPass->SetVector4("samples", ssaoKernel.data(), 64);
     aoPass->SetTexture("texNoise", noise);
-    aoPass->SetFloat("screenWidth", context.GetCamera().width);
-    aoPass->SetFloat("screenHeight", context.GetCamera().height);
+    aoPass->SetFloat("screenWidth", spec.width);
+    aoPass->SetFloat("screenHeight", spec.height);
     aoPass->SetFloat("intensity", intensity);
     aoPass->SetFloat("radius", radius);
     aoPass->SetFloat("bias", bias);
-    aoPass->SetVector2("noiseScale", 
-        //{Application::ScreenWidth() / 4.0f, Application::ScreenHeight() / 4.0f}
-        {context.GetCamera().width / 2.0f, context.GetCamera().height / 2.0f}
-    );
+    aoPass->SetInt("outputBentNormals", debugBentNormals || (publishGlobalAO && useBentNormals));
+    aoPass->SetVector2("noiseScale", {spec.width / 2.0f, spec.height / 2.0f});
     aoPass->SetTexture("gNormal", deferred, 0);
     aoPass->SetTexture("gAlbedoSpec", deferred, 1);
     aoPass->SetTexture("gDepth", deferred, -1);
 
     Graphics::BeginFramebuffer(*ao1);
+    Graphics::SetViewport(0, 0, spec.width, spec.height);
     aoPass->SetPass(0);
-    aoPass->SetTexture("mainTex", data.src, 0);
     Graphics::DrawFullScreenQuad(*aoPass, Matrix4Identity);
     Graphics::EndFramebuffer();
 
-    Graphics::BeginFramebuffer(*ao2);
-    aoPass->SetPass(1);
-    aoPass->SetTexture("ssaoTexture", ao1, 0);
+    Ref<Framebuffer> coefficients;
+    if(guided){
+        auto coefficientSpec = spec;
+        coefficientSpec.colorAttachments = {{FramebufferTextureFormat::RGBA32F}, {FramebufferTextureFormat::RGBA32F}};
+        auto localModels = ResourceManager::Get().Create<Framebuffer>(coefficientSpec);
+        coefficients = ResourceManager::Get().Create<Framebuffer>(coefficientSpec);
+
+        Graphics::BeginFramebuffer(*localModels);
+        aoPass->SetPass(7); // SSAOGuidedFit
+        aoPass->SetTexture("ssaoTexture", ao1, 0);
+        Graphics::DrawFullScreenQuad(*aoPass, Matrix4Identity);
+        Graphics::EndFramebuffer();
+
+        Graphics::BeginFramebuffer(*coefficients);
+        aoPass->SetPass(8); // SSAOGuidedAverage
+        aoPass->SetTexture("guidedSlope", localModels, 0);
+        aoPass->SetTexture("guidedIntercept", localModels, 1);
+        Graphics::DrawFullScreenQuad(*aoPass, Matrix4Identity);
+        Graphics::EndFramebuffer();
+    } else {
+        auto ao2 = ResourceManager::Get().Create<Framebuffer>(spec);
+        Graphics::BeginFramebuffer(*ao2);
+        aoPass->SetPass(1);
+        aoPass->SetTexture("ssaoTexture", ao1, 0);
+        Graphics::DrawFullScreenQuad(*aoPass, Matrix4Identity);
+        Graphics::EndFramebuffer();
+
+        Graphics::BeginFramebuffer(*ao1);
+        aoPass->SetPass(2);
+        aoPass->SetTexture("ssaoTexture", ao2, 0);
+        Graphics::DrawFullScreenQuad(*aoPass, Matrix4Identity);
+        Graphics::EndFramebuffer();
+    }
+
+    if(divisor == 1) return ao1;
+
+    auto fullAO = ResourceManager::Get().Create<Framebuffer>(fullSpec);
+    Graphics::BeginFramebuffer(*fullAO);
+    Graphics::SetViewport(0, 0, fullSpec.width, fullSpec.height);
+    if(guided){
+        aoPass->SetPass(9); // SSAOGuidedUpsample
+        aoPass->SetTexture("guidedSlope", coefficients, 0);
+        aoPass->SetTexture("guidedIntercept", coefficients, 1);
+    } else {
+        aoPass->SetPass(6); // SSAOBilateralUpsample
+        aoPass->SetInt("useSurfacePlane", upsampleMode == UpsampleMode::SurfacePlane);
+        aoPass->SetTexture("ssaoTexture", ao1, 0);
+    }
     Graphics::DrawFullScreenQuad(*aoPass, Matrix4Identity);
     Graphics::EndFramebuffer();
 
-    Graphics::BeginFramebuffer(*ao1);
-    aoPass->SetPass(2);
-    aoPass->SetTexture("ssaoTexture", ao2, 0);
+    return fullAO;
+    #else
+    return nullptr;
+    #endif
+}
+
+void SSAOFeature::DrawDebug(const Ref<Framebuffer>& ao){
+    aoPass->SetPass(5); // SSAODebug
+    aoPass->SetInt("debugBentNormals", debugView == DebugView::BentNormals);
+    aoPass->SetTexture("ssaoTexture", ao, 0);
     Graphics::DrawFullScreenQuad(*aoPass, Matrix4Identity);
-    Graphics::EndFramebuffer();
+}
+
+void SSAOFeature::Execute(Scene& scene, RenderContext& context, RenderFrameData& data){
+    if(!context.isDeferred || !compose){
+        Graphics::BlitFramebuffer(data.src.get(), data.dst.get());
+        return;
+    }
+
+    auto ao = publishGlobalAO ? context.GetGlobalAO() : nullptr;
+    if(ao == nullptr) ao = GenerateAO(context);
+    if(ao == nullptr){
+        Graphics::BlitFramebuffer(data.src.get(), data.dst.get());
+        return;
+    }
 
     Graphics::BeginFramebuffer(*data.dst);
     aoPass->SetPass(3);
     aoPass->SetTexture("mainTex", data.src, 0);
-    aoPass->SetTexture("ssaoTexture", ao1, 0);
+    aoPass->SetTexture("ssaoTexture", ao, 0);
     Graphics::DrawFullScreenQuad(*aoPass, Matrix4Identity);
     Graphics::EndFramebuffer();
-
-    /*if(context.isDeferred == false){
-        Graphics::BlitFramebuffer(data.src, data.dst);
-        return;
-    }
-
-    Framebuffer* deferred = context.GetDeferredFramebuffer();
-
-    aoPass->SetVector4("samples", ssaoKernel.data(), 64);
-    aoPass->SetTexture("texNoise", noise);
-
-    aoPass->SetFloat("screenWidth", context.GetCamera().width);
-    aoPass->SetFloat("screenHeight", context.GetCamera().height);
-
-    aoPass->SetFloat("intensity", intensity);
-    aoPass->SetFloat("radius", radius);
-    aoPass->SetFloat("bias", bias);
-    aoPass->SetVector2("noiseScale", 
-        //{Application::ScreenWidth() / 4.0f, Application::ScreenHeight() / 4.0f}
-        {context.GetCamera().width / 2.0f, context.GetCamera().height / 2.0f}
-    );
-
-    aoPass->SetTexture("gNormal", deferred, 0);
-    aoPass->SetTexture("gAlbedoSpec", deferred, 1);
-    aoPass->SetTexture("gDepth", deferred, -1);
-
-    Graphics::BeginFramebuffer(*data.dst);
-    aoPass->SetTexture("mainTex", data.src, 0);
-    Graphics::DrawFullScreenQuad(*aoPass, Matrix4Identity);
-    Graphics::EndFramebuffer();*/
-    #else
-    Assert(false);
-    #endif
 }
 
 }

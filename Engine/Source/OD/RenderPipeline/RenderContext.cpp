@@ -421,7 +421,21 @@ void RenderContext::DeferredCopyToForwardPass(){
     Graphics::BlitFramebuffer(deferredOutColor.get(), forwardOutColor.get(), -1);
 }
 
-void RenderContext::DrawDeferredLight(int index, bool combinedIndirect){
+void RenderContext::SetGlobalAO(Ref<Framebuffer> ao){
+    globalAO = ao;
+    if(globalAO != nullptr){
+        Material::SetGlobalTexture("_ScreenSpaceAO", globalAO, 0);
+    } else {
+        Material::ClearGlobalTexture("_ScreenSpaceAO");
+    }
+}
+
+void RenderContext::DrawDeferredLight(int index, bool combinedIndirect, bool specularOcclusion){
+    if(specularOcclusion && globalAO != nullptr && (index < 0 || combinedIndirect)){
+        deferredLightDirSinglePass->EnableKeyword("SCREENSPACEAO");
+    } else {
+        deferredLightDirSinglePass->DisableKeyword("SCREENSPACEAO");
+    }
 
     if(index < 0){
         /*deferredLightPass->SetTexture("gPosition", deferredOutColor, 0);

@@ -56,6 +56,7 @@ void EnvironmentComponent::OnGui(Entity& e, Scene& scene){
         ImGui::ColorEdit3("ambient", &environment.settings.ambient, ImGuiColorEditFlags_HDR);
     } else {
         ImGui::DragFloat("skyLightIntensity", &environment.settings.skyLightIntensity, 1, 0, 10);
+        ImGui::SliderFloat("Environment Reflections Intensity Multiplier", &environment.settings.environmentReflectionIntensity, 0.0f, 1.0f);
     }
 
     ImGui::Spacing();ImGui::Spacing();
@@ -67,6 +68,7 @@ void EnvironmentComponent::OnGui(Entity& e, Scene& scene){
     ImGui::DragFloat("shadowDistance", &environment.settings.shadowDistance);
     ImGui::DragFloat("shadowBias", &environment.settings.shadowBias, 0.1f, 0, 1, "%.6f");
 
+    ImGui::Checkbox("Specular Occlusion (Deferred)", &environment.settings.enableSpecularOcclusion);
     ImGui::Checkbox("enableSSS", &environment.settings.enableSSS);
     ImGui::DragFloat("sssSurfaceThickness", &environment.settings.sssSurfaceThickness);
     ImGui::DragFloat("sssBilinearThreshold", &environment.settings.sssBilinearThreshold);

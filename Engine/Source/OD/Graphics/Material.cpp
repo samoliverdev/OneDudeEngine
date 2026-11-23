@@ -372,6 +372,10 @@ void Material::SetGlobalTexture(const char* name, Ref<Framebuffer> tex, int atta
     map.framebufferAttachment = attachment;
 }
 
+void Material::ClearGlobalTexture(const char* name){
+    globalMaps.erase(name);
+}
+
 void Material::SetGlobalCubemap(const char* name, Ref<Cubemap> tex){
     MaterialMap& map = globalMaps[name];
     map.type = MaterialMap::Type::Cubemap;

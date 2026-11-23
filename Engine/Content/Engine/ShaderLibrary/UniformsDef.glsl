@@ -26,7 +26,7 @@ BeginUniform(0, 1, PipelineData)
 
     Uniform float _SkyLightIntensity;
     Uniform float _ShadowDistance;
-    Uniform float _Pad0;
+    Uniform float _EnvironmentReflectionIntensity;
     Uniform float _Pad1;
     
     Uniform int _DirectionalLightCount;

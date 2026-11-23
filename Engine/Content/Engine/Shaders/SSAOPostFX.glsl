@@ -28,6 +28,41 @@
     DepthTest DISABLE
 #pragma EndPassDef
 
+#pragma BeginPassDef
+    Name SSAODebug
+    CullFace BACK
+    DepthTest DISABLE
+    DepthMask False
+#pragma EndPassDef
+
+#pragma BeginPassDef
+    Name SSAOBilateralUpsample
+    CullFace BACK
+    DepthTest DISABLE
+    DepthMask False
+#pragma EndPassDef
+
+#pragma BeginPassDef
+    Name SSAOGuidedFit
+    CullFace BACK
+    DepthTest DISABLE
+    DepthMask False
+#pragma EndPassDef
+
+#pragma BeginPassDef
+    Name SSAOGuidedAverage
+    CullFace BACK
+    DepthTest DISABLE
+    DepthMask False
+#pragma EndPassDef
+
+#pragma BeginPassDef
+    Name SSAOGuidedUpsample
+    CullFace BACK
+    DepthTest DISABLE
+    DepthMask False
+#pragma EndPassDef
+
 #include Engine/ShaderLibrary/Base.glsl
 #include Engine/ShaderLibrary/Common.glsl
 
@@ -40,6 +75,9 @@ BeginUniform(0, 0, Main)
     Uniform float radius;
     Uniform float intensity;
     Uniform float bias;
+    Uniform int outputBentNormals;
+    Uniform int debugBentNormals;
+    Uniform int useSurfacePlane;
 EndUniform()
 
 BeginUniform(2, 0, CamDraw)
@@ -58,7 +96,9 @@ Texture2D(0, 8, gAlbedoSpec, gAlbedoSpecSampler)
 Texture2D(0, 9, gEmission, gEmissionSampler)
 Texture2D(0, 10, gOther, gOtherSampler)
 Texture2D(0, 12, gDepth, gDepthSampler)
-Texture2D(0, 4, ssaoTexture, ssaoSampler)
+Texture2D(0, 15, ssaoTexture, ssaoSampler)
+Texture2D(0, 13, guidedSlope, guidedSlopeSampler)
+Texture2D(0, 14, guidedIntercept, guidedInterceptSampler)
 
 #if defined(VERTEX) //&& defined(MainPass)
     layout (location = 0) in vec3 _pos;
@@ -74,93 +114,38 @@ Texture2D(0, 4, ssaoTexture, ssaoSampler)
     }
 #endif
 
-#if defined(FRAGMENT) && defined(MainPass)
-    in vec3 pos;
-    in vec2 texCoord;
-    out vec4 fragColor;
+#if defined(FRAGMENT)
+    vec2 DepthTexelUV(vec2 uv){
+        ivec2 size = textureSize(gDepth, 0);
+        ivec2 pixel = clamp(ivec2(uv * vec2(size)), ivec2(0), size - 1);
+        return (vec2(pixel) + 0.5) / vec2(size);
+    }
+#endif
 
-    uniform vec4 samples[64]; // Sample kernel
-
-    /*uniform mat4 projection;
-    uniform mat4 view;
-    uniform mat4 invProjection;
-    uniform mat4 invView;*/
-
-    /*uniform float intensity = 0.5;
-    uniform float radius = 0.5;
-    uniform float bias = 0.025;*/
-    int kernelSize = 64;
-
+#if defined(FRAGMENT) && (defined(MainPass) || defined(SSAOBilateralUpsample))
+    uniform vec4 samples[64];
     uniform vec2 noiseScale;
 
-    float rand(vec2 co) {
-        return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
-    }
+    vec4 EvaluateAO(vec2 uv, bool snapDepth, int sampleStride, vec2 sampleNoiseScale){
+        vec2 surfaceUV = snapDepth ? DepthTexelUV(uv) : uv;
+        float depth = texture(gDepth, surfaceUV).r;
+        if(snapDepth && depth >= 1.0) return vec4(1.0, 0.0, 0.0, 0.0);
 
-    void main(){
-        float depth = texture(gDepth, texCoord).r;
-        //if(depth >= 1.0) discard;
+        vec3 worldPosition = reconstructWorldPos(surfaceUV, depth, invProjection, invView);
+        vec3 fragPos = (view * vec4(worldPosition, 1)).xyz;
+        vec3 worldNormal = unpack_normal_octahedron(texture(gNormal, surfaceUV).rg);
+        vec3 normal = normalize(mat3(view) * worldNormal);
 
-        vec3 fragPos = reconstructWorldPos(texCoord, texture(gDepth, texCoord).r, invProjection, invView); //texture(gPosition, texCoord).rgb;
-        vec3 normal = unpack_normal_octahedron(texture(gNormal, texCoord).rg); //texture(gNormal, texCoord).rgb;
-        
-        fragColor = vec4(normal, 1);
-        //return;
-
-        vec3 randomVec = normalize(texture(texNoise, texCoord * noiseScale).xyz);
-        fragColor = vec4(randomVec, 1);
-        //return;
-
-        /*vec2 noiseSeed = gl_FragCoord.xy / screenSize;
-        randomVec = normalize(vec3(
-            rand(noiseSeed),
-            rand(noiseSeed + vec2(1.0, 0.0)),
-            rand(noiseSeed + vec2(0.0, 1.0))
-        ) * 2.0 - 1.0);*/
-
-        fragPos = (view * vec4(fragPos, 1)).xyz;
-        normal = normalize(mat3(view) * normal);  // Or use normal matrix //normalize((view * vec4(normal, 0)).xyz);
-
-        //fragColor = vec4(normal, 1);
-        //return;
-
+        vec3 randomVec = normalize(texture(texNoise, uv * sampleNoiseScale).xyz);
         vec3 tangent = normalize(randomVec - normal * dot(randomVec, normal));
         vec3 bitangent = cross(normal, tangent);
         mat3 TBN = mat3(tangent, bitangent, normal);
-    
-        /*float occlusion = 0.0;
-        for(int i = 0; i < kernelSize; ++i){
-            // get sample position
-            vec3 samplePos = TBN * samples[i].xyz; // from tangent to view-space
-            samplePos = fragPos + samplePos * radius; 
-            
-            // project sample position (to sample texture) (to get position on screen/texture)
-            vec4 offset = vec4(samplePos, 1.0);
-            offset = projection * offset; // from view to clip-space
-            offset.xyz /= offset.w; // perspective divide
-            offset.xyz = offset.xyz * 0.5 + 0.5; // transform to range 0.0 - 1.0
-            
-            // get sample depth
-            //float sampleDepth = (view * vec4(texture(gPosition, offset.xy).xyz, 1)).z; //texture(gPosition, offset.xy).z; // get depth value of kernel sample
-            float sampleDepth = (view * vec4(reconstructWorldPos(offset.xy, texture(gDepth, offset.xy).r, invProjection, invView), 1)).z;
-            
-            // range check & accumulate
-            float rangeCheck = smoothstep(0.0, 1.0, radius / abs(fragPos.z - sampleDepth));
-            occlusion += (sampleDepth >= samplePos.z + bias ? 1.0 : 0.0) * rangeCheck;           
-        }
-        occlusion = 1.0 - (occlusion / float(kernelSize));
-
-        if(depth >= 1) occlusion = 1;
-
-        occlusion = pow(occlusion, intensity);
-        fragColor = vec4(occlusion, occlusion, occlusion, 1);*/
 
         float linearDepth = -fragPos.z;
         float ao = 0.0;
+        vec3 blockedTangent = vec3(0.0);
         const float falloffDistance = 500.0;
-        const float beta = 0.004;
-        const float epsilon = 0.0001;
-        for(int i = 0; i < kernelSize; ++i){
+        for(int i = 0; i < 64; i += sampleStride){
             vec3 sampleOffset = TBN * samples[i].xyz;// Sample in tangent space
             vec3 samplePos = fragPos + sampleOffset * radius;// Position in view space
 
@@ -171,8 +156,9 @@ Texture2D(0, 4, ssaoTexture, ssaoSampler)
             if(sampleUV.x < 0.0 || sampleUV.x > 1.0 || sampleUV.y < 0.0 || sampleUV.y > 1.0)// Don't allow samples outside the screen
                 continue;
 
-            float rawDepth = texture(gDepth, sampleUV).r;// Depth buffer at projected position
-            vec3 sampleSurface = (view * vec4(reconstructWorldPos(sampleUV, rawDepth, invProjection, invView), 1.0)).xyz;// Reconstruct view position
+            vec2 depthUV = snapDepth ? DepthTexelUV(sampleUV) : sampleUV;
+            float rawDepth = texture(gDepth, depthUV).r;
+            vec3 sampleSurface = (view * vec4(reconstructWorldPos(depthUV, rawDepth, invProjection, invView), 1.0)).xyz;
             float sampleDepth = -samplePos.z;// Unity's "zDist"
             float surfaceDepth = -sampleSurface.z;// Actual geometry depth
             float isInsideRadius = abs(sampleDepth - surfaceDepth) < radius ? 1.0 : 0.0;// Make sure sampled geometry is actually within radius
@@ -187,9 +173,15 @@ Texture2D(0, 4, ssaoTexture, ssaoSampler)
             float a1 = max(dotVal, 0.0);
             float a2 = dot(v_s2, v_s2) + 0.0001;
             
-            ao += a1 / a2 * isInsideRadius;
+            float occlusion = a1 / a2 * isInsideRadius;
+            ao += occlusion;
+            if(outputBentNormals != 0){
+                vec3 direction = v_s2 * inversesqrt(a2);
+                blockedTangent += occlusion * (direction - normal * dot(direction, normal));
+            }
         }
 
+        vec3 meanBlockedTangent = blockedTangent / max(ao, 0.0001);
         ao *= radius;
 
         float falloff = 1.0 - linearDepth / falloffDistance;
@@ -197,12 +189,28 @@ Texture2D(0, 4, ssaoTexture, ssaoSampler)
 
         ao *= intensity;
         ao *= falloff;
-        ao /= float(kernelSize);
+        ao /= float(64 / sampleStride);
 
         ao = pow(clamp(ao, 0.0, 1.0), 0.6);
         ao = 1 - ao;
 
-        fragColor = vec4(ao, ao, ao, 1);
+        // R stores visibility. GBA stores a signed world-space direction, or zero in scalar mode.
+        vec3 bentNormal = vec3(0.0);
+        if(outputBentNormals != 0){
+            vec3 bentView = normal - 2.0 * (1.0 - ao) * meanBlockedTangent;
+            bentNormal = normalize(mat3(invView) * bentView);
+        }
+        return vec4(ao, bentNormal);
+    }
+#endif
+
+#if defined(FRAGMENT) && defined(MainPass)
+    in vec2 texCoord;
+    out vec4 fragColor;
+
+    void main(){
+        bool reducedResolution = any(notEqual(ivec2(screenWidth, screenHeight), textureSize(gDepth, 0)));
+        fragColor = EvaluateAO(texCoord, reducedResolution, 1, noiseScale);
     }
 #endif
 
@@ -217,13 +225,13 @@ Texture2D(0, 4, ssaoTexture, ssaoSampler)
     void main(){
         vec2 texelSize = 1.0 / vec2(screenWidth, screenHeight);
         vec3 centerNormal = GetNormal(texCoord);
-        float centerAO = texture(ssaoTexture, texCoord).r;
+        vec4 centerAO = texture(ssaoTexture, texCoord);
 
         float w0 = 0.2270270270;
         float w1 = 0.3162162162;
         float w2 = 0.0702702703;
 
-        float ao = centerAO * w0;
+        vec4 ao = centerAO * w0;
         float weight = w0;
 
         vec2 offset1 = vec2(1.3846153846 * texelSize.x, 0.0);
@@ -236,7 +244,7 @@ Texture2D(0, 4, ssaoTexture, ssaoSampler)
         vec2 uv = texCoord + offset1;
         vec3 normal = GetNormal(uv);
         float normalWeight = smoothstep(0.6, 1.0, dot(centerNormal, normal));
-        float sampleAO = texture(ssaoTexture, uv).r;
+        vec4 sampleAO = texture(ssaoTexture, uv);
         float w = w1 * normalWeight;
 
         ao += sampleAO * w;
@@ -246,7 +254,7 @@ Texture2D(0, 4, ssaoTexture, ssaoSampler)
         uv = texCoord - offset1;
         normal = GetNormal(uv);
         normalWeight = smoothstep(0.6, 1.0, dot(centerNormal, normal));
-        sampleAO = texture(ssaoTexture, uv).r;
+        sampleAO = texture(ssaoTexture, uv);
 
         w = w1 * normalWeight;
 
@@ -257,7 +265,7 @@ Texture2D(0, 4, ssaoTexture, ssaoSampler)
         uv = texCoord + offset2;
         normal = GetNormal(uv);
         normalWeight = smoothstep(0.6, 1.0, dot(centerNormal, normal));
-        sampleAO = texture(ssaoTexture, uv).r;
+        sampleAO = texture(ssaoTexture, uv);
 
         w = w2 * normalWeight;
 
@@ -268,7 +276,7 @@ Texture2D(0, 4, ssaoTexture, ssaoSampler)
         uv = texCoord - offset2;
         normal = GetNormal(uv);
         normalWeight = smoothstep(0.6, 1.0, dot(centerNormal, normal));
-        sampleAO = texture(ssaoTexture, uv).r;
+        sampleAO = texture(ssaoTexture, uv);
 
         w = w2 * normalWeight;
 
@@ -276,7 +284,7 @@ Texture2D(0, 4, ssaoTexture, ssaoSampler)
         weight += w;
 
         ao /= max(weight, 0.0001);
-        fragColor = vec4(ao, ao, ao, 1.0);
+        fragColor = ao;
     }
 #endif
 
@@ -293,13 +301,13 @@ Texture2D(0, 4, ssaoTexture, ssaoSampler)
 
         vec3 centerNormal = GetNormal(texCoord);
 
-        float centerAO = texture(ssaoTexture, texCoord).r;
+        vec4 centerAO = texture(ssaoTexture, texCoord);
 
         float w0 = 0.2270270270;
         float w1 = 0.3162162162;
         float w2 = 0.0702702703;
 
-        float ao = centerAO * w0;
+        vec4 ao = centerAO * w0;
         float weight = w0;
 
         vec2 offset1 = vec2(0.0, 1.3846153846 * texelSize.y);
@@ -311,7 +319,7 @@ Texture2D(0, 4, ssaoTexture, ssaoSampler)
 
         vec3 normal = GetNormal(uv);
         float normalWeight = smoothstep(0.6, 1.0, dot(centerNormal, normal));
-        float sampleAO = texture(ssaoTexture, uv).r;
+        vec4 sampleAO = texture(ssaoTexture, uv);
         float w = w1 * normalWeight;
 
         ao += sampleAO * w;
@@ -321,7 +329,7 @@ Texture2D(0, 4, ssaoTexture, ssaoSampler)
         uv = texCoord - offset1;
         normal = GetNormal(uv);
         normalWeight = smoothstep(0.6, 1.0, dot(centerNormal, normal));
-        sampleAO = texture(ssaoTexture, uv).r;
+        sampleAO = texture(ssaoTexture, uv);
 
         w = w1 * normalWeight;
 
@@ -332,7 +340,7 @@ Texture2D(0, 4, ssaoTexture, ssaoSampler)
         uv = texCoord + offset2;
         normal = GetNormal(uv);
         normalWeight = smoothstep(0.6, 1.0, dot(centerNormal, normal));
-        sampleAO = texture(ssaoTexture, uv).r;
+        sampleAO = texture(ssaoTexture, uv);
 
         w = w2 * normalWeight;
 
@@ -343,7 +351,7 @@ Texture2D(0, 4, ssaoTexture, ssaoSampler)
         uv = texCoord - offset2;
         normal = GetNormal(uv);
         normalWeight = smoothstep(0.6, 1.0, dot(centerNormal, normal));
-        sampleAO = texture(ssaoTexture, uv).r;
+        sampleAO = texture(ssaoTexture, uv);
 
         w = w2 * normalWeight;
 
@@ -351,7 +359,7 @@ Texture2D(0, 4, ssaoTexture, ssaoSampler)
         weight += w;
 
         ao /= max(weight, 0.0001);
-        fragColor = vec4(ao, ao, ao, 1.0);
+        fragColor = ao;
     }
 #endif
 
@@ -364,6 +372,210 @@ Texture2D(0, 4, ssaoTexture, ssaoSampler)
         float ao = texture(ssaoTexture, texCoord).r;
         fragColor = vec4(color * ao, 1.0);
         //fragColor = vec4(ao.xxx, 1.0);
+    }
+#endif
+
+#if defined(FRAGMENT) && (defined(SSAOBilateralUpsample) || defined(SSAOGuidedFit) || defined(SSAOGuidedUpsample))
+    vec3 ViewPosition(vec2 uv, float depth){
+        #ifdef Vulkan_API
+        float ndcDepth = depth;
+        #else
+        float ndcDepth = depth * 2.0 - 1.0;
+        #endif
+        vec4 viewPosition = invProjection * vec4(uv * 2.0 - 1.0, ndcDepth, 1.0);
+        return viewPosition.xyz / viewPosition.w;
+    }
+#endif
+
+#if defined(FRAGMENT) && defined(SSAOBilateralUpsample)
+    in vec2 texCoord;
+    out vec4 fragColor;
+
+    float SurfaceWeight(ivec2 tap, ivec2 lowSize, vec3 centerPosition, vec3 centerNormal, vec3 viewNormal, float tolerance){
+        vec2 tapUV = DepthTexelUV((vec2(tap) + 0.5) / vec2(lowSize));
+        float tapDepth = texture(gDepth, tapUV).r;
+        if(tapDepth >= 1.0) return 0.0;
+
+        vec3 tapPosition = ViewPosition(tapUV, tapDepth);
+        vec3 tapNormal = unpack_normal_octahedron(texture(gNormal, tapUV).rg);
+        vec3 delta = tapPosition - centerPosition;
+        float surfaceDistance = abs(useSurfacePlane != 0 ? dot(delta, viewNormal) : delta.z);
+        float surfaceWeight = 1.0 - smoothstep(tolerance, 3.0 * tolerance, surfaceDistance);
+        float normalWeight = smoothstep(0.6, 1.0, dot(centerNormal, tapNormal));
+        return surfaceWeight * normalWeight;
+    }
+
+    void main(){
+        fragColor = vec4(1.0, 0.0, 0.0, 0.0);
+        float rawDepth = texture(gDepth, texCoord).r;
+        if(rawDepth >= 1.0) return;
+
+        vec3 centerPosition = ViewPosition(texCoord, rawDepth);
+        vec3 centerNormal = unpack_normal_octahedron(texture(gNormal, texCoord).rg);
+        vec3 viewNormal = mat3(view) * centerNormal;
+        ivec2 lowSize = textureSize(ssaoTexture, 0);
+        vec2 lowPosition = texCoord * vec2(lowSize) - 0.5;
+        ivec2 lowBase = ivec2(floor(lowPosition));
+        vec2 blend = fract(lowPosition);
+        float tolerance = useSurfacePlane != 0
+            ? max(0.005, -0.001 * centerPosition.z)
+            : max(0.01, -0.02 * centerPosition.z);
+
+        vec4 sum = vec4(0.0);
+        float totalWeight = 0.0;
+        for(int y = 0; y < 2; ++y){
+            for(int x = 0; x < 2; ++x){
+                ivec2 tap = clamp(lowBase + ivec2(x, y), ivec2(0), lowSize - 1);
+                vec2 spatialWeight = mix(1.0 - blend, blend, vec2(x, y));
+                float weight = spatialWeight.x * spatialWeight.y *
+                    SurfaceWeight(tap, lowSize, centerPosition, centerNormal, viewNormal, tolerance);
+                sum += texelFetch(ssaoTexture, tap, 0) * weight;
+                totalWeight += weight;
+            }
+        }
+
+        // A thin edge can miss all four taps. Look for the closest compatible surface.
+        if(useSurfacePlane != 0 && totalWeight < 0.05){
+            ivec2 nearest = ivec2(floor(lowPosition + 0.5));
+            float bestWeight = 0.0;
+            vec4 bestAO = fragColor;
+            for(int y = -1; y <= 1; ++y){
+                for(int x = -1; x <= 1; ++x){
+                    ivec2 tap = clamp(nearest + ivec2(x, y), ivec2(0), lowSize - 1);
+                    vec2 offset = vec2(tap) - lowPosition;
+                    float weight = SurfaceWeight(tap, lowSize, centerPosition, centerNormal, viewNormal, tolerance) /
+                        (1.0 + dot(offset, offset));
+                    if(weight > bestWeight){
+                        bestWeight = weight;
+                        bestAO = texelFetch(ssaoTexture, tap, 0);
+                    }
+                }
+            }
+            sum += bestAO * bestWeight;
+            totalWeight += bestWeight;
+        }
+
+        if(totalWeight >= 0.05){
+            fragColor = sum / totalWeight;
+            return;
+        }
+
+        // Low-resolution taps can miss thin geometry entirely. Evaluate the receiving pixel.
+        vec4 edgeAO = EvaluateAO(texCoord, true, 2, vec2(textureSize(gDepth, 0)) * 0.5);
+        if(totalWeight > 0.0001){
+            edgeAO = mix(edgeAO, sum / totalWeight, smoothstep(0.0, 0.05, totalWeight));
+        }
+        fragColor = edgeAO;
+    }
+#endif
+
+#if defined(FRAGMENT) && (defined(SSAOGuidedFit) || defined(SSAOGuidedUpsample))
+    float GuidedDepth(vec2 uv, float depth){
+        // Log depth makes regularization respond to relative depth changes.
+        return log2(max(-ViewPosition(uv, min(depth, 0.999999)).z, 0.0001));
+    }
+#endif
+
+#if defined(FRAGMENT) && defined(SSAOGuidedFit)
+    layout(location = 0) out vec4 slope;
+    layout(location = 1) out vec4 intercept;
+
+    void main(){
+        ivec2 size = textureSize(ssaoTexture, 0);
+        ivec2 center = ivec2(gl_FragCoord.xy);
+        vec2 centerUV = DepthTexelUV((vec2(center) + 0.5) / vec2(size));
+        float centerDepth = GuidedDepth(centerUV, texture(gDepth, centerUV).r);
+        float meanDepth = 0.0;
+        float meanDepthSquared = 0.0;
+        vec4 meanAO = vec4(0.0);
+        vec4 meanDepthAO = vec4(0.0);
+
+        for(int y = -1; y <= 1; ++y){
+            for(int x = -1; x <= 1; ++x){
+                ivec2 tap = clamp(center + ivec2(x, y), ivec2(0), size - 1);
+                vec2 uv = DepthTexelUV((vec2(tap) + 0.5) / vec2(size));
+                float rawDepth = texture(gDepth, uv).r;
+                float depth = GuidedDepth(uv, rawDepth) - centerDepth;
+                vec4 ao = rawDepth < 1.0 ? texelFetch(ssaoTexture, tap, 0) : vec4(1.0, 0.0, 0.0, 0.0);
+                meanDepth += depth;
+                meanDepthSquared += depth * depth;
+                meanAO += ao;
+                meanDepthAO += depth * ao;
+            }
+        }
+
+        meanDepth /= 9.0;
+        meanDepthSquared /= 9.0;
+        meanAO /= 9.0;
+        meanDepthAO /= 9.0;
+        float variance = max(meanDepthSquared - meanDepth * meanDepth, 0.0);
+        // Dampen shallow depth gradients so the model does not amplify quantization.
+        slope = (meanDepthAO - meanDepth * meanAO) / (variance + 0.0025);
+        intercept = meanAO - slope * (meanDepth + centerDepth);
+    }
+#endif
+
+#if defined(FRAGMENT) && defined(SSAOGuidedAverage)
+    layout(location = 0) out vec4 meanSlope;
+    layout(location = 1) out vec4 meanIntercept;
+
+    void main(){
+        ivec2 size = textureSize(guidedSlope, 0);
+        ivec2 center = ivec2(gl_FragCoord.xy);
+        meanSlope = vec4(0.0);
+        meanIntercept = vec4(0.0);
+        for(int y = -1; y <= 1; ++y){
+            for(int x = -1; x <= 1; ++x){
+                ivec2 tap = clamp(center + ivec2(x, y), ivec2(0), size - 1);
+                meanSlope += texelFetch(guidedSlope, tap, 0);
+                meanIntercept += texelFetch(guidedIntercept, tap, 0);
+            }
+        }
+        meanSlope /= 9.0;
+        meanIntercept /= 9.0;
+    }
+#endif
+
+#if defined(FRAGMENT) && defined(SSAOGuidedUpsample)
+    in vec2 texCoord;
+    out vec4 fragColor;
+
+    void main(){
+        float rawDepth = texture(gDepth, texCoord).r;
+        if(rawDepth >= 1.0){
+            fragColor = vec4(1.0, 0.0, 0.0, 0.0);
+            return;
+        }
+
+        // Interpolate the fitted models, then evaluate against full-resolution depth.
+        vec2 edge = 0.5 / vec2(textureSize(guidedSlope, 0));
+        vec2 uv = clamp(texCoord, edge, 1.0 - edge);
+        vec4 slope = texture(guidedSlope, uv);
+        vec4 intercept = texture(guidedIntercept, uv);
+        vec4 ao = slope * GuidedDepth(texCoord, rawDepth) + intercept;
+        fragColor = clamp(ao, vec4(0.0, -1.0, -1.0, -1.0), vec4(1.0));
+    }
+#endif
+
+#if defined(FRAGMENT) && defined(SSAODebug)
+    in vec2 texCoord;
+    out vec4 fragColor;
+
+    void main(){
+        if(texture(gDepth, texCoord).r >= 1.0){
+            fragColor = vec4(vec3(debugBentNormals == 0 ? 1.0 : 0.0), 1.0);
+            return;
+        }
+
+        vec4 ao = texture(ssaoTexture, texCoord);
+        if(debugBentNormals == 0){
+            fragColor = vec4(ao.rrr, 1.0);
+        } else {
+            vec3 bentNormal = ao.gba;
+            float lengthSquared = dot(bentNormal, bentNormal);
+            if(lengthSquared > 0.0001) bentNormal *= inversesqrt(lengthSquared);
+            fragColor = vec4(bentNormal * 0.5 + 0.5, 1.0);
+        }
     }
 #endif
 
