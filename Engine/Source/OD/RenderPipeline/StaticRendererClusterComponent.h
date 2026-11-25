@@ -9,6 +9,7 @@ namespace OD{
 class Mesh;
 class Model;
 class Material;
+class InstancingBuffer;
 
 //TODO: Check if this is make dont have any individual culling check
 struct OD_API StaticRendererClusterComponent{
@@ -24,6 +25,7 @@ struct OD_API StaticRendererClusterComponent{
 
     struct SubChunk{
         std::vector<RenderTarget> targets;
+        std::vector<Ref<InstancingBuffer>> instancingBuffers;
         CommandBucket4<uint32_t, uint32_t, DrawInstancingCommand2> drawIntancingCommands;
 
         AABB bounds;       // full subchunk region (static, from grid definition)

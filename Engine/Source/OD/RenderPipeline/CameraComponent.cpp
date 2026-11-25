@@ -15,10 +15,12 @@ Camera CameraComponent::GetCamera(){
 }
 
 void CameraComponent::UpdateCameraData(TransformComponent& transform, int width, int height){
+    const int viewportWidth = math::max(1, static_cast<int>(width * viewportRect.z));
+    const int viewportHeight = math::max(1, static_cast<int>(height * viewportRect.w));
     if(type == Type::Perspective)
-        camera.SetPerspective(fieldOfView, nearClipPlane, farClipPlane, width, height);
-    else    
-        camera.SetOrtho(orthographicSize, nearClipPlane, farClipPlane, width, height);
+        camera.SetPerspective(fieldOfView, nearClipPlane, farClipPlane, viewportWidth, viewportHeight);
+    else
+        camera.SetOrtho(orthographicSize, nearClipPlane, farClipPlane, viewportWidth, viewportHeight);
 
     camera.width = width;
     camera.height = height;

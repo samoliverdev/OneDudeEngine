@@ -1,4 +1,5 @@
 #include "OpenglGPU.h"
+#include "OD/Platform/OpenGL/ReadColorTexture.h"
 #include "OD/Gfx/FramebufferUtils.h"
 #include "OD/Gfx/GfxReflection.h"
 #include "OD/Platform/BaseGpu/ImGuiImageResolver.h"
@@ -1144,6 +1145,10 @@ void* OpenglGPUDevice::ImGuiTexture2D(Texture2D texture){
     return multithreadRendererContext.simulationFrame->imguiImages.Texture(texture);
 }
 
+void OpenglGPUDevice::ReadFramebufferColor(Framebuffer framebuffer, uint32_t attachment, ColorReadbackCallback complete){
+    multithreadRendererContext.simulationFrame->colorReadbacks.push_back({framebuffer, attachment, std::move(complete)});
+}
+
 void* OpenglGPUDevice::ImGuiFramebufferColorAttachment(Framebuffer framebuffer, uint32_t attachment){
     return multithreadRendererContext.simulationFrame->imguiImages.ColorAttachment(framebuffer, attachment);
 }
@@ -2146,6 +2151,22 @@ void OpenglGPUDevice::ExecuteRenderCommand(RenderFrame& frame, const CommandBuff
 }
 
 void OpenglGPUDevice::FinishRenderFrame(RenderFrame& frame){
+    for(auto& request : frame.colorReadbacks){
+        if(!framebufferPool.IsValid(request.framebuffer)){
+            request.complete({});
+            continue;
+        }
+        const auto& data = framebufferPool.Get(request.framebuffer);
+        if(request.attachment >= data.colorAttachments.size()){
+            request.complete({ColorReadbackResult::InvalidAttachment});
+        } else if(data.layout.type != FramebufferAttachmentType::TEXTURE_2D ||
+                  data.layout.colorAttachments[request.attachment].format == FramebufferTextureFormat::RED_INTEGER){
+            request.complete({ColorReadbackResult::Unsupported});
+        } else {
+            request.complete(ReadOpenGLColorTexture(data.colorAttachments[request.attachment], data.width, data.height));
+        }
+    }
+
     for(auto id : frameBindGroups){
         bindGroupPool.AddDestroyedId(id);
     }

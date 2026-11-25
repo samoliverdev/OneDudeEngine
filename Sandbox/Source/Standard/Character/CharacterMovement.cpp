@@ -14,12 +14,14 @@ void CharacterMovement::OnStart(RigidbodyComponent& rb){
 }
 
 float CharacterMovement::GetAxisHorizontal(){
+    if(!keyboardInput) return 0.0f;
     float x = Input::IsKey(KeyCode::D) ? 1 : 0;
     float y = Input::IsKey(KeyCode::A) ? 1 : 0;
     return math::clamp(x - y, -1.0f, 1.0f);
 }
 
 float CharacterMovement::GetAxisVertical(){
+    if(!keyboardInput) return 0.0f;
     float x = Input::IsKey(KeyCode::W) ? 1 : 0;
     float y = Input::IsKey(KeyCode::S) ? 1 : 0;
     return math::clamp(x - y, -1.0f, 1.0f);
@@ -67,10 +69,15 @@ void CharacterMovement::OnFixedUpdate(Scene& scene, Entity entity, TransformComp
     }
     
     if(handleInputs){
-        TransformComponent& cam = scene.GetComponent<TransformComponent>(scene.GetMainCamera());
-        moveDir = cam.Right() * GetAxisHorizontal() + cam.Back() * GetAxisVertical();
+        const Entity cameraEntity = inputCamera == EntityNull ? scene.GetMainCamera() : inputCamera;
+        TransformComponent& cam = scene.GetComponent<TransformComponent>(cameraEntity);
+        Vector2 input(GetAxisHorizontal(), GetAxisVertical());
+        const bool useAnalog = input.x == 0.0f && input.y == 0.0f;
+        if(useAnalog) input = analogMoveInput;
+        moveDir = cam.Right() * input.x + cam.Back() * input.y;
         moveDir.y = 0.0f;
         moveDir = math::normalizeSafe(moveDir);
+        if(useAnalog) moveDir *= math::min(math::length(input), 1.0f);
 
         if(moveType == MoveType::Free){
             lookDir = moveDir;
@@ -186,7 +193,7 @@ void CharacterMovement::OnFixedUpdate(Scene& scene, Entity entity, TransformComp
     if(moveType == MoveType::Free){
         if(math::length(moveDir) > 0.001f && enableRotation){
             rb.Rotation(
-                math::slerp(rb.Rotation(), math::quatLookAt(-moveDir, Vector3Up), freeTurnSpeed * Time::FixedDelta())
+                math::slerp(rb.Rotation(), math::quatLookAt(-math::normalizeSafe(moveDir), Vector3Up), freeTurnSpeed * Time::FixedDelta())
             );
         }
     }

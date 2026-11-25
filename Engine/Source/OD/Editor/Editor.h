@@ -13,6 +13,9 @@
 #include "EditorCamera.h"
 #include "Workspace.h"
 #include <functional>
+#include <future>
+#include "OD/Core/LiveCommands.h"
+#include "OD/Graphics/ColorReadback.h"
 
 namespace OD{
 
@@ -40,6 +43,9 @@ public:
     static Editor* Get();
 
     inline EditorCamera& EditorCam(){ return editorCam; }
+
+    void PlayScene();
+    void RequestViewportCapture(const std::string& path, bool quitWhenDone = false, LiveCommands::Reply reply = {});
 
     void AddMenuCommand(const std::string path, std::function<void()> command);
 
@@ -116,6 +122,14 @@ private:
     //bool showSceneHierarchy = true;
     //bool showInspector = true;
     bool open = true;
+    std::string viewportCapturePath;
+    std::future<ColorReadback> viewportCapture;
+    bool quitAfterCapture = false;
+    LiveCommands::Reply viewportCaptureReply;
+    void FinishViewportCapture();
+    void RegisterLiveCommands();
+    void OpenScenePath(const std::string& path);
+
     bool drawSceneToCustomFramebuffer = true;
 
     struct GizmoInteractionState{
@@ -191,7 +205,6 @@ private:
     Entity GetTargetSelected(Entity input);
     
     void HandleShotcuts();
-    void PlayScene();
     void StopScene();
     void NewScene();
     void OpenScene();

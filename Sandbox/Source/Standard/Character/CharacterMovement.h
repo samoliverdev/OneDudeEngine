@@ -22,6 +22,9 @@ public:
     bool enableMovement = true;
     bool enableRotation = true;
     bool handleInputs = false;
+    Vector2 analogMoveInput{0, 0};
+    bool keyboardInput = true;
+    Entity inputCamera = EntityNull;
 
     MoveType moveType; 
     float moveSpeed = 6;

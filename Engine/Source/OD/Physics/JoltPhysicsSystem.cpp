@@ -4235,8 +4235,14 @@ void PhysicsSystem::PrePhysicsUpdate(Scene& inscene){
 		if(rb.data == nullptr) continue;
 
         TransformComponent& transform = rbView.get<TransformComponent>(e);
-		
-        if(rb.GetType() != RigidbodyComponent::Type::Dynamic){
+				
+		if(rb.GetType() == RigidbodyComponent::Type::Static){
+			if(rb.staticIsDirt == true){
+				rb.staticIsDirt = false;	
+				bodyInterface.SetPosition(rb.data->bodyID, ToJolt(transform.Position()), EActivation::Activate);
+            	bodyInterface.SetRotation(rb.data->bodyID, ToJolt(transform.Rotation()), EActivation::Activate);
+			}
+		} else if(rb.GetType() != RigidbodyComponent::Type::Dynamic){
             bodyInterface.SetPosition(rb.data->bodyID, ToJolt(transform.Position()), EActivation::Activate);
             bodyInterface.SetRotation(rb.data->bodyID, ToJolt(transform.Rotation()), EActivation::Activate);
         }

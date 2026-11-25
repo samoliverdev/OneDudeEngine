@@ -1261,6 +1261,7 @@ void Scene::_LoadTransform(ODInputArchive& archive, std::unordered_map<entt::ent
 
 void Scene::Load(const char* path){
     ResourceStream as(path, ResourceManager::Get().GetPackages());
+    if(!as.IsOpen()) throw std::runtime_error(std::string("Cannot open scene: ") + path);
     ODInputArchive archive(as.GetStream());
 
     //std::ifstream is(path);

@@ -4,19 +4,6 @@
         "shaderPath": "Engine/Shaders/Lit.glsl",
         "maps": [
             {
-                "key": "color",
-                "value": {
-                    "type": 5,
-                    "vec.vector": {
-                        "v.x": 1.0,
-                        "v.y": 1.0,
-                        "v.z": 1.0,
-                        "v.w": 0.0
-                    },
-                    "vec.vectorIsColor": true
-                }
-            },
-            {
                 "key": "metallic",
                 "value": {
                     "type": 2,
@@ -33,6 +20,19 @@
                 }
             },
             {
+                "key": "color",
+                "value": {
+                    "type": 5,
+                    "vec.vector": {
+                        "v.x": 1.0,
+                        "v.y": 1.0,
+                        "v.z": 1.0,
+                        "v.w": 0.0
+                    },
+                    "vec.vectorIsColor": true
+                }
+            },
+            {
                 "key": "sizeOffset",
                 "value": {
                     "type": 5,
@@ -46,13 +46,6 @@
                 }
             },
             {
-                "key": "mainTex",
-                "value": {
-                    "type": 7,
-                    "texPath": "Sandbox/PBR_Models/cannon_01/textures/cannon_01_diff_1k.jpg"
-                }
-            },
-            {
                 "key": "emissionColor",
                 "value": {
                     "type": 5,
@@ -63,6 +56,13 @@
                         "v.w": 0.0
                     },
                     "vec.vectorIsColor": true
+                }
+            },
+            {
+                "key": "mainTex",
+                "value": {
+                    "type": 7,
+                    "texPath": "Sandbox/PBR_Models/cannon_01/textures/cannon_01_diff_1k.jpg"
                 }
             },
             {
@@ -125,12 +125,10 @@
                 }
             },
             {
-                "key": "clearCoatRoughness",
+                "key": "roughnessMap",
                 "value": {
-                    "type": 2,
-                    "valueFloat": 0.0,
-                    "valueFloatMin": 0.0,
-                    "valueFloatMax": 1.0
+                    "type": 7,
+                    "texPath": "Sandbox/PBR_Models/cannon_01/textures/cannon_01_rough_1k.jpg"
                 }
             },
             {
@@ -143,10 +141,12 @@
                 }
             },
             {
-                "key": "roughnessMap",
+                "key": "clearCoatRoughness",
                 "value": {
-                    "type": 7,
-                    "texPath": "Sandbox/PBR_Models/cannon_01/textures/cannon_01_rough_1k.jpg"
+                    "type": 2,
+                    "valueFloat": 0.0,
+                    "valueFloatMin": 0.0,
+                    "valueFloatMax": 1.0
                 }
             },
             {

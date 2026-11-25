@@ -95,6 +95,55 @@ static double lastMouseY = 0.0;
 static double mouseDeltaX = 0.0;
 static double mouseDeltaY = 0.0;
 
+Input::GamepadState Input::gamepads[Input::MaxGamepads];
+Input::GamepadState Input::previousGamepads[Input::MaxGamepads];
+int Input::primaryGamepad = PrimaryGamepad;
+int Input::previousPrimaryGamepad = PrimaryGamepad;
+
+int Input::GetPrimaryGamepad(){
+    return primaryGamepad;
+}
+
+const Input::GamepadState& Input::GetGamepadState(int device, bool previous){
+    static const GamepadState disconnected;
+    if(device == PrimaryGamepad) device = previous ? previousPrimaryGamepad : primaryGamepad;
+    if(device < 0 || device >= MaxGamepads) return disconnected;
+    return previous ? previousGamepads[device] : gamepads[device];
+}
+
+bool Input::HasGamepad(int device){
+    return GetGamepadState(device).connected;
+}
+
+bool Input::IsGamepadButton(GamepadButton button, int device){
+    const int index = static_cast<int>(button);
+    return index >= 0 && index < static_cast<int>(GamepadButton::Count) &&
+        GetGamepadState(device).buttons[index];
+}
+
+bool Input::IsGamepadButtonDown(GamepadButton button, int device){
+    if(device == PrimaryGamepad && primaryGamepad != previousPrimaryGamepad) return false;
+    const int index = static_cast<int>(button);
+    const auto& previous = GetGamepadState(device, true);
+    return IsGamepadButton(button, device) && previous.connected && !previous.buttons[index];
+}
+
+bool Input::IsGamepadButtonUp(GamepadButton button, int device){
+    const int index = static_cast<int>(button);
+    if(index < 0 || index >= static_cast<int>(GamepadButton::Count)) return false;
+    if(!GetGamepadState(device, true).buttons[index]) return false;
+    return (device == PrimaryGamepad && primaryGamepad != previousPrimaryGamepad) ||
+        !IsGamepadButton(button, device);
+}
+
+Vector2 Input::GetGamepadLeftStick(int device){
+    return GetGamepadState(device).leftStick;
+}
+
+Vector2 Input::GetGamepadRightStick(int device){
+    return GetGamepadState(device).rightStick;
+}
+
 bool Input::IsKeyDown(KeyCode key){
     return keysStates[(int)key].lastPressed == false && keysStates[(int)key].pressed == true;
 }
@@ -113,13 +162,19 @@ void Input::Update(){
     //return;
     OD_PROFILE_SCOPE("Platform::Update");
 
+    previousPrimaryGamepad = primaryGamepad;
+    int firstConnected = PrimaryGamepad;
+    for(int device = 0; device < MaxGamepads; ++device){
+        previousGamepads[device] = gamepads[device];
+        gamepads[device] = ReadGamepad(device);
+        if(firstConnected == PrimaryGamepad && gamepads[device].connected) firstConnected = device;
+    }
+    if(!HasGamepad()) primaryGamepad = firstConnected;
+
     const std::vector<KeyCode> allKeys {
         KeyCode::Backspace,
         KeyCode::Enter,
         KeyCode::Tab,
-        KeyCode::Shift,
-        KeyCode::Control,
-        KeyCode::Alt,
         KeyCode::Escape,
         KeyCode::Space,
         KeyCode::Delete,

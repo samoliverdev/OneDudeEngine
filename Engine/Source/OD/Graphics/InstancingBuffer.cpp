@@ -76,7 +76,10 @@ bool InstancingBuffer::IsValid(){
 //}
 
 void InstancingBuffer::SetData(const Matrix4* data, unsigned int incount){
-    if(incount == 0) return;
+    if(incount == 0){
+        count = 0;
+        return;
+    }
 
     #ifdef TestNewGPU_API
     //Assert(false);
@@ -98,6 +101,11 @@ void InstancingBuffer::SetData(const Matrix4* data, unsigned int incount){
 }
 
 void InstancingBuffer::SetData(const Matrix4x3* data, unsigned int incount){
+    if(incount == 0){
+        count = 0;
+        return;
+    }
+
     #ifdef TestNewGPU_API
     //Assert(false);
     if(buffer != Gfx::InvalidID) gfxDevice->DestroyBuffer(buffer);
@@ -106,7 +114,7 @@ void InstancingBuffer::SetData(const Matrix4x3* data, unsigned int incount){
     gfxDevice->UpdatedBuffer(buffer, data, sizeof(Matrix4x3) * incount);
     count = incount;
     #else
-    graphicsDevice->InstancingBufferSetData(*this, data, count);
+    graphicsDevice->InstancingBufferSetData(*this, data, incount);
     count = incount;
     #endif
 }

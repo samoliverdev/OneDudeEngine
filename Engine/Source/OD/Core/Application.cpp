@@ -6,6 +6,7 @@
 #include "Input.h"
 #include "Time.h"
 #include "Log.h"
+#include "LiveCommands.h"
 #include "Instrumentor.h"
 #include "Lua.h"
 #include "PhysFSPackage.h"
@@ -27,6 +28,7 @@ namespace OD{
 extern Gfx::Device* gfxDevice;
 
 std::vector<std::string> args;
+static bool liveCommandsRequested = false;
 std::vector<Module*> modules;
 std::vector<Module*> modulesToAdd;
 std::vector<Module*> modulesToRemove;
@@ -41,6 +43,7 @@ Gfx::Device* gpuDevice = nullptr;
 
 //Module* mainModule;
 bool running = true;
+static int exitCode = 0;
 int width;
 int heigth;
 
@@ -143,6 +146,7 @@ bool Application::Create(Module* inMainModule, ApplicationConfig appConfig, cons
     }
 
     if(callbacks.onInit != nullptr) callbacks.onInit();
+    LiveCommands::Start(liveCommandsRequested);
 
     //MemoryTracker::SetAllocationBreakpointSize(1024*1024);
     //MemoryTracker::SetAllocationBreakpointSize(0);
@@ -212,6 +216,7 @@ void Application::Loop(){
     modulesToAdd.clear();
 
     inUpdate = true;
+    LiveCommands::Poll();
     {
         OD_PROFILE_SCOPE("Application::Run::OnUpdate");
         for(auto i: modules) i->OnUpdate(deltaTime);
@@ -363,6 +368,7 @@ bool Application::Run(){
 }
 
 void Application::OnExit(){
+    LiveCommands::Stop();
     ///////////////////////////
     #ifdef TestNewGPU_API
     gpuDevice->Shut();
@@ -403,13 +409,16 @@ void Application::OnExit(){
     Log::Shutdown();
 }
 
+void Application::SetExitCode(int code){ exitCode = code; }
+int Application::GetExitCode(){ return exitCode; }
+
 void Application::Quit(){
     running = false;
 }
 
 void Application::Exit(){
     OnExit();
-    exit(0);
+    exit(exitCode);
 }
 
 void Application::GetFramebufferSize(int* width, int* height){}
@@ -465,6 +474,7 @@ void Application::_RemoveModule(Module* module){
 
     modules.erase(std::remove(modules.begin(), modules.end(), module), modules.end());
     module->OnExit();
+    LiveCommands::Unregister(*module);
 }
 
 void Application::_AddModule(Module* module){
@@ -477,6 +487,18 @@ void Application::_AddModule(Module* module){
 
 const std::vector<Module*>& Application::GetAllModules(){
     return modules;
+}
+
+void Application::SetArgs(int argc, char* const* argv){
+    args.clear();
+    liveCommandsRequested = false;
+    for(int i = 0; i < argc; ++i){
+        if(i > 0 && std::string_view(argv[i]) == "--live-commands"){
+            liveCommandsRequested = true;
+        } else {
+            args.emplace_back(argv[i]);
+        }
+    }
 }
 
 std::vector<std::string>& Application::GetArgs(){

@@ -38,6 +38,7 @@ public:
     virtual void SubmitImGuiDrawData(void* data, ImGuiDrawDataDestroyFunction destroy) override;
     virtual void ImGuiShutdown() override;
     void* ImGuiTexture2D(Texture2D texture) override;
+    void ReadFramebufferColor(Framebuffer framebuffer, uint32_t attachment, ColorReadbackCallback complete) override;
     virtual void* ImGuiFramebufferColorAttachment(Framebuffer framebuffer, uint32_t attachment) override;
     
     virtual CommandBuffer* GetCommandBuffer() override;

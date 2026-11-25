@@ -9,9 +9,22 @@
 #include <OD/Core/ImGui.h>
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/random.hpp> // glm::linearRand, glm::sphericalRand
-#include <random>
+#include <algorithm>
+#include <cmath>
+#include <sstream>
+#include <cereal/archives/binary.hpp>
 
 namespace Standard{
+
+namespace {
+constexpr float MaxPreviewTime = 120.0f;
+constexpr float PreviewStep = 1.0f / 120.0f;
+
+float SampleParticleRange(std::mt19937* random, float min, float max){
+    if(random == nullptr) return Ultis::RandomRange(min, max);
+    return min + std::generate_canonical<float, 24>(*random) * (max - min);
+}
+}
 
 void SpawnModule::OnGui(){
     if(ImGui::CollapsingHeader("Spawn")){
@@ -20,26 +33,21 @@ void SpawnModule::OnGui(){
     }
 }
 
-void SpawnModule::OnStartSpawnUpdate(ParticleEmiter& system){
+void SpawnModule::OnStartSpawnUpdate(ParticleEmiter& system, std::mt19937* random){
     int singleNewParticles = singleBustEmiterCount;
     for(int i = 0; i < singleNewParticles; i++){
-        system.SpawnNewParticle();
+        system.SpawnNewParticle(random);
     }
 }
 
-void SpawnModule::OnSpawnUpdate(ParticleEmiter& system){
-    /*int newParticles = (int)(Time::DeltaTime() * overTimeEmiterRate);
-    for(int i = 0; i < newParticles; i++){
-        system.SpawnNewParticle();
-    }*/
-
-    emissionAccumulator += Time::DeltaTime() * overTimeEmiterRate;
+void SpawnModule::OnSpawnUpdate(ParticleEmiter& system, float delta, std::mt19937* random){
+    emissionAccumulator += delta * overTimeEmiterRate;
 
     int newParticles = (int)emissionAccumulator;
     emissionAccumulator -= newParticles; // keep the leftover fraction
 
     for (int i = 0; i < newParticles; i++){
-        system.SpawnNewParticle();
+        system.SpawnNewParticle(random);
     }
 }
 
@@ -50,8 +58,8 @@ void InitialLifeModule::OnGui(){
     }
 }
 
-void InitialLifeModule::OnInitParticle(ParticleData& particle){
-    particle.life = Ultis::RandomRange(minLife, maxLife); 
+void InitialLifeModule::OnInitParticle(ParticleData& particle, std::mt19937* random){
+    particle.life = SampleParticleRange(random, minLife, maxLife);
 }
 
 void InitialVelocityModule::OnGui(){
@@ -61,11 +69,11 @@ void InitialVelocityModule::OnGui(){
     }
 }
 
-void InitialVelocityModule::OnInitParticle(ParticleData& particle){
+void InitialVelocityModule::OnInitParticle(ParticleData& particle, std::mt19937* random){
     particle.vel = Vector3(
-        Ultis::RandomRange(minVelocity.x, maxVelocity.x), 
-        Ultis::RandomRange(minVelocity.y, maxVelocity.y), 
-        Ultis::RandomRange(minVelocity.z, maxVelocity.z) 
+        SampleParticleRange(random, minVelocity.x, maxVelocity.x),
+        SampleParticleRange(random, minVelocity.y, maxVelocity.y),
+        SampleParticleRange(random, minVelocity.z, maxVelocity.z)
     ); 
 }
 
@@ -76,8 +84,8 @@ void InitialRotationModule::OnGui(){
     }
 }
 
-void InitialRotationModule::OnInitParticle(ParticleData& particle){
-    particle.rotation = Ultis::RandomRange(minRotation, maxRotation);
+void InitialRotationModule::OnInitParticle(ParticleData& particle, std::mt19937* random){
+    particle.rotation = SampleParticleRange(random, minRotation, maxRotation);
 }
 
 void InitialSizeModule::OnGui(){
@@ -94,14 +102,14 @@ void InitialSizeModule::OnGui(){
     }
 }
 
-void InitialSizeModule::OnInitParticle(ParticleData& particle){
+void InitialSizeModule::OnInitParticle(ParticleData& particle, std::mt19937* random){
     if(uniforSize){
-        particle.size = Vector3(Ultis::RandomRange(minSize.x, maxSize.x));
+        particle.size = Vector3(SampleParticleRange(random, minSize.x, maxSize.x));
     } else {
         particle.size = Vector3(
-            Ultis::RandomRange(minSize.x, maxSize.x), 
-            Ultis::RandomRange(minSize.y, maxSize.y), 
-            Ultis::RandomRange(minSize.z, maxSize.z) 
+            SampleParticleRange(random, minSize.x, maxSize.x),
+            SampleParticleRange(random, minSize.y, maxSize.y),
+            SampleParticleRange(random, minSize.z, maxSize.z)
         ); 
     }
 }
@@ -112,7 +120,7 @@ void InitialColorModule::OnGui(){
     }
 }
 
-void InitialColorModule::OnInitParticle(ParticleData& particle){
+void InitialColorModule::OnInitParticle(ParticleData& particle, std::mt19937*){
     particle.color = color;
 }
 
@@ -377,9 +385,11 @@ void ParticleEmiter::Reset(){
     runningTime = 0;
     curDelayTime = delay;
     hasStarted = false;
+    spawnModule.Reset();
 
     currentParticleIndex = 0;
     particlesCount = 0;
+    curParticleCollisionCount = 0;
     freeParticles.clear();
     for(int i = 0; i < particles.size(); i++){
         particles[i].life = 0;
@@ -393,6 +403,7 @@ void ParticleEmiter::Play(){
 
 void ParticleEmiter::Stop(){
     state = State::Stop;
+    Reset();
 }
 
 ParticleEmiter::State ParticleEmiter::CurState(){
@@ -441,12 +452,12 @@ void ParticleEmiter::FreeParticle(int index){
     particle.startSize = particle.size;
 }*/
 
-void ParticleEmiter::SpawnNewParticle(){
+void ParticleEmiter::SpawnNewParticle(std::mt19937* random){
     int newIndex = GetNewParticle();
     if(newIndex == -1) return;
 
     ParticleData& p = particles[newIndex];
-    for(auto* i: initParticleModules) i->OnInitParticle(p);
+    for(auto* i: initParticleModules) i->OnInitParticle(p, random);
     p.startSize = p.size;
     p.startLife = p.life;
     if(simulationSpace == SimulationSpace::WorldSpace){
@@ -459,6 +470,11 @@ void ParticleEmiter::SpawnNewParticle(){
 void ParticleEmiter::Update(Scene& scene, Entity e, TransformComponent& trans, Vector3 camPos){
     if(state != State::Running) return;
 
+    PrepareUpdate(scene, e, trans);
+    Simulate(Time::DeltaTime(), camPos);
+}
+
+void ParticleEmiter::PrepareUpdate(Scene& scene, Entity e, TransformComponent& trans){
     currentGlobalTrans = trans.ToTransform();
     collisionPhysicModule.curParticleCollisionCount = &curParticleCollisionCount;
     collisionPhysicModule.isGlobalSpace = simulationSpace == SimulationSpace::WorldSpace;
@@ -470,57 +486,50 @@ void ParticleEmiter::Update(Scene& scene, Entity e, TransformComponent& trans, V
 
     if(spawnModules.size() == 0) BindModules();
     if(particles.size() != maxParticles) SetMaxParticle(maxParticles);
+}
 
-    float delta = Time::DeltaTime();
-    curDelayTime -= delta;
-    if(curDelayTime > 0) return;
+void ParticleEmiter::Simulate(float delta, Vector3 camPos, std::mt19937* previewRandom){
+    if(state != State::Running) return;
 
+    if(curDelayTime > 0.0f){
+        const float elapsedDelay = std::min(delta, curDelayTime);
+        curDelayTime -= elapsedDelay;
+        delta -= elapsedDelay;
+        if(curDelayTime > 0.0f) return;
+    }
+
+    const float emissionDelta = isLooping ? delta : std::clamp(duration - runningTime, 0.0f, delta);
+    if(!hasStarted){
+        hasStarted = true;
+        for(auto* module: spawnModules) module->OnStartSpawnUpdate(*this, previewRandom);
+    }
+    for(auto* module: spawnModules) module->OnSpawnUpdate(*this, emissionDelta, previewRandom);
     runningTime += delta;
 
-    bool runSpwan = true;
-    if(isLooping == false && runningTime > duration) runSpwan = false;
-
-    if(runSpwan){
-        if(hasStarted == false){
-            hasStarted = true;
-            for(auto* i: spawnModules) i->OnStartSpawnUpdate(*this);
-        }
-        for(auto* i: spawnModules) i->OnSpawnUpdate(*this);
-    }
-
     particlesCount = 0;
-    for(int i = 0; i < particles.size(); i++){
-        ParticleData& p = particles[i]; // shortcut
-        ParticleRunningData runningData;
-        runningData.delta = delta;
-        runningData.lifetime = math::clamp<float>(1.0f - (p.life / p.startLife), 0, 1);
+    for(size_t index = 0; index < particles.size(); index++){
+        auto& particle = particles[index];
+        if(particle.IsDead()) continue;
 
-        if(p.life > 0.0f){
-            /*p.life -= delta;
-
-            if(p.life > 0.0f){
-                for(auto* i: updateModules) i->OnParticleUpdate(p, runningData);
-                p.cameradistance = math::length2(p.pos - camPos);
-                particlesCount++;
-            }else{
-                p.cameradistance = -1.0f;
-                FreeParticle(i);
-            }*/
-
-            for(auto* i: updateModules) i->OnParticleUpdate(p, runningData);
-            p.life -= delta;
-            if(p.life > 0.0f){
-                p.cameradistance = math::length2(p.pos - camPos);
-                particlesCount++;
-            }else{
-                if(p.handleCollision) curParticleCollisionCount -= 1;
-                p.cameradistance = -1.0f;
-                FreeParticle(i);
-            }
+        const float lifetime = std::clamp(1.0f - particle.life / particle.startLife, 0.0f, 1.0f);
+        ParticleRunningData runningData{delta, lifetime};
+        for(auto* module: updateModules){
+            if(previewRandom != nullptr && module == &collisionPhysicModule) continue;
+            module->OnParticleUpdate(particle, runningData);
+        }
+        particle.life -= delta;
+        if(!particle.IsDead()){
+            particle.cameradistance = math::length2(particle.pos - camPos);
+            particlesCount++;
+        }else{
+            if(particle.handleCollision) curParticleCollisionCount--;
+            particle.cameradistance = -1.0f;
+            FreeParticle(static_cast<int>(index));
         }
     }
 
-    if(isLooping == false && particlesCount <= 0){
+    const bool emissionFinished = runningTime >= duration || spawnModule.overTimeEmiterRate <= 0.0f;
+    if(!isLooping && emissionFinished && particlesCount == 0){
         Stop();
     }
 }
@@ -700,6 +709,52 @@ void ParticleEmiter::SubmitDrawData(InstancingBuffer& buffer, const Matrix4& roo
 }
 
 void ParticleSystem::OnGui(){
+    const bool playing = IsPlaying();
+    if(paused){
+        if(ImGui::Button("Resume") && !requestedTime.has_value()){
+            if(std::any_of(emiters.begin(), emiters.end(), [](const ParticleEmiter& emitter){
+                return emitter.state == ParticleEmiter::State::Running;
+            })){
+                paused = false;
+            }else{
+                Play();
+            }
+        }
+    }else if(playing){
+        if(ImGui::Button("Pause")) paused = true;
+    }else{
+        if(ImGui::Button("Play")) Play();
+    }
+    ImGui::SameLine();
+    if(ImGui::Button("Stop")) Stop();
+
+    float time = requestedTime.value_or(currentTime);
+    if(ImGui::DragFloat("Time (s)", &time, 0.01f, 0.0f, MaxPreviewTime, "%.3f", ImGuiSliderFlags_AlwaysClamp)
+        && std::isfinite(time)){
+        requestedTime = time;
+        paused = true;
+    }
+    if(ImGui::IsItemHovered()){
+        ImGui::SetTooltip("Drag to scrub, or Ctrl-click to enter seconds.");
+    }
+    ImGui::Checkbox("Resimulate", &resimulate);
+    if(ImGui::IsItemHovered()){
+        ImGui::SetTooltip("Apply emitter edits at the current preview time (up to 120 seconds).");
+    }
+    ImGui::TextUnformatted(paused ? "Paused" : IsPlaying() ? "Playing" : "Stopped");
+    ImGui::Separator();
+
+    // Compare serialized settings so custom controls such as the HDR gradient
+    // participate without relying on individual ImGui widgets to report edits.
+    const auto captureSettings = [this](){
+        std::ostringstream stream(std::ios::binary);
+        cereal::BinaryOutputArchive archive(stream);
+        archive(emiters);
+        return stream.str();
+    };
+    const bool trackEdits = resimulate && currentTime <= MaxPreviewTime && (paused || IsPlaying());
+    const auto beforeEdits = trackEdits ? captureSettings() : std::string{};
+
     for(int i = 0; i < emiters.size(); i++){
         std::string name = "Emitter " + std::to_string(i);
 
@@ -746,6 +801,10 @@ void ParticleSystem::OnGui(){
 
     ImGui::Separator();
 
+    if(trackEdits && !requestedTime && captureSettings() != beforeEdits){
+        requestedTime = currentTime;
+    }
+
     if(ImGui::Button("PushEmiter")){
         Stop();
         emiters.push_back(ParticleEmiter());
@@ -758,47 +817,61 @@ void ParticleSystem::OnGui(){
 
     ImGui::Separator();
 
-    Assert(emiters.size() >= 1);
-    auto runningTime = emiters[0].runningTime;
-
-    auto state = ParticleEmiter::State::Stop;
     int particlesCount = 0;
     int particlesCollisionCount = 0;
-    for(int i = 0; i < emiters.size(); i++){
-        particlesCount += emiters[i].particlesCount;
-        particlesCollisionCount += emiters[i].curParticleCollisionCount;
-        if(emiters[i].state == ParticleEmiter::State::Running) state = ParticleEmiter::State::Running;
+    for(const auto& emitter: emiters){
+        particlesCount += emitter.particlesCount;
+        particlesCollisionCount += emitter.curParticleCollisionCount;
     }
-
-    ImVec4 color = ImVec4(1.0f, 0.7f, 0.2f, 1.0f); // orange
-    ImGui::TextColored(color, "State %s", std::string(magic_enum::enum_name(state)).c_str());
-    ImGui::Text("RunTime: %f", runningTime);
     ImGui::Text("ParticleCounts: %d", particlesCount);
     ImGui::Text("ParticleCollisionCounts: %d", particlesCollisionCount);
-
-    if(state == ParticleEmiter::State::Running && ImGui::Button("Stop")){
-        Stop();
-    } else if(state == ParticleEmiter::State::Stop && ImGui::Button("Play")){
-        Play();
-    }
 }
 
 bool ParticleSystem::IsPlaying(){
-    for(auto& i: emiters){
-        if(i.state == ParticleEmiter::State::Running) return true; 
-    }
-    return true;
+    return !paused && std::any_of(emiters.begin(), emiters.end(), [](const ParticleEmiter& emitter){
+        return emitter.state == ParticleEmiter::State::Running;
+    });
 }
 
 void ParticleSystem::Play(){
+    paused = false;
+    requestedTime.reset();
+    currentTime = 0.0f;
     for(auto& i: emiters) i.Play();
 }
 
 void ParticleSystem::Stop(){
+    paused = false;
+    requestedTime.reset();
+    currentTime = 0.0f;
     for(auto& i: emiters) i.Stop();
 }
 
 void ParticleSystem::Update(Scene& scene, Entity e, TransformComponent& trans, Vector3 camPos){
+    if(requestedTime.has_value()){
+        currentTime = *requestedTime;
+        requestedTime.reset();
+        for(size_t index = 0; index < emiters.size(); index++){
+            auto& emitter = emiters[index];
+            emitter.Play();
+            emitter.PrepareUpdate(scene, e, trans);
+
+            // Rebuild with the same seed whenever the inspector visits a time.
+            std::mt19937 random(static_cast<std::mt19937::result_type>(index));
+            emitter.Simulate(0.0f, camPos, &random);
+            const int wholeSteps = static_cast<int>(currentTime / PreviewStep);
+            for(int step = 0; step < wholeSteps && emitter.state == ParticleEmiter::State::Running; step++){
+                emitter.Simulate(PreviewStep, camPos, &random);
+            }
+            const float remainder = std::max(0.0f, currentTime - wholeSteps * PreviewStep);
+            if(remainder > 0.0f) emitter.Simulate(remainder, camPos, &random);
+            if(currentTime > 0.0f) emitter.Simulate(0.0f, camPos, &random);
+        }
+        return;
+    }
+
+    if(!IsPlaying()) return;
+    currentTime += Time::DeltaTime();
     for(auto& i: emiters) i.Update(scene, e, trans, camPos);
 }
 

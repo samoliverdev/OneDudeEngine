@@ -7,6 +7,13 @@
 #include <OD/Editor/Editor.h>
 
 void LoadSceneSample::OnInit(){
+    if(!startupError.empty()){
+        LogError("{}", startupError);
+        Application::SetExitCode(1);
+        Application::Quit();
+        return;
+    }
+
     LogInfo("Game Init");
     Application::Vsync(false);
 
@@ -18,12 +25,21 @@ void LoadSceneSample::OnInit(){
     auto& SceneManager = SceneManager::Get();
     OD::Ref<OD::Scene> scene = SceneManager.NewScene();
 
-    scene->Load("Standard/Scenes/Prototype.scene");
-    //scene->Load("Sandbox/Scenes/TerrainTest2.scene");
-    //scene->Load("Sandbox/Scenes/PBR.scene");
+    const std::string path = scenePath.empty() ? "Standard/Scenes/Prototype.scene" : scenePath;
+    try{
+        scene->Load(path.c_str());
+    } catch(const std::exception& error){
+        LogError("Failed to load scene '{}': {}", path, error.what());
+        SceneManager.SetActiveScene(nullptr);
+        Application::SetExitCode(1);
+        Application::Quit();
+        return;
+    }
 
-    Application::AddModule<Editor>();
-    //scene->Start();
+    auto* editor = new Editor();
+    Application::AddModule(editor);
+    if(mode == "play") editor->PlayScene();
+    if(!capturePath.empty()) editor->RequestViewportCapture(capturePath, true);
 }
 
 void LoadSceneSample::OnUpdate(float deltaTime){}   

@@ -1,4 +1,5 @@
 #pragma once
+#include "OD/Graphics/ColorReadback.h"
 #include "OD/Defines.h"
 #include "OD/Base.h"
 #include "OD/Core/Math.h"
@@ -1644,6 +1645,12 @@ struct OD_API RenderFrame{
     ResourceCommands resourcePostCommands = {};
     CommandBuffer renderCommands = {};
     std::unordered_map<Framebuffer, FrameBufferCreateInfo> framebufferResizes;
+    struct ColorReadbackRequest{
+        Framebuffer framebuffer;
+        uint32_t attachment;
+        ColorReadbackCallback complete;
+    };
+    std::vector<ColorReadbackRequest> colorReadbacks;
     std::vector<ImGuiSnapshot> imguiSnapshots;
     ImGuiImages imguiImages;
 
@@ -1715,6 +1722,7 @@ struct OD_API RenderFrame{
             if(snapshot.destroy != nullptr && snapshot.data != nullptr)
                 snapshot.destroy(snapshot.data);
         }
+        colorReadbacks.clear();
         imguiSnapshots.clear();
         imguiImages.Clear();
         resourceCommands.Clear();
@@ -1755,6 +1763,9 @@ public:
     virtual void SubmitImGuiDrawData(void* data, ImGuiDrawDataDestroyFunction destroy){}
     virtual void ImGuiShutdown(){}
     // Frame-local ImTextureID. Obtain again each UI frame; never dereference it.
+    virtual void ReadFramebufferColor(Framebuffer, uint32_t, ColorReadbackCallback complete){
+        complete({ColorReadbackResult::Unsupported});
+    }
     virtual void* ImGuiFramebufferColorAttachment(Framebuffer framebuffer, uint32_t attachment){ return nullptr; }
     virtual void* ImGuiTexture2D(Texture2D texture){ return nullptr; }
     virtual bool ImGuiFramebufferNeedsVerticalFlip() const { return true; }

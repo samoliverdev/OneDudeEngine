@@ -463,6 +463,45 @@ void Platform::SystemShutdown(void* plat_state){
     LogInfo("Glfw shutdown");
 }
 
+Input::GamepadState Input::ReadGamepad(int device){
+    GamepadState result;
+#if !defined(__EMSCRIPTEN__)
+    static_assert(MaxGamepads == GLFW_JOYSTICK_LAST - GLFW_JOYSTICK_1 + 1);
+    if(!glfwGetWindowAttrib(window, GLFW_FOCUSED)) return result;
+
+    GLFWgamepadstate state{};
+    if(!glfwGetGamepadState(GLFW_JOYSTICK_1 + device, &state)) return result;
+    result.connected = true;
+
+    const int buttons[]{
+        GLFW_GAMEPAD_BUTTON_A, GLFW_GAMEPAD_BUTTON_B, GLFW_GAMEPAD_BUTTON_X, GLFW_GAMEPAD_BUTTON_Y,
+        GLFW_GAMEPAD_BUTTON_LEFT_BUMPER, GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER,
+        GLFW_GAMEPAD_BUTTON_BACK, GLFW_GAMEPAD_BUTTON_START, GLFW_GAMEPAD_BUTTON_GUIDE,
+        GLFW_GAMEPAD_BUTTON_LEFT_THUMB, GLFW_GAMEPAD_BUTTON_RIGHT_THUMB,
+        GLFW_GAMEPAD_BUTTON_DPAD_UP, GLFW_GAMEPAD_BUTTON_DPAD_RIGHT,
+        GLFW_GAMEPAD_BUTTON_DPAD_DOWN, GLFW_GAMEPAD_BUTTON_DPAD_LEFT
+    };
+    static_assert(sizeof(buttons) / sizeof(buttons[0]) == static_cast<int>(GamepadButton::LeftTrigger));
+    for(int i = 0; i < static_cast<int>(GamepadButton::LeftTrigger); ++i){
+        result.buttons[i] = state.buttons[buttons[i]] == GLFW_PRESS;
+    }
+    // GLFW reports triggers from -1 (released) to +1 (fully pressed).
+    result.buttons[static_cast<int>(GamepadButton::LeftTrigger)] = state.axes[GLFW_GAMEPAD_AXIS_LEFT_TRIGGER] > -0.5f;
+    result.buttons[static_cast<int>(GamepadButton::RightTrigger)] = state.axes[GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER] > -0.5f;
+
+    auto readStick = [&](int xAxis, int yAxis){
+        constexpr float deadZone = 0.2f;
+        Vector2 stick(state.axes[xAxis], -state.axes[yAxis]);
+        float length = math::length(stick);
+        if(length <= deadZone) return Vector2(0, 0);
+        return stick * (math::min((length - deadZone) / (1.0f - deadZone), 1.0f) / length);
+    };
+    result.leftStick = readStick(GLFW_GAMEPAD_AXIS_LEFT_X, GLFW_GAMEPAD_AXIS_LEFT_Y);
+    result.rightStick = readStick(GLFW_GAMEPAD_AXIS_RIGHT_X, GLFW_GAMEPAD_AXIS_RIGHT_Y);
+#endif
+    return result;
+}
+
 bool Input::IsKey(KeyCode key){
     auto state = glfwGetKey(window, (int)key);
     return state == GLFW_PRESS || state == GLFW_REPEAT;

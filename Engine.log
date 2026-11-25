@@ -1,127 +1,181 @@
-[18:16:23] [info] Engine Texture2D TypeId: 17280249800387042021
-[18:16:23] [info] Loading Project Path: C:/Users/sam/Desktop/cpp/OneDudeEngine/Sandbox/
-[18:16:23] [warning] Cur Path: C:\Users\sam\Desktop\cpp\OneDudeEngine
-[18:16:23] [warning] Loaded Cur Path: C:\Users\sam\Desktop\cpp\OneDudeEngine\Sandbox\Content
-[18:16:23] [info] Glfw creationg windows: Game1 800 600
-[18:16:23] [info] OpenGLGraphicsDevice::LoadContext
-[18:16:23] [info] OpenGLGraphicsDevice::Initialize
-[18:16:23] [info] OpenGLGraphicsDevice::Initialize2
-[18:16:23] [info] Opengl Version: 4.6.0 Core Profile Context 26.10.1.261008
-[18:16:23] [info] GL_VENDOR: ATI Technologies Inc.
-[18:16:23] [info] GL_RENDERER: AMD Radeon RX 6600
-[18:16:23] [info] GL_SHADING_LANGUAGE_VERSION: 4.60
-[18:16:23] [info] GL_MAX_UNIFORM_BUFFER_BINDINGS: 84
-[18:16:23] [info] Loading Cubemap: Engine/Textures/Skybox/right.jpg
-[18:16:23] [info] Loading Cubemap: Engine/Textures/Skybox/left.jpg
-[18:16:23] [info] Loading Cubemap: Engine/Textures/Skybox/top.jpg
-[18:16:23] [info] Loading Cubemap: Engine/Textures/Skybox/bottom.jpg
-[18:16:23] [info] Loading Cubemap: Engine/Textures/Skybox/front.jpg
-[18:16:23] [info] Loading Cubemap: Engine/Textures/Skybox/back.jpg
-[18:16:23] [info] AddAsset: DefaultSkyboxCubemap
-[18:16:23] [info] Load Shader: Engine/Shaders/Gizmos.glsl
-[18:16:23] [warning] Uniform block Main not found.
-[18:16:23] [info] MaxArrayTextureLayers: 8192
-[18:16:23] [info] MaxVertexUniformComponents: 8000
-[18:16:23] [info] MaxFragmentUniformComponents: 8000
-[18:16:23] [info] MaxTextureSize: 16384
-[18:16:23] [info] MaxTextureUnits: 32
-[18:16:23] [info] Load Shader: Engine/Shaders/IrradianceConvolution.glsl
-[18:16:23] [info] Load Shader: Engine/Shaders/Prefilter.glsl
-[18:16:23] [info] Load Shader: Engine/Shaders/brdf.glsl
-[18:16:23] [info] Load Shader: Engine/Shaders/EquirectangularToCubemap.glsl
-[18:16:23] [warning] PhysFS unavailable: initialization failed and the library did not retain an error code
-[18:16:23] [info] CoreModulesInit
-[18:16:23] [info] Load Shader: Engine/Shaders/ScreenSpaceShadow2.glsl
-[18:16:23] [info] Load Shader: Engine/Shaders/EntityId.glsl
-[18:16:23] [info] Load Shader: Engine/Shaders/Blit.glsl
-[18:16:23] [info] Load Shader: Engine/Shaders/DeferredLightPassLit.glsl
-[18:16:23] [info] Load Shader: Engine/Shaders/DeferredLightPassSingleLit.glsl
-[18:16:23] [info] Load Shader: Engine/Shaders/DeferredLightPassSingleOtherLit.glsl
-[18:16:23] [info] Load Shader: Engine/Shaders/Model.glsl
-[18:16:23] [info] miniaudio initialized successfully
-[18:16:23] [info] Main Lua Run
-[18:16:23] [warning] Main Lua Run
-[18:16:24] [info] %sGame Init %s
-[18:16:24] [info] Load Shader: Engine/Shaders/ShadowMap.glsl
-[18:16:24] [warning] Uniform block Main not found.
-[18:16:24] [info] Load Shader: Engine/Shaders/Blit.glsl
-[18:16:24] [info] Load Shader: Engine/Shaders/ToneMappingReinhardPostFX.glsl
-[18:16:24] [info] Load Shader: Engine/Shaders/ToneMappingNeutralPostFX.glsl
-[18:16:24] [info] Load Shader: Engine/Shaders/ToneMappingACESPostFX.glsl
-[18:16:24] [info] Load Shader: Engine/Shaders/ColorGradingPostFX.glsl
-[18:16:24] [info] Load Shader: Engine/Shaders/Blit.glsl
-[18:16:24] [info] Load Shader: Engine/Shaders/BloomPostFX.glsl
-[18:16:24] [info] Load Shader: Engine/Shaders/BloomHorizontalPostFX.glsl
-[18:16:24] [warning] Uniform block Main not found.
-[18:16:24] [info] Load Shader: Engine/Shaders/BloomVerticalPostFX.glsl
-[18:16:24] [warning] Uniform block Main not found.
-[18:16:24] [info] Load Shader: Engine/Shaders/BloomCombinePostFX.glsl
-[18:16:24] [warning] Uniform block Main not found.
-[18:16:24] [info] Load Shader: Engine/Shaders/BloomPrefilterPostFX.glsl
-[18:16:24] [warning] Uniform block Main not found.
-[18:16:24] [info] Load Shader: Engine/Shaders/SSAOPostFX.glsl
-[18:16:24] [info] Load Shader: Engine/Shaders/Blit.glsl
-[18:16:24] [info] Load Shader: Engine/Shaders/SSGIPostFX4.glsl
-[18:16:24] [info] Load Shader: Engine/Shaders/SSGIBlurPostFX4.glsl
-[18:16:24] [info] Load Shader: Engine/Shaders/SSGIComposePostFX.glsl
-[18:16:24] [info] Load Shader: Engine/Shaders/SSGIUpsample.glsl
-[18:16:24] [info] Load Shader: Engine/Shaders/SSGIBlitPostFX.glsl
-[18:16:24] [info] Load Shader: Engine/Shaders/SSGITemporalFilter.glsl
-[18:16:24] [info] Load Shader: Engine/Shaders/SkyboxCubemap.glsl
-[18:16:24] [info] Load Shader: Engine/Shaders/GamaCorrectionPP.glsl
-[18:16:24] [info] Load Shader: Engine/Shaders/Sprite.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/FontMSDF.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/GamaCorrectionPP.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/Blit.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/Blit.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/ToneMappingReinhardPostFX.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/ToneMappingNeutralPostFX.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/ToneMappingACESPostFX.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/ColorGradingPostFX.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/Blit.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/BloomPostFX.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/BloomHorizontalPostFX.glsl
-[18:16:25] [warning] Uniform block Main not found.
-[18:16:25] [info] Load Shader: Engine/Shaders/BloomVerticalPostFX.glsl
-[18:16:25] [warning] Uniform block Main not found.
-[18:16:25] [info] Load Shader: Engine/Shaders/BloomCombinePostFX.glsl
-[18:16:25] [warning] Uniform block Main not found.
-[18:16:25] [info] Load Shader: Engine/Shaders/BloomPrefilterPostFX.glsl
-[18:16:25] [warning] Uniform block Main not found.
-[18:16:25] [info] Load Shader: Engine/Shaders/SSAOPostFX.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/Blit.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/SSGIPostFX4.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/SSGIBlurPostFX4.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/SSGIComposePostFX.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/SSGIUpsample.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/SSGIBlitPostFX.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/SSGITemporalFilter.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/Blit.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/ToneMappingReinhardPostFX.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/ToneMappingNeutralPostFX.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/ToneMappingACESPostFX.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/ColorGradingPostFX.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/Blit.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/BloomPostFX.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/BloomHorizontalPostFX.glsl
-[18:16:25] [warning] Uniform block Main not found.
-[18:16:25] [info] Load Shader: Engine/Shaders/BloomVerticalPostFX.glsl
-[18:16:25] [warning] Uniform block Main not found.
-[18:16:25] [info] Load Shader: Engine/Shaders/BloomCombinePostFX.glsl
-[18:16:25] [warning] Uniform block Main not found.
-[18:16:25] [info] Load Shader: Engine/Shaders/BloomPrefilterPostFX.glsl
-[18:16:25] [warning] Uniform block Main not found.
-[18:16:25] [info] Load Shader: Engine/Shaders/SSAOPostFX.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/Blit.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/SSGIPostFX4.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/SSGIBlurPostFX4.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/SSGIComposePostFX.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/SSGIUpsample.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/SSGIBlitPostFX.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/SSGITemporalFilter.glsl
-[18:16:25] [info] Load Shader: Engine/Shaders/LitGfx.glsl
-[18:16:25] [info] Characters Count: 2401
-[18:16:25] [info] ContentBrowserPanel CurDirectory: C:\Users\sam\Desktop\cpp\OneDudeEngine\Sandbox\Content
-[18:16:25] [info] Full file cache updated with 590 files
-[18:16:25] [info] Animation Count: 1
-[18:16:37] [info] Glfw shutdown
+[09:23:35] [info] Engine Texture2D TypeId: 17280249800387042021
+[09:23:35] [info] Loading Project Path: C:/Users/sam/Desktop/cpp/OneDudeEngine/Sandbox/
+[09:23:35] [warning] Cur Path: C:\Users\sam\Desktop\cpp\OneDudeEngine
+[09:23:35] [warning] Loaded Cur Path: C:\Users\sam\Desktop\cpp\OneDudeEngine\Sandbox\Content
+[09:23:35] [info] Glfw creationg windows: Game1 800 600
+[09:23:35] [info] OpenGLGraphicsDevice::LoadContext
+[09:23:35] [info] OpenGLGraphicsDevice::Initialize
+[09:23:35] [info] OpenGLGraphicsDevice::Initialize2
+[09:23:35] [info] Opengl Version: 4.6.0 Core Profile Context 26.10.1.261008
+[09:23:35] [info] GL_VENDOR: ATI Technologies Inc.
+[09:23:35] [info] GL_RENDERER: AMD Radeon RX 6600
+[09:23:35] [info] GL_SHADING_LANGUAGE_VERSION: 4.60
+[09:23:35] [info] GL_MAX_UNIFORM_BUFFER_BINDINGS: 84
+[09:23:35] [info] Loading Cubemap: Engine/Textures/Skybox/right.jpg
+[09:23:35] [info] Loading Cubemap: Engine/Textures/Skybox/left.jpg
+[09:23:35] [info] Loading Cubemap: Engine/Textures/Skybox/top.jpg
+[09:23:35] [info] Loading Cubemap: Engine/Textures/Skybox/bottom.jpg
+[09:23:35] [info] Loading Cubemap: Engine/Textures/Skybox/front.jpg
+[09:23:35] [info] Loading Cubemap: Engine/Textures/Skybox/back.jpg
+[09:23:35] [info] AddAsset: DefaultSkyboxCubemap
+[09:23:35] [info] Load Shader: Engine/Shaders/Gizmos.glsl
+[09:23:35] [warning] Uniform block Main not found.
+[09:23:35] [info] MaxArrayTextureLayers: 8192
+[09:23:35] [info] MaxVertexUniformComponents: 8000
+[09:23:35] [info] MaxFragmentUniformComponents: 8000
+[09:23:35] [info] MaxTextureSize: 16384
+[09:23:35] [info] MaxTextureUnits: 32
+[09:23:35] [info] Load Shader: Engine/Shaders/IrradianceConvolution.glsl
+[09:23:35] [info] Load Shader: Engine/Shaders/Prefilter.glsl
+[09:23:35] [info] Load Shader: Engine/Shaders/brdf.glsl
+[09:23:35] [info] Load Shader: Engine/Shaders/EquirectangularToCubemap.glsl
+[09:23:35] [warning] PhysFS unavailable: initialization failed and the library did not retain an error code
+[09:23:36] [info] CoreModulesInit
+[09:23:36] [info] Load Shader: Engine/Shaders/ScreenSpaceShadow2.glsl
+[09:23:36] [info] Load Shader: Engine/Shaders/EntityId.glsl
+[09:23:36] [info] Load Shader: Engine/Shaders/Blit.glsl
+[09:23:36] [info] Load Shader: Engine/Shaders/DeferredLightPassLit.glsl
+[09:23:36] [info] Load Shader: Engine/Shaders/DeferredLightPassSingleLit.glsl
+[09:23:36] [info] Load Shader: Engine/Shaders/DeferredLightPassSingleOtherLit.glsl
+[09:23:36] [info] Load Shader: Engine/Shaders/Model.glsl
+[09:23:36] [info] miniaudio initialized successfully
+[09:23:36] [info] Main Lua Run
+[09:23:36] [warning] Main Lua Run
+[09:23:36] [info] Game Init
+[09:23:36] [info] Game Texture2D TypeId: 17280249800387042021
+[09:23:36] [info] Load Shader: Engine/Shaders/ShadowMap.glsl
+[09:23:36] [warning] Uniform block Main not found.
+[09:23:36] [info] Load Shader: Engine/Shaders/Blit.glsl
+[09:23:36] [info] Load Shader: Engine/Shaders/ToneMappingReinhardPostFX.glsl
+[09:23:36] [info] Load Shader: Engine/Shaders/ToneMappingNeutralPostFX.glsl
+[09:23:36] [info] Load Shader: Engine/Shaders/ToneMappingACESPostFX.glsl
+[09:23:36] [info] Load Shader: Engine/Shaders/ColorGradingPostFX.glsl
+[09:23:36] [info] Load Shader: Engine/Shaders/Blit.glsl
+[09:23:36] [info] Load Shader: Engine/Shaders/BloomPostFX.glsl
+[09:23:36] [info] Load Shader: Engine/Shaders/BloomHorizontalPostFX.glsl
+[09:23:36] [warning] Uniform block Main not found.
+[09:23:36] [info] Load Shader: Engine/Shaders/BloomVerticalPostFX.glsl
+[09:23:36] [warning] Uniform block Main not found.
+[09:23:36] [info] Load Shader: Engine/Shaders/BloomCombinePostFX.glsl
+[09:23:36] [warning] Uniform block Main not found.
+[09:23:36] [info] Load Shader: Engine/Shaders/BloomPrefilterPostFX.glsl
+[09:23:36] [warning] Uniform block Main not found.
+[09:23:36] [info] Load Shader: Engine/Shaders/SSAOPostFX.glsl
+[09:23:36] [info] Load Shader: Engine/Shaders/Blit.glsl
+[09:23:36] [info] Load Shader: Engine/Shaders/SSGIPostFX4.glsl
+[09:23:36] [info] Load Shader: Engine/Shaders/SSGIBlurPostFX4.glsl
+[09:23:36] [info] Load Shader: Engine/Shaders/SSGIComposePostFX.glsl
+[09:23:36] [info] Load Shader: Engine/Shaders/SSGIUpsample.glsl
+[09:23:37] [info] Load Shader: Engine/Shaders/SSGIBlitPostFX.glsl
+[09:23:37] [info] Load Shader: Engine/Shaders/SSGITemporalFilter.glsl
+[09:23:37] [info] Load Shader: Engine/Shaders/SkyboxCubemap.glsl
+[09:23:37] [info] Load Shader: Engine/Shaders/GamaCorrectionPP.glsl
+[09:23:37] [info] Load Shader: Engine/Shaders/Sprite.glsl
+[09:23:38] [info] Load Shader: Engine/Shaders/FontMSDF.glsl
+[09:23:38] [info] Load Shader: Engine/Shaders/GamaCorrectionPP.glsl
+[09:23:38] [info] Load Shader: Engine/Shaders/Blit.glsl
+[09:23:38] [info] Load Shader: Standard/Shaders/UnlitParticleBlend.glsl
+[09:23:38] [info] Load Shader: Engine/Shaders/Blit.glsl
+[09:23:38] [info] Load Shader: Engine/Shaders/ToneMappingReinhardPostFX.glsl
+[09:23:38] [info] Load Shader: Engine/Shaders/ToneMappingNeutralPostFX.glsl
+[09:23:38] [info] Load Shader: Engine/Shaders/ToneMappingACESPostFX.glsl
+[09:23:38] [info] Load Shader: Engine/Shaders/ColorGradingPostFX.glsl
+[09:23:38] [info] Load Shader: Engine/Shaders/Blit.glsl
+[09:23:38] [info] Load Shader: Engine/Shaders/BloomPostFX.glsl
+[09:23:38] [info] Load Shader: Engine/Shaders/BloomHorizontalPostFX.glsl
+[09:23:38] [warning] Uniform block Main not found.
+[09:23:38] [info] Load Shader: Engine/Shaders/BloomVerticalPostFX.glsl
+[09:23:38] [warning] Uniform block Main not found.
+[09:23:38] [info] Load Shader: Engine/Shaders/BloomCombinePostFX.glsl
+[09:23:38] [warning] Uniform block Main not found.
+[09:23:38] [info] Load Shader: Engine/Shaders/BloomPrefilterPostFX.glsl
+[09:23:38] [warning] Uniform block Main not found.
+[09:23:38] [info] Load Shader: Engine/Shaders/SSAOPostFX.glsl
+[09:23:38] [info] Load Shader: Engine/Shaders/Blit.glsl
+[09:23:38] [info] Load Shader: Engine/Shaders/SSGIPostFX4.glsl
+[09:23:38] [info] Load Shader: Engine/Shaders/SSGIBlurPostFX4.glsl
+[09:23:38] [info] Load Shader: Engine/Shaders/SSGIComposePostFX.glsl
+[09:23:38] [info] Load Shader: Engine/Shaders/SSGIUpsample.glsl
+[09:23:38] [info] Load Shader: Engine/Shaders/SSGIBlitPostFX.glsl
+[09:23:38] [info] Load Shader: Engine/Shaders/SSGITemporalFilter.glsl
+[09:23:38] [info] Load Shader: Engine/Shaders/Lit.glsl
+[09:23:39] [info] Load Shader: Engine/Shaders/Blit.glsl
+[09:23:39] [info] Load Shader: Engine/Shaders/ToneMappingReinhardPostFX.glsl
+[09:23:39] [info] Load Shader: Engine/Shaders/ToneMappingNeutralPostFX.glsl
+[09:23:39] [info] Load Shader: Engine/Shaders/ToneMappingACESPostFX.glsl
+[09:23:39] [info] Load Shader: Engine/Shaders/ColorGradingPostFX.glsl
+[09:23:39] [info] Load Shader: Engine/Shaders/Blit.glsl
+[09:23:39] [info] Load Shader: Engine/Shaders/BloomPostFX.glsl
+[09:23:39] [info] Load Shader: Engine/Shaders/BloomHorizontalPostFX.glsl
+[09:23:39] [warning] Uniform block Main not found.
+[09:23:39] [info] Load Shader: Engine/Shaders/BloomVerticalPostFX.glsl
+[09:23:39] [warning] Uniform block Main not found.
+[09:23:39] [info] Load Shader: Engine/Shaders/BloomCombinePostFX.glsl
+[09:23:39] [warning] Uniform block Main not found.
+[09:23:39] [info] Load Shader: Engine/Shaders/BloomPrefilterPostFX.glsl
+[09:23:39] [warning] Uniform block Main not found.
+[09:23:39] [info] Load Shader: Engine/Shaders/SSAOPostFX.glsl
+[09:23:40] [info] Load Shader: Engine/Shaders/Blit.glsl
+[09:23:40] [info] Load Shader: Engine/Shaders/SSGIPostFX4.glsl
+[09:23:40] [info] Load Shader: Engine/Shaders/SSGIBlurPostFX4.glsl
+[09:23:40] [info] Load Shader: Engine/Shaders/SSGIComposePostFX.glsl
+[09:23:40] [info] Load Shader: Engine/Shaders/SSGIUpsample.glsl
+[09:23:40] [info] Load Shader: Engine/Shaders/SSGIBlitPostFX.glsl
+[09:23:40] [info] Load Shader: Engine/Shaders/SSGITemporalFilter.glsl
+[09:23:40] [info] Load Shader: Engine/Shaders/Lit2.glsl
+[09:23:41] [warning] LoadingScene: C:\Users\sam\Desktop\cpp\OneDudeEngine\build\probe-check\probe.scene Succefu
+[09:23:41] [info] ContentBrowserPanel CurDirectory: C:\Users\sam\Desktop\cpp\OneDudeEngine\Sandbox\Content
+[09:23:41] [info] Full file cache updated with 590 files
+[09:23:41] [warning] Uniform block Main not found.
+[09:23:41] [info] Load Shader: Engine/Shaders/Blit.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/ToneMappingReinhardPostFX.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/ToneMappingNeutralPostFX.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/ToneMappingACESPostFX.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/ColorGradingPostFX.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/Blit.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/BloomPostFX.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/BloomHorizontalPostFX.glsl
+[09:23:41] [warning] Uniform block Main not found.
+[09:23:41] [info] Load Shader: Engine/Shaders/BloomVerticalPostFX.glsl
+[09:23:41] [warning] Uniform block Main not found.
+[09:23:41] [info] Load Shader: Engine/Shaders/BloomCombinePostFX.glsl
+[09:23:41] [warning] Uniform block Main not found.
+[09:23:41] [info] Load Shader: Engine/Shaders/BloomPrefilterPostFX.glsl
+[09:23:41] [warning] Uniform block Main not found.
+[09:23:41] [info] Load Shader: Engine/Shaders/SSAOPostFX.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/Blit.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/SSGIPostFX4.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/SSGIBlurPostFX4.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/SSGIComposePostFX.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/SSGIUpsample.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/SSGIBlitPostFX.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/SSGITemporalFilter.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/GamaCorrectionPP.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/FontMSDF.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/GamaCorrectionPP.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/Blit.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/Blit.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/ToneMappingReinhardPostFX.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/ToneMappingNeutralPostFX.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/ToneMappingACESPostFX.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/ColorGradingPostFX.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/Blit.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/BloomPostFX.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/BloomHorizontalPostFX.glsl
+[09:23:41] [warning] Uniform block Main not found.
+[09:23:41] [info] Load Shader: Engine/Shaders/BloomVerticalPostFX.glsl
+[09:23:41] [warning] Uniform block Main not found.
+[09:23:41] [info] Load Shader: Engine/Shaders/BloomCombinePostFX.glsl
+[09:23:41] [warning] Uniform block Main not found.
+[09:23:41] [info] Load Shader: Engine/Shaders/BloomPrefilterPostFX.glsl
+[09:23:41] [warning] Uniform block Main not found.
+[09:23:41] [info] Load Shader: Engine/Shaders/SSAOPostFX.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/Blit.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/SSGIPostFX4.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/SSGIBlurPostFX4.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/SSGIComposePostFX.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/SSGIUpsample.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/SSGIBlitPostFX.glsl
+[09:23:41] [info] Load Shader: Engine/Shaders/SSGITemporalFilter.glsl
+[09:23:42] [info] Captured viewport: C:\Users\sam\Desktop\cpp\OneDudeEngine\build\probe-check\probe.png (800x600)
+[09:23:43] [info] Glfw shutdown

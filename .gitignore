@@ -10,3 +10,4 @@ Tests/Content/Engine/
 *.meshbin
 *.modelbin
 docs/
+!/Engine/Docs/

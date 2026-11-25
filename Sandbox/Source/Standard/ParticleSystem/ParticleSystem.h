@@ -1,4 +1,6 @@
 #pragma once
+#include <optional>
+#include <random>
 #include <OD/Scene/Scene.h>
 #include <OD/Core/Color.h>
 #include <OD/Core/Action.h>
@@ -29,14 +31,14 @@ struct ParticleRunningData;
 class IParticleSpawnModule{
 public:
     virtual void OnGui(){}
-    virtual void OnStartSpawnUpdate(ParticleEmiter& system){};
-    virtual void OnSpawnUpdate(ParticleEmiter& system){};
+    virtual void OnStartSpawnUpdate(ParticleEmiter& system, std::mt19937* random){};
+    virtual void OnSpawnUpdate(ParticleEmiter& system, float delta, std::mt19937* random){};
 };
 
 class IInitParticleModule{
 public:
     virtual void OnGui(){}
-    virtual void OnInitParticle(ParticleData& particle){};
+    virtual void OnInitParticle(ParticleData& particle, std::mt19937* random){};
 };
 
 class IParticleUpdateModule{
@@ -56,9 +58,10 @@ public:
         ArchiveDumpNVP(ar, overTimeEmiterRate);
     }
 
+    void Reset(){ emissionAccumulator = 0; }
     void OnGui() override;
-    void OnStartSpawnUpdate(ParticleEmiter& system) override;
-    void OnSpawnUpdate(ParticleEmiter& system) override;
+    void OnStartSpawnUpdate(ParticleEmiter& system, std::mt19937* random) override;
+    void OnSpawnUpdate(ParticleEmiter& system, float delta, std::mt19937* random) override;
 private:
     float emissionAccumulator = 0; 
 };
@@ -75,7 +78,7 @@ public:
     }
 
     void OnGui() override;
-    void OnInitParticle(ParticleData& particle) override;
+    void OnInitParticle(ParticleData& particle, std::mt19937* random) override;
 };
 
 class InitialVelocityModule: public IInitParticleModule{
@@ -90,7 +93,7 @@ public:
     }
 
     void OnGui() override;
-    void OnInitParticle(ParticleData& particle) override;
+    void OnInitParticle(ParticleData& particle, std::mt19937* random) override;
 };
 
 class InitialRotationModule: public IInitParticleModule{
@@ -105,7 +108,7 @@ public:
     }
 
     void OnGui() override;
-    void OnInitParticle(ParticleData& particle) override;
+    void OnInitParticle(ParticleData& particle, std::mt19937* random) override;
 };
 
 class InitialSizeModule: public IInitParticleModule{
@@ -122,7 +125,7 @@ public:
     }
 
     void OnGui() override;
-    void OnInitParticle(ParticleData& particle) override;
+    void OnInitParticle(ParticleData& particle, std::mt19937* random) override;
 };
 
 class InitialColorModule: public IInitParticleModule{
@@ -135,7 +138,7 @@ public:
     }
 
     void OnGui() override;
-    void OnInitParticle(ParticleData& particle) override;
+    void OnInitParticle(ParticleData& particle, std::mt19937* random) override;
 };
 
 class UpdaterModule: public IParticleUpdateModule{
@@ -324,7 +327,7 @@ public:
     void Sort();
     void SubmitDrawData(InstancingBuffer& buffer, const Matrix4& root = Matrix4Identity, const Camera* cam = nullptr);
 
-    void SpawnNewParticle();
+    void SpawnNewParticle(std::mt19937* random = nullptr);
 
     inline CollisionPhysicModule& GetCollisionPhysicModule(){ return collisionPhysicModule; }
 
@@ -425,6 +428,8 @@ private:
     //void SpawnParticle(Particle &particle);
 
     void BindModules();
+    void PrepareUpdate(Scene& scene, Entity e, TransformComponent& trans);
+    void Simulate(float delta, Vector3 camPos, std::mt19937* previewRandom = nullptr);
 };
 
 class ParticleSystem{
@@ -448,6 +453,10 @@ public:
 
 private:
     std::vector<ParticleEmiter> emiters = {ParticleEmiter()};
+    float currentTime = 0.0f;
+    bool paused = false;
+    bool resimulate = false;
+    std::optional<float> requestedTime;
 };
 
 struct ParticleComponent{

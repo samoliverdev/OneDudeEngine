@@ -44,6 +44,9 @@
 #include "Samples/GPUSample11.h"
 
 #include <OD/Graphics/Texture.h>
+#include <OD/Core/CommandLineOptions.h>
+#include <filesystem>
+#include <memory>
 
 OD::ApplicationConfig GetStartAppConfig(){
     return OD::ApplicationConfig{
@@ -54,6 +57,35 @@ OD::ApplicationConfig GetStartAppConfig(){
 }
 
 OD::Module* CreateMainModule(){
+    auto sceneSample = std::make_unique<LoadSceneSample>();
+    OD::CommandLineOptions options;
+    options.Add("--scene", sceneSample->scenePath);
+    options.Add("--mode", sceneSample->mode);
+    options.Add("--capture-viewport", sceneSample->capturePath);
+
+    const auto& args = OD::Application::GetArgs();
+    if(args.size() > 1 && (options.HasOptions(args) || args[1].compare(0, 2, "--") == 0)){
+        if(options.Parse(args, sceneSample->startupError)){
+            // Keep Content-relative asset paths and accept an existing path
+            // relative to the caller before project startup changes directories.
+            std::error_code error;
+            if(!sceneSample->scenePath.empty() && std::filesystem::is_regular_file(sceneSample->scenePath, error)){
+                const auto path = std::filesystem::absolute(sceneSample->scenePath, error);
+                if(!error) sceneSample->scenePath = path.string();
+            }
+            if(!sceneSample->mode.empty() && sceneSample->mode != "edit" && sceneSample->mode != "play"){
+                sceneSample->startupError = "Expected --mode edit or --mode play";
+            }
+            if(sceneSample->scenePath.empty()) sceneSample->scenePath = "Sandbox/Scenes/PBR.scene";
+            if(sceneSample->startupError.empty() && !sceneSample->capturePath.empty()){
+                const auto path = std::filesystem::absolute(sceneSample->capturePath, error);
+                if(error) sceneSample->startupError = "Could not resolve the capture output path: " + error.message();
+                else sceneSample->capturePath = path.u8string();
+            }
+        }
+        return sceneSample.release();
+    }
+
     int i = 23; //10; //-1; //35;
 
     #ifdef TestNewGPU_API
@@ -74,7 +106,7 @@ OD::Module* CreateMainModule(){
     if(i == -11) return new GPUSample10();
     if(i == -12) return new GPUSample11();
 
-    if(i == -1) return new LoadSceneSample();
+    if(i == -1) return sceneSample.release();
     
     if(i == 0) return new BaseMeshSample();
     if(i == 1) return new LoadModelSample();

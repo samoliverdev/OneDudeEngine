@@ -296,6 +296,7 @@ private:
     //Possible solution, use id instead PhysicObject* data
     class PhysicObject* data = nullptr;
     bool isDirt = true;
+    bool staticIsDirt = true;
 };
 
 struct OD_API RagdollComponent{

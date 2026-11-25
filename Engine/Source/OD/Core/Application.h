@@ -42,6 +42,8 @@ public:
     static bool Run();
     
     static void Quit();
+    static void SetExitCode(int code);
+    static int GetExitCode();
     static void Exit();
     static void GetFramebufferSize(int* width, int* height);
 
@@ -79,6 +81,8 @@ public:
         return nullptr;
     }
 
+    // Call before interpreting project arguments. Consumes engine startup flags.
+    static void SetArgs(int argc, char* const* argv);
     static std::vector<std::string>& GetArgs();
 
     static void CreateLuaBind(sol::state& lua);

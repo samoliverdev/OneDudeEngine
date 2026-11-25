@@ -306,6 +306,25 @@ void Framebuffer::Invalidate(){
     #endif
 }
 
+void Framebuffer::ReadColorAttachment(int attachmentIndex, ColorReadbackCallback complete){
+    if(attachmentIndex < 0 || attachmentIndex >= static_cast<int>(specification.colorAttachments.size())){
+        complete({ColorReadbackResult::InvalidAttachment});
+        return;
+    }
+#ifdef TestNewGPU_API
+    if(gfxDevice != nullptr && framebuffer != Gfx::InvalidID){
+        gfxDevice->ReadFramebufferColor(framebuffer, attachmentIndex, std::move(complete));
+        return;
+    }
+#else
+    if(graphicsDevice != nullptr){
+        graphicsDevice->ReadFramebufferColor(*this, attachmentIndex, std::move(complete));
+        return;
+    }
+#endif
+    complete({});
+}
+
 int Framebuffer::ReadPixel(int attachmentIndex, int x, int y){
     #ifdef TestNewGPU_API
     Assert(false);

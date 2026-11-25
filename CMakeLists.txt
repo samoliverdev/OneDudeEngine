@@ -249,6 +249,14 @@ endif()
 
 project(Engine)
 
+if(WIN32 OR (CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT ANDROID))
+    add_executable(onedude Tools/onedude.cpp)
+    target_include_directories(onedude PRIVATE Engine/Source)
+    if(MINGW)
+        target_link_options(onedude PRIVATE -municode)
+    endif()
+endif()
+
 file(GLOB_RECURSE ENGINE_SOURCE_FILES 
     Engine/ThirdParty/tinyfiledialogs/*.c
     #Engine/ThirdParty/glad/*.c 

@@ -140,10 +140,12 @@ void StaticRendererClusterComponent::CreateIntancingCommands(){
                 #endif
             }
 
-            subchunk.drawIntancingCommands.Each([](DrawInstancingCommand2& cmd){
-                Ref<InstancingBuffer> buffer = InstancingBuffer::Create();
+            subchunk.instancingBuffers.clear();
+            subchunk.drawIntancingCommands.Each([&subchunk](DrawInstancingCommand2& cmd){
+                auto buffer = InstancingBuffer::Create();
                 buffer->SetData(&cmd.trans[0], cmd.trans.size());
                 cmd.buffer = buffer->GetId();
+                subchunk.instancingBuffers.push_back(std::move(buffer));
             });
             if(subchunk.drawIntancingCommands.Size() > 0){
                 subchunk.targets.clear();

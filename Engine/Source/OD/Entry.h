@@ -106,9 +106,7 @@ int main(int argc, char *argv[]){
     _CrtSetAllocHook(AllocHook);
     #endif
 
-    for(int i = 0; i < argc; i++){
-        OD::Application::GetArgs().push_back(std::string(argv[i]));
-    }
+    OD::Application::SetArgs(argc, argv);
 
     /*#ifdef TestNewGPU_API
     OD::ApplicationCallbacks callbacks = {};
@@ -174,5 +172,5 @@ int main(int argc, char *argv[]){
         //_CrtDumpMemoryLeaks();
     #endif
 
-    return 0;
+    return OD::Application::GetExitCode();
 }

@@ -20,6 +20,10 @@
 #include "OD/TerrainSystem/TerrainEditor.h"
 #include <imgui/imgui_internal.h>
 #include <ImGuizmo/ImGuizmo.h>
+#include <stb/stb_image_write.h>
+#include <algorithm>
+#include <chrono>
+#include <fstream>
 
 namespace OD{
 
@@ -184,6 +188,7 @@ int Editor::ExecutionSortPriority(){
 };
 
 void Editor::OnInit(){
+    RegisterLiveCommands();
     ImGuiLayer::SetCleanAll(true);
 
     FrameBufferSpecification framebufferSpecification = {Application::ScreenWidth(), Application::ScreenHeight()};
@@ -331,6 +336,8 @@ void Editor::OnExit(){
 void Editor::OnUpdate(float deltaTime){
     OD_PROFILE_SCOPE("Editor::OnUpdate");
 
+    FinishViewportCapture();
+
     Assert(SceneManager::Get().GetActiveScene() != nullptr);
     if(SceneManager::Get().GetActiveScene() == nullptr) return;
     
@@ -442,8 +449,117 @@ void Editor::OnUpdate(float deltaTime){
     }
 }
 
+void Editor::RequestViewportCapture(const std::string& path, bool quitWhenDone, LiveCommands::Reply reply){
+    if(path.empty() || !viewportCapturePath.empty()){
+        if(reply) reply(false, path.empty() ? "Missing capture path" : "A capture is already pending");
+        return;
+    }
+    viewportCapturePath = path;
+    quitAfterCapture = quitWhenDone;
+    viewportCaptureReply = std::move(reply);
+    if(quitAfterCapture) Application::SetExitCode(1);
+}
+
 void Editor::OnRender(float deltaTime){
-    //assetPreviewScene->Draw();
+    if(viewportCapturePath.empty() || viewportCapture.valid()) return;
+
+    auto result = std::make_shared<std::promise<ColorReadback>>();
+    viewportCapture = result->get_future();
+    auto scene = SceneManager::Get().GetActiveScene();
+    if(!open || !drawSceneToCustomFramebuffer || !scene || !framebuffer){
+        result->set_value({});
+        return;
+    }
+    if(scene->Running()){
+        auto cameras = scene->GetRegistry().view<CameraComponent, TransformComponent, InfoComponent>(entt::exclude<SelfDisable>);
+        const bool viewportCamera = std::any_of(cameras.begin(), cameras.end(), [&](Entity entity){
+            const auto& target = cameras.get<CameraComponent>(entity).customRenderOut;
+            return !target || !target->IsValid();
+        });
+        if(!viewportCamera){
+            LogError("Viewport capture requires an enabled game camera that renders to the viewport");
+            result->set_value({});
+            return;
+        }
+    }
+
+    framebuffer->ReadColorAttachment(0, [result](ColorReadback image){
+        result->set_value(std::move(image));
+    });
+}
+
+void Editor::FinishViewportCapture(){
+    if(!viewportCapture.valid() || viewportCapture.wait_for(std::chrono::seconds(0)) != std::future_status::ready) return;
+
+    ColorReadback image = viewportCapture.get();
+    bool saved = false;
+    std::string message;
+    if(image.result == ColorReadbackResult::Success){
+        std::ofstream output(std::filesystem::u8path(viewportCapturePath), std::ios::binary);
+        if(output){
+            const int encoded = stbi_write_png_to_func([](void* stream, void* data, int size){
+                static_cast<std::ofstream*>(stream)->write(static_cast<const char*>(data), size);
+            }, &output, image.width, image.height, 4, image.rgba8.data(), image.width * 4);
+            output.close();
+            saved = encoded != 0 && output.good();
+        }
+        if(!saved) message = "Could not write viewport PNG: " + viewportCapturePath;
+    } else if(image.result == ColorReadbackResult::Unsupported){
+        message = "Viewport color readback is unsupported by the active graphics backend";
+    } else {
+        message = "Could not read the viewport color attachment";
+    }
+    if(saved){
+        message = "Captured viewport: " + viewportCapturePath;
+        LogInfo("{} ({}x{})", message, image.width, image.height);
+    } else {
+        LogError("{}", message);
+    }
+
+    viewportCapturePath.clear();
+    auto reply = std::move(viewportCaptureReply);
+    if(reply) reply(saved, std::move(message));
+    if(quitAfterCapture){
+        Application::SetExitCode(saved ? 0 : 1);
+        Application::Quit();
+    }
+}
+
+void Editor::RegisterLiveCommands(){
+    LiveCommands::Register(*this, "status", [this](const auto& args, auto reply){
+        if(!args.empty()) return reply(false, "Usage: status");
+        auto scene = SceneManager::Get().GetActiveScene();
+        if(!scene) return reply(true, "mode=edit\nscene=");
+        const bool playing = scene->Running();
+        const auto& path = playing && lastScene && !scene->PathIsValid() ? lastScene->Path() : scene->Path();
+        reply(true, std::string(playing ? "mode=play" : "mode=edit") + "\nscene=" + path);
+    });
+    LiveCommands::Register(*this, "play", [this](const auto& args, auto reply){
+        if(!args.empty()) return reply(false, "Usage: play");
+        auto scene = SceneManager::Get().GetActiveScene();
+        if(!scene) return reply(false, "No scene is open");
+        PlayScene();
+        reply(true, "mode=play");
+    });
+    LiveCommands::Register(*this, "stop", [this](const auto& args, auto reply){
+        if(!args.empty()) return reply(false, "Usage: stop");
+        auto scene = SceneManager::Get().GetActiveScene();
+        if(!scene) return reply(false, "No scene is open");
+        if(scene->Running() && !lastScene) return reply(false, "No editor play session to stop");
+        StopScene();
+        reply(true, "mode=edit");
+    });
+    LiveCommands::Register(*this, "scene", [this](const auto& args, auto reply){
+        if(args.size() != 2 || args[0] != "open" || args[1].empty()) return reply(false, "Usage: scene open <path>");
+        auto scene = SceneManager::Get().GetActiveScene();
+        if(scene && scene->Running()) return reply(false, "Stop play mode before opening a scene");
+        OpenScenePath(std::filesystem::u8path(args[1]).string());
+        reply(true, "scene=" + curScenePath);
+    });
+    LiveCommands::Register(*this, "capture-viewport", [this](const auto& args, auto reply){
+        if(args.size() != 1) return reply(false, "Usage: capture-viewport <path>");
+        RequestViewportCapture(args[0], false, std::move(reply));
+    });
 }
 
 void Editor::OnGUI(){
@@ -527,17 +643,21 @@ void Editor::OpenScene(){
     Assert(SceneManager::Get().GetActiveScene() != nullptr);
     if(SceneManager::Get().GetActiveScene()->Running()) return;
 
-    BaseRenderPipeline* renderPipeline = SceneManager::Get().GetActiveScene()->GetSystemDynamic<BaseRenderPipeline>();
-    Assert(renderPipeline != nullptr);
-
-    std::string path = Platform::OpenFile("*.scene"); 
-    if(path.empty() == false){
-        renderPipeline->SetOverrideFrameBuffer(nullptr);
-        Ref<Scene> scene = SceneManager::Get().NewScene();
-
-        scene->Load(path.c_str());
-        curScenePath = scene->Path();
+    const std::string path = Platform::OpenFile("*.scene");
+    if(path.empty()) return;
+    try{
+        OpenScenePath(path);
+    } catch(const std::exception& error){
+        LogError("Could not open scene '{}': {}", path, error.what());
     }
+}
+
+void Editor::OpenScenePath(const std::string& path){
+    auto scene = CreateRef<Scene>();
+    scene->Load(path.c_str());
+    SceneManager::Get().SetActiveScene(scene);
+    curScenePath = scene->Path();
+    lastScene.reset();
     UnselectAll();
 }
 
@@ -663,6 +783,14 @@ void Editor::DrawMainMenuBar(){
 
             if(ImGui::MenuItem("New", "Ctrl+N")) NewScene();
             if(ImGui::MenuItem("Open...", "Ctrl+O")) OpenScene();
+            if(ImGui::MenuItem("Capture Viewport...", nullptr, false,
+                drawSceneToCustomFramebuffer && viewportCapturePath.empty())){
+                std::string path = Platform::SaveFile("*.png");
+                if(!path.empty()){
+                    if(std::filesystem::path(path).extension().empty()) path += ".png";
+                    RequestViewportCapture(path);
+                }
+            }
             if(ImGui::MenuItem("Save", "Ctrl+S")) SaveScene();
             if(ImGui::MenuItem("Save As", "Ctrl+Shift+S")) SaveAsScene();
             if(ImGui::MenuItem("Exit", "Alt+F4")) Application::Quit(); 

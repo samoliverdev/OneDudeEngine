@@ -1,4 +1,5 @@
 #pragma once
+#include "OD/Graphics/ColorReadback.h"
 #include "OD/Defines.h"
 #include "OD/Core/Math.h"
 #include "OD/Core/Color.h"
@@ -98,6 +99,9 @@ public:
     virtual void FramebufferGenMipmap(Framebuffer& Framebuffer){}
     virtual void* FramebufferColorAttachmentId(Framebuffer& framebuffer, int index){ return nullptr; }
     virtual void* FramebufferDepthAttachmentId(Framebuffer& framebuffer){ return nullptr; }
+    virtual void ReadFramebufferColor(Framebuffer&, int, ColorReadbackCallback complete){
+        complete({ColorReadbackResult::Unsupported});
+    }
     virtual int FramebufferReadPixel(Framebuffer& frambuffer, int attachmentIndex, int x, int y){ return 0; }
     virtual void BlitFramebuffer(Framebuffer* src, Framebuffer* dst, int srcPass = 0){}
 

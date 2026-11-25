@@ -89,6 +89,7 @@ public:
     virtual void FramebufferGenMipmap(Framebuffer& Framebuffer) override;
     virtual void* FramebufferColorAttachmentId(Framebuffer& framebuffer, int index) override;
     virtual void* FramebufferDepthAttachmentId(Framebuffer& framebuffer) override;
+    void ReadFramebufferColor(Framebuffer& framebuffer, int attachment, ColorReadbackCallback complete) override;
     virtual int FramebufferReadPixel(Framebuffer& frambuffer, int attachmentIndex, int x, int y) override;
 
     virtual bool Texture2DCreate(Texture2D& tex, void* data, int width, int height, TextureDataType dataType) override;

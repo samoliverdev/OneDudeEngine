@@ -30,6 +30,16 @@ BeginUniform(0, 0, Main)
 
     Uniform float _TemporalDirection;
     Uniform float _TemporalOffset;
+    #ifdef SSGI_CUSTOM_SAMPLING
+    Uniform int useBlueNoise;
+    Uniform int noiseFrame;
+    Uniform int gradientPass;
+    Uniform int probePhase;
+    Uniform vec2 traceResolution;
+    Uniform mat4 probePreviousView;
+    Uniform mat4 probePreviousProjection;
+    Uniform mat4 probePreviousInverseProjection;
+    #endif
 
     Uniform float _Radius;
     Uniform float _GIIntensity;
@@ -378,6 +388,13 @@ vec4 ComputeSSGI(vec2 uv){
     //float initialStep = fract(noiseOffset + temporalOffset) + Rand((uv + noiseJitterIdx) * 2.0 - 1.0); // initial ray step (THIS IS VERY IMPORTANT)
     // ===================== INITIAL STEP FIX =====================
     float initialStep = fract(noiseOffset + temporalOffset) + Rand((uv + noiseJitterIdx) * 2.0 - 1.0) * 1;
+    #ifdef SSGI_CUSTOM_SAMPLING
+    vec2 customSample = SSGI_CUSTOM_SAMPLING();
+    if(customSample.x >= 0.0){
+        noiseDirection = customSample.x - _TemporalDirection;
+        initialStep = customSample.y;
+    }
+    #endif
 
     vec3 color = vec3(0);
     float ao = 0;

@@ -20,17 +20,17 @@ enum class KeyCode {
     Tab = 258,
     Shift = 340,
     Control = 341,
-    Alt = 0x11,
+    Alt = 342,
     Escape = 256,
     Space = 32,
     //8
 
     Delete = 261,
 
-    Left = 0x25,
-    Up = 0x26,
-    Right = 0x27,
-    Down = 0x28,
+    Left = 263,
+    Up = 265,
+    Right = 262,
+    Down = 264,
     //4
 
     Alpha0 = 48,
@@ -97,6 +97,13 @@ enum class KeyCode {
 };
 #define KeyCodeMaxKeys 348
 
+enum class GamepadButton{
+    A, B, X, Y,
+    LeftBumper, RightBumper, Back, Start, Guide,
+    LeftStick, RightStick, DpadUp, DpadRight, DpadDown, DpadLeft,
+    LeftTrigger, RightTrigger, Count
+};
+
 class Application;
 
 class OD_API Input{
@@ -116,11 +123,38 @@ public:
 
     static Vector2 GetMouseDelta();
 
+    // Controller slots are zero-based. By default, queries use the primary gamepad.
+    static constexpr int MaxGamepads = 16;
+    static constexpr int PrimaryGamepad = -1;
+
+    static int GetPrimaryGamepad(); // Returns -1 when no gamepad is connected.
+    static bool HasGamepad(int device = PrimaryGamepad);
+    static bool IsGamepadButton(GamepadButton button, int device = PrimaryGamepad);
+    static bool IsGamepadButtonDown(GamepadButton button, int device = PrimaryGamepad);
+    static bool IsGamepadButtonUp(GamepadButton button, int device = PrimaryGamepad);
+    // Stick Y is positive upwards.
+    static Vector2 GetGamepadLeftStick(int device = PrimaryGamepad);
+    static Vector2 GetGamepadRightStick(int device = PrimaryGamepad);
+
     static void CreateLuaBind(sol::state& lua);
 
 private:
     static void Update();
     static void PostUpdate();
+
+    struct GamepadState{
+        bool connected = false;
+        bool buttons[static_cast<int>(GamepadButton::Count)]{};
+        Vector2 leftStick{0, 0};
+        Vector2 rightStick{0, 0};
+    };
+
+    static GamepadState ReadGamepad(int device);
+    static const GamepadState& GetGamepadState(int device, bool previous = false);
+    static GamepadState gamepads[MaxGamepads];
+    static GamepadState previousGamepads[MaxGamepads];
+    static int primaryGamepad;
+    static int previousPrimaryGamepad;
 };
 
 }

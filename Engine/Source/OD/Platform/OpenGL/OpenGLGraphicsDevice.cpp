@@ -3,6 +3,7 @@
 #include "OD/Core/ResourceManager.h"
 #include "OpenGLGraphicsDevice.h"
 #include "GL.h"
+#include "OD/Platform/OpenGL/ReadColorTexture.h"
 #include "OD/Graphics/Common.h"
 #include "OD/Graphics/Graphics.h"
 #include "OD/Graphics/Camera.h"
@@ -4219,6 +4220,20 @@ void* OpenGLGraphicsDevice::FramebufferColorAttachmentId(Framebuffer& framebuffe
 
 void* OpenGLGraphicsDevice::FramebufferDepthAttachmentId(Framebuffer& framebuffer){
     return (void*)(uint64_t)framebuffer.glData.depthAttachment;
+}
+
+void OpenGLGraphicsDevice::ReadFramebufferColor(Framebuffer& framebuffer, int attachment, ColorReadbackCallback complete){
+    if(attachment < 0 || attachment >= static_cast<int>(framebuffer.glData.colorAttachments.size())){
+        complete({ColorReadbackResult::InvalidAttachment});
+        return;
+    }
+    const auto& spec = framebuffer.specification;
+    if(spec.type != FramebufferAttachmentType::TEXTURE_2D ||
+       spec.colorAttachments[attachment].colorFormat == FramebufferTextureFormat::RED_INTEGER){
+        complete({ColorReadbackResult::Unsupported});
+        return;
+    }
+    complete(ReadOpenGLColorTexture(framebuffer.glData.colorAttachments[attachment], spec.width, spec.height));
 }
 
 int OpenGLGraphicsDevice::FramebufferReadPixel(Framebuffer& frambuffer, int attachmentIndex, int x, int y){

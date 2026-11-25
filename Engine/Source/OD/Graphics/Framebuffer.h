@@ -1,4 +1,5 @@
 #pragma once
+#include "OD/Graphics/ColorReadback.h"
 #include "OD/Defines.h"
 #include "OD/Platform/OpenGL/GL.h"
 #include "OD/Core/Resource.h"
@@ -86,6 +87,9 @@ public:
     void GenMipmap();
     void Invalidate();
     
+    // Completion runs on the rendering thread, or inline for immediate backends.
+    void ReadColorAttachment(int attachmentIndex, ColorReadbackCallback complete);
+
     int ReadPixel(int attachmentIndex, int x, int y);
 
     bool IsValid();

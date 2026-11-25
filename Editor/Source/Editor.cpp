@@ -637,7 +637,7 @@ class Editor: public OD::Module{
 };
 
 int main(int argc, char *argv[]){
-    for(int i = 0; i < argc; i++) OD::Application::GetArgs().push_back(std::string(argv[i]));
+    OD::Application::SetArgs(argc, argv);
 
     OD::Action<void()> action;
     action.Add([](){ LogInfo("tesds"); });
@@ -648,7 +648,8 @@ int main(int argc, char *argv[]){
 
     enginePath = ENGINE_PATH "";
     defaultProjectPath = RESOURCES_PATH "";
-    std::string targetProjectPath = argc > 1 ? argv[1] : "";
+    const auto& args = OD::Application::GetArgs();
+    std::string targetProjectPath = args.size() > 1 ? args[1] : "";
     
     //TODO: Revise CoreModulesInit this can be outdate, in the order of call and forgot to call shutdown
     if(useLauncher){
